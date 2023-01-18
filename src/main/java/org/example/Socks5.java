@@ -201,7 +201,7 @@ public class Socks5 {
     }
 
     public static void main(String[] args) throws IOException {
-        System.out.println("Service Listen: 127.0.0.1:1080");
+        System.out.println("Service start on :1080");
         ServerSocket srvSocket  = new ServerSocket(Socks5.port);
         while (true){
             Socket sock = srvSocket.accept();
