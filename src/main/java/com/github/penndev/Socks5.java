@@ -1,4 +1,4 @@
-package org.example;
+package com.github.penndev;
 
 import java.io.*;
 import java.net.ServerSocket;
