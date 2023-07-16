@@ -1,6 +1,7 @@
 package com.github.penndev;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.LocalDateTime;
@@ -10,31 +11,127 @@ public class Socks5 {
     /**
      * 监听端口
      */
-    public static final int port = 1080;
+    public static int Port = 1080;
 
-    /**
-     *   认证方法
-     *o  X'00' NO AUTHENTICATION REQUIRED
-     *o  X'01' GSSAPI
-     *o  X'02' USERNAME/PASSWORD
-     *o  X'03' to X'7F' IANA ASSIGNED
-     *o  X'80' to X'FE' RESERVED FOR PRIVATE METHODS
-     *o  X'FF' NO ACCEPTABLE METHODS
-     */
-    public static final int method = 2;
+    public static String username = null;
 
-    /**
-     *  Socks Protocol version
-     *  socks 版本首字符
-     */
-    public static final int VERSION = 5;
+    public static String password = null;
 
-    /**
-     * 预留字符默认值  socks5 默认为 0x00
-     */
-    public static final int RESERVED = 0;
+    public static void main(String[] args) throws IOException {
+        System.out.println("Socks5 listening: " + Socks5.Port);
+        ServerSocket srvSocket  = new ServerSocket(Socks5.Port);
+        while (true) {
+            Socket sock = srvSocket.accept();
+            new Thread(new Service(sock), "listener").start();
+        }
+    }
+
 
     public static class Service implements Runnable {
+        private Socket sock;
+        private OutputStream output;
+        private InputStream input;
+
+        private byte method = 0;
+
+        private byte cmd;
+        private byte atyp;
+        private String addr;
+        private int port;
+
+
+        public Service(Socket sock) throws IOException {
+            this.sock = sock;
+            this.input = sock.getInputStream();
+            this.output =  sock.getOutputStream();
+            // 确定当前支持的认证方法。
+            if (username != null) {
+                method = 2;
+            }
+
+        }
+
+        //https://datatracker.ietf.org/doc/html/rfc1928#section-3
+        public boolean Connects() throws IOException {
+            var ver_n_method = input.readNBytes(2);
+            if (ver_n_method[0] != 0x05 || ver_n_method[1] < 1){
+                output.write(new byte[]{0x05, (byte) 0xff});
+                return false;
+            }
+
+            var methods = input.readNBytes(ver_n_method[1]);
+            for(byte i : methods){
+                if (i == method){
+                    output.write(new byte[]{0x05, method});
+                    //https://datatracker.ietf.org/doc/html/rfc1929#section-2
+                    if(i == 0x02){
+                        if( input.readNBytes(1)[0] != 1 ){
+                            output.write(new byte[]{0x05, 0x01});
+                            return false;
+                        }
+                        String username = new String(input.readNBytes(input.readNBytes(1)[0]));
+                        String password = new String(input.readNBytes(input.readNBytes(1)[0]));
+                        System.out.println("client auth:" + username + ":" + password);
+                        output.write(new byte[]{0x05, 0x00});
+                    }
+                    return true;
+                }
+            }
+            output.write(new byte[]{0x05, (byte) 0xff});
+            return false;
+        }
+
+        //https://datatracker.ietf.org/doc/html/rfc1928#section-4
+        public boolean Requests() throws IOException{
+            var d = input.readNBytes(4);
+            if (d[0] != 0x05){
+                return false;
+            }
+            cmd = d[1];
+            atyp = d[3];
+            addr = switch (atyp) {
+                case 0x01 -> InetAddress.getByAddress(input.readNBytes(4)).getHostAddress();
+                case 0x03 -> new String(input.readNBytes(input.readNBytes(1)[0]));
+                case 0x04 -> new String(input.readNBytes(16));
+                default -> throw new IllegalArgumentException("not merge the atyp ->" + atyp);
+            };
+            var portByte = input.readNBytes(2);
+            port = (portByte[0] & 0xff) * 256 + (portByte[1] & 0xff);
+            return true;
+        }
+
+        //https://datatracker.ietf.org/doc/html/rfc1928#section-6
+        public boolean Replies() throws IOException{
+            System.out.println(addr + " : " + port);
+            return true;
+        }
+
+
+        @Override
+        public void run() {
+            try {
+                // 选择授权方式。
+                if(! Connects()) {
+                    return;
+                }
+                if(! Requests()) {
+                    return;
+                }
+                if(! Replies()) {
+                    return;
+                }
+
+            } catch (Exception e) {
+                System.out.print(e);
+            }
+        }
+    }
+
+
+
+
+
+    public static class ServiceS implements Runnable {
         private Socket sock;
         private OutputStream output;
         private InputStream input;
@@ -69,7 +166,7 @@ public class Socks5 {
         public static final int repliesNetworkUnreachable = 3; // 连接状态网络错误
         public static final byte repliesConnectionRefused = 5; // 远程服务器拒绝访问
 
-        public Service(Socket sock) throws IOException {
+        public ServiceS(Socket sock) throws IOException {
             this.sock = sock;
             this.input = sock.getInputStream();
             this.output =  sock.getOutputStream();
@@ -141,6 +238,7 @@ public class Socks5 {
                 System.out.println("Addressing 错误的数据");
                 return false;
             }
+            input.readNBytes(2);
             byte[] portB16 = this.input.readNBytes(2);
             this.port = (portB16[0] & 0xff) * 256 + (portB16[1] & 0xff);
             return true;
@@ -200,15 +298,32 @@ public class Socks5 {
         }
     }
 
-    public static void main(String[] args) throws IOException {
-        System.out.println("Service start on :1080");
-        ServerSocket srvSocket  = new ServerSocket(Socks5.port);
-        while (true){
-            Socket sock = srvSocket.accept();
-            DateTimeFormatter formatStr = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-            String format = LocalDateTime.now().format(formatStr);
-            System.out.println(format + " | new client " + sock.getRemoteSocketAddress());
-            new Thread(new Service(sock),"listener").start();
-        }
-    }
+
+
+
+
+
+    /**
+     *   认证方法
+     *o  X'00' NO AUTHENTICATION REQUIRED
+     *o  X'01' GSSAPI
+     *o  X'02' USERNAME/PASSWORD
+     *o  X'03' to X'7F' IANA ASSIGNED
+     *o  X'80' to X'FE' RESERVED FOR PRIVATE METHODS
+     *o  X'FF' NO ACCEPTABLE METHODS
+     */
+    public static final int method = 2;
+
+    /**
+     *  Socks Protocol version
+     *  socks 版本首字符
+     */
+    public static final int VERSION = 5;
+
+    /**
+     * 预留字符默认值  socks5 默认为 0x00
+     */
+    public static final int RESERVED = 0;
+
+
 }
