@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
+import java.nio.ByteBuffer;
 
 public class Service implements Runnable {
     private Socket sock;
@@ -90,7 +91,7 @@ public class Service implements Runnable {
     //https://datatracker.ietf.org/doc/html/rfc1928#section-6
     public void Replies(byte[] ip, int port, byte rep) throws IOException {
         ByteArrayOutputStream replies = new ByteArrayOutputStream();
-        replies.write(new byte[]{0x05, rep, 0x00, 0x04});
+        replies.write(new byte[]{0x05, rep, 0x00, 0x01});
         replies.write(ip);
         replies.write(new byte[]{(byte) (port / 256), (byte) (port % 256)});
         output.write(replies.toByteArray());
@@ -104,18 +105,16 @@ public class Service implements Runnable {
             new Thread(() -> {
                 try {
                     remote.getInputStream().transferTo(output);
-                    if (!remote.isClosed()) remote.close();
-                    if (!sock.isClosed()) sock.close();
-                } catch (IOException e) {
-                    return;
+                } catch (IOException e) {}finally {
+                    if (!sock.isClosed()) try {sock.close(); } catch (IOException e){}
+                    //System.out.println("remote->:" + host + ":" + port + ":" + cmd);
                 }
             }).start();
             try {
                 input.transferTo(remote.getOutputStream());
-                if (!remote.isClosed()) remote.close();
-                if (!sock.isClosed()) sock.close();
-            } catch (IOException e) {
-                return;
+            } catch (IOException e) {}finally {
+                if (!remote.isClosed()) try{remote.close();} catch (IOException e){}
+                //System.out.println("finish->:" + host + ":" + port + ":" + cmd);
             }
         } else {
             Replies(remote.getInetAddress().getAddress(), port, (byte) 0x04);
@@ -161,7 +160,7 @@ public class Service implements Runnable {
             if (!Requests()) {
                 return;
             }
-            System.out.println(host + ":" + port);
+            //System.out.println("start->:" + host + ":" + port + ":" + cmd);
             switch (cmd) {
                 case 0x01 -> cmdConnect(); // CONNECT X'01'
                 //case 0x02 -> // BIND X'02'

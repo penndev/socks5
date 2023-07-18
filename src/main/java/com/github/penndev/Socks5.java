@@ -13,7 +13,7 @@ public class Socks5 {
 
     public static String username = null;
 
-    public static String password = "123456";
+    public static String password = null;
 
     public static void main(String[] args) throws IOException {
         System.out.println("Socks5 listening on:" + Socks5.Port);
