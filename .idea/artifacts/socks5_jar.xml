@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="socks5:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/socks5_jar</output-path>
+    <root id="archive" name="socks5.jar">
+      <element id="module-output" name="socks5" />
+    </root>
+  </artifact>
+</component>

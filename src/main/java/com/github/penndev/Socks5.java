@@ -16,7 +16,22 @@ public class Socks5 {
     public static String password = null;
 
     public static void main(String[] args) throws IOException {
-        System.out.println("Socks5 listening on:" + Socks5.Port);
+        // 获取传递的参数
+        if(args.length == 1 || args.length == 3){
+            Socks5.Port = Integer.parseInt(args[0]);
+            if(args.length == 3){
+                Socks5.username = args[1];
+                Socks5.password = args[2];
+            }
+        }else if(args.length  > 1){
+            System.out.println("Error args:[port] [username] [password]");
+            return;
+        }
+
+        System.out.println("Service start on:" + Socks5.Port);
+
+
+
         ServerSocket srvSocket = new ServerSocket(Socks5.Port);
         while (true) {
             Socket sock = srvSocket.accept();
