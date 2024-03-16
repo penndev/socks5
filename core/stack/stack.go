@@ -2,6 +2,7 @@ package stack
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net"
 
@@ -16,22 +17,6 @@ import (
 	"gvisor.dev/gvisor/pkg/tcpip/transport/udp"
 	"gvisor.dev/gvisor/pkg/waiter"
 )
-
-type ForwarderTCPRequest struct {
-	*tcp.ForwarderRequest
-}
-
-func (r *ForwarderTCPRequest) TCPConn() (net.Conn, error) {
-	var (
-		waiterQueue waiter.Queue
-	)
-	endPoint, err := r.CreateEndpoint(&waiterQueue)
-	if err != nil {
-		return nil, errors.New(err.String())
-	}
-	localConn := gonet.NewTCPConn(&waiterQueue, endPoint)
-	return localConn, nil
-}
 
 type ForwarderUDPRequest struct {
 	*udp.ForwarderRequest
@@ -49,13 +34,19 @@ func (r *ForwarderUDPRequest) UDPConn() (net.Conn, error) {
 	return localConn, nil
 }
 
+type ForwarderTCPRequest struct {
+	Conn       net.Conn
+	RemoteAddr string
+	LocalAddr  string
+}
+
 type Option struct {
 	HandleTCP  func(*ForwarderTCPRequest)
 	HandlerUDP func(*ForwarderUDPRequest)
 	EndPoint   stack.LinkEndpoint
 }
 
-func Start(option Option) {
+func New(option Option) {
 	s := stack.New(stack.Options{
 		NetworkProtocols: []stack.NetworkProtocolFactory{
 			ipv4.NewProtocol,
@@ -68,24 +59,33 @@ func Start(option Option) {
 			icmp.NewProtocol6,
 		},
 	})
+
+	// handle TCP setting
 	if option.HandleTCP != nil {
-		tcpForwarder := tcp.NewForwarder(s, 0, 2048, func(fr *tcp.ForwarderRequest) {
-			defer func() {
-				if r := recover(); r != nil {
-					log.Println(r)
-					fr.Complete(true)
-				} else {
-					fr.Complete(false)
-				}
-			}()
-			option.HandleTCP(&ForwarderTCPRequest{fr})
+		tcpForwarder := tcp.NewForwarder(s, 0, 2048, func(r *tcp.ForwarderRequest) {
+			var ftr ForwarderTCPRequest
+			var waiterQueue waiter.Queue
+			if endPoint, err := r.CreateEndpoint(&waiterQueue); err == nil {
+				ftr.Conn = gonet.NewTCPConn(&waiterQueue, endPoint)
+			} else {
+				log.Println(err)
+				r.Complete(true)
+				return
+			}
+			defer r.Complete(false)
+			addrInfo := r.ID()
+			ftr.LocalAddr = fmt.Sprintf("%s:%d", addrInfo.RemoteAddress, addrInfo.RemotePort)
+			ftr.RemoteAddr = fmt.Sprintf("%s:%d", addrInfo.LocalAddress, addrInfo.LocalPort)
+			go option.HandleTCP(&ftr)
 		})
 		s.SetTransportProtocolHandler(tcp.ProtocolNumber, tcpForwarder.HandlePacket)
 	}
+
 	if option.HandlerUDP != nil {
 		udpForwarder := udp.NewForwarder(s, func(fr *udp.ForwarderRequest) { option.HandlerUDP(&ForwarderUDPRequest{fr}) })
 		s.SetTransportProtocolHandler(udp.ProtocolNumber, udpForwarder.HandlePacket)
 	}
+
 	nicID := tcpip.NICID(s.UniqueID())
 	s.CreateNICWithOptions(nicID, option.EndPoint, stack.NICOptions{
 		Disabled: false,

@@ -1,30 +1,37 @@
-// go:build windows
-package main
+//go:build linux
+
+package mobileStack
 
 import (
+	"fmt"
 	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
+	"github.com/penndev/socks5/core/fdtun"
 	"github.com/penndev/socks5/core/socks5"
 	"github.com/penndev/socks5/core/stack"
-	"github.com/penndev/socks5/core/tun"
 )
 
-func main() {
-	dev, err := tun.CreateTUN("wintun", 0)
+type Option struct {
+	TunFd       int
+	MTU         uint32
+	User        string
+	Pass        string
+	SrvHost     string
+	SrvPort     uint16
+	HandleError func(string)
+}
+
+func New(option Option) error {
+	dev, err := fdtun.CreateTUN(option.TunFd, option.MTU)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	if err := tun.Cfg(dev.Name(), "10.10.100.251", "255.255.255.255"); err != nil {
-		panic("cant set ip")
-	}
+	srvAddr := fmt.Sprintf("%s:%d", option.SrvHost, option.SrvPort)
 	stack.New(stack.Option{
 		EndPoint: dev,
 		HandleTCP: func(ftr *stack.ForwarderTCPRequest) {
 			defer ftr.Conn.Close()
-			s5, err := socks5.NewClient("127.0.0.1:1080", "", "")
+			s5, err := socks5.NewClient(srvAddr, option.User, option.Pass)
 			if err != nil {
 				log.Println("socks5 connection err:", err)
 				return
@@ -39,8 +46,5 @@ func main() {
 			socks5.TunnelTCP(ftr.Conn, remoteConn)
 		},
 	})
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-	<-sigCh
+	return nil
 }

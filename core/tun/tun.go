@@ -104,7 +104,8 @@ func (t *Tun) readDev(cancel context.CancelFunc) {
 	}
 }
 
-func CreateTUN(ifname string, mtu int) (stack.LinkEndpoint, error) {
+// return stack.LinkEndpoint interface
+func CreateTUN(ifname string, mtu int) (*Tun, error) {
 	offset := 0
 
 	dev, err := tun.CreateTUN(ifname, mtu)

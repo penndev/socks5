@@ -83,6 +83,10 @@ func (c *Conn) requests(network, address string) (Requests, error) {
 	return req, nil
 }
 
+func (c *Conn) Close() error {
+	return c.rw.Close()
+}
+
 func (c *Conn) Dial(network, address string) (net.Conn, error) {
 	req, err := c.requests(network, address)
 	if err != nil {
