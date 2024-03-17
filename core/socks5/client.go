@@ -3,7 +3,6 @@ package socks5
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"strconv"
 )
@@ -93,7 +92,7 @@ func (c *Conn) Dial(network, address string) (net.Conn, error) {
 		return nil, err
 	}
 
-	log.Println("send:", req.ToByte())
+	// log.Println("send:", req.ToByte())
 
 	c.rw.Write(req.ToByte())
 	buf := make([]byte, 231)
@@ -102,7 +101,7 @@ func (c *Conn) Dial(network, address string) (net.Conn, error) {
 		return nil, err
 	}
 
-	log.Println("recv:", buf[:n])
+	// log.Println("recv:", buf[:n])
 
 	rep := Replies{}
 	rep.Serialization(buf[:n])

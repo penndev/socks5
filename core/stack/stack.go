@@ -3,7 +3,6 @@ package stack
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net"
 
 	"gvisor.dev/gvisor/pkg/tcpip"
@@ -68,7 +67,7 @@ func New(option Option) {
 			if endPoint, err := r.CreateEndpoint(&waiterQueue); err == nil {
 				ftr.Conn = gonet.NewTCPConn(&waiterQueue, endPoint)
 			} else {
-				log.Println(err)
+				// fmt.Println(err)
 				r.Complete(true)
 				return
 			}

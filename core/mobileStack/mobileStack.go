@@ -4,24 +4,26 @@ package mobileStack
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/penndev/socks5/core/fdtun"
 	"github.com/penndev/socks5/core/socks5"
 	"github.com/penndev/socks5/core/stack"
 )
 
-type Option struct {
-	TunFd       int
-	MTU         uint32
-	User        string
-	Pass        string
-	SrvHost     string
-	SrvPort     uint16
-	HandleError func(string)
+type Handle interface {
+	Error(s string)
 }
 
-func New(option Option) error {
+type Option struct {
+	TunFd   int
+	MTU     uint32
+	User    string
+	Pass    string
+	SrvHost string
+	SrvPort uint16
+}
+
+func New(option Option, handle Handle) error {
 	dev, err := fdtun.CreateTUN(option.TunFd, option.MTU)
 	if err != nil {
 		return err
@@ -33,14 +35,14 @@ func New(option Option) error {
 			defer ftr.Conn.Close()
 			s5, err := socks5.NewClient(srvAddr, option.User, option.Pass)
 			if err != nil {
-				log.Println("socks5 connection err:", err)
+				fmt.Println("socks5 connection err:", err)
 				return
 			}
 			defer s5.Close()
 
 			remoteConn, err := s5.Dial("tcp", ftr.RemoteAddr)
 			if err != nil {
-				log.Println("socks5 remote err:", err)
+				fmt.Println("socks5 remote err:", err)
 				return
 			}
 			socks5.TunnelTCP(ftr.Conn, remoteConn)
