@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.penndev.socks5.service.BaseService
 import com.penndev.socks5.service.Socks5Service
 
 
@@ -57,9 +56,6 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "请输入服务器信息", Toast.LENGTH_LONG).show()
             return
         }
-
-
-        Toast.makeText(this, "Socks5Service.status:" + BaseService.status.toString(), Toast.LENGTH_LONG).show()
 
         val bundle = Bundle().apply {
             putString("host", inputHost)

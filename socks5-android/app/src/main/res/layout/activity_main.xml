@@ -13,7 +13,6 @@
             android:layout_width="match_parent"
             android:layout_marginTop="20dp"
             android:layout_height="45dp"
-            android:background="@color/gray"
             android:hint="@string/activity_main_ip_hits"
             android:paddingStart="6dp"
             tools:ignore="MissingConstraints"></EditText>
@@ -24,7 +23,6 @@
             android:layout_marginTop="20dp"
             android:layout_width="match_parent"
             android:layout_height="45dp"
-            android:background="@color/gray"
             android:hint="@string/activity_main_port_hits"
             android:paddingStart="6dp"
             tools:ignore="MissingConstraints"></EditText>
@@ -36,7 +34,6 @@
             android:layout_marginTop="20dp"
             android:layout_width="match_parent"
             android:layout_height="45dp"
-            android:background="@color/gray"
             android:hint="@string/activity_main_name_hits"
             android:paddingStart="6dp"
     ></EditText>
@@ -47,7 +44,6 @@
             android:inputType="numberPassword"
             android:layout_width="match_parent"
             android:layout_height="45dp"
-            android:background="@color/gray"
             android:hint="@string/activity_main_passwd_hits"
             android:paddingStart="6dp"
     ></EditText>
@@ -59,8 +55,7 @@
             android:textSize="16dp"
             android:text="@string/activity_main_select_app"
             android:paddingLeft="6dp"
-            android:backgroundTint="@color/gray"
-            android:textColor="@color/black_overlay"
+            android:textColor="@color/black"
             android:gravity="left|center"
             android:onClick="handleAllowApp"
     ></Button>
