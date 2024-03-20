@@ -19,10 +19,21 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.net.InetAddress
 
+class Socks5ServiceCloseException(message: String) : Exception(message)
+
 class Socks5Service : VpnService() {
+
+    // 回调UI状态
+    interface OnStatus {
+        fun start(){ status = true }
+        fun close() { status = false }
+    }
+
     companion object {
         var status:Boolean = false
+        lateinit var onStatus: OnStatus
     }
+
 
     // tun 设备
     protected var tun: ParcelFileDescriptor? = null
@@ -38,20 +49,33 @@ class Socks5Service : VpnService() {
     protected var tunDNS: String = "8.8.8.8"
     protected var tunMtu: Int = 1400
 
-    //通知
-    private val notifyID = 1
-    private val notifyChannelID = "penndev.vpnService"
-    private val notifyChannelName = "penndev.vpnService"
-    private lateinit var notificationManager: NotificationManager
-    private lateinit var notificationBuilder: NotificationCompat.Builder
-    private lateinit var notificationView: RemoteViews
+    // 启动
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        try {
+            val err = setupCommand(intent)
+            if (err != null) {
+                Toast.makeText(this, err, Toast.LENGTH_SHORT).show()
+            } else {
+                setupNotifyForeground()
+                onStatus.start()
+            }
+        }catch (e: Socks5ServiceCloseException) {
+            onDestroy()
+            Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) { //处理抛出异常问题
+            onDestroy()
+            Log.e("penndev", "启动异常", e)
+        }
+        return START_NOT_STICKY
+    }
 
+    // 启动初始化参数
     private fun setupCommand(intent: Intent?) : String? {
         if (intent == null) {
             return "传参错误"
         }
         if (intent.getBooleanExtra("close", false)) {
-            throw Exception("关闭请求")
+            throw Socks5ServiceCloseException("Closed")
         }
         if (status) {
             return "正在运行中"
@@ -66,7 +90,7 @@ class Socks5Service : VpnService() {
         }
 
         servicePort = intent.getIntExtra("port", 0)
-        if (servicePort < 1024 || servicePort > 49151){
+        if (servicePort < 1 || servicePort > 65025){
             return "错误的port"
         }
         serviceUser =  intent.getStringExtra("user")!!
@@ -74,6 +98,7 @@ class Socks5Service : VpnService() {
         return null
     }
 
+    // 启动VPN
     fun setupVpnServe() {
         setupNotifyForeground() //启动通知
 
@@ -91,28 +116,10 @@ class Socks5Service : VpnService() {
         }
     }
 
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        try {
-            val err = setupCommand(intent)
-            if (err != null) {
-                Toast.makeText(this, err, Toast.LENGTH_SHORT).show()
-            }else{
-                setupVpnServe()
-                status = true
-            }
-        } catch (e: Exception) { //处理抛出异常问题
-            onDestroy()
-            Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
-            Log.e("penndev", "启动异常", e)
-        }
-        return START_NOT_STICKY
-    }
-
     override fun onDestroy() {
         job?.cancel()
         tun?.close()
-        status = false
+        onStatus.close()
         stopForeground(true)
         super.onDestroy()
     }
@@ -122,6 +129,13 @@ class Socks5Service : VpnService() {
         onDestroy()
     }
 
+    //通知
+    private val notifyID = 1
+    private val notifyChannelID = "penndev.vpnService"
+    private val notifyChannelName = "penndev.vpnService"
+    private lateinit var notificationManager: NotificationManager
+    private lateinit var notificationBuilder: NotificationCompat.Builder
+    private lateinit var notificationView: RemoteViews
     @SuppressLint("UnspecifiedImmutableFlag")
     protected fun setupNotifyForeground() {
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager

@@ -1,8 +1,0 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.Socks5" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <!-- 设置 状态栏字体和背景色 -->
-        <item name="android:statusBarColor">@color/black</item>
-        <item name="android:windowLightStatusBar">false</item>
-    </style>
-</resources>
