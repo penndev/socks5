@@ -11,7 +11,6 @@ import android.widget.BaseAdapter
 import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
-import com.penndev.socks5.R
 
 class AppListAdapter(private val context: Context, private val appList: List<ApplicationInfo>) :
     BaseAdapter() {
@@ -56,7 +55,6 @@ class AppListAdapter(private val context: Context, private val appList: List<App
         viewHolder.imageView.setImageDrawable(appInfo.loadIcon(context.packageManager))
         viewHolder.textView.text = appInfo.loadLabel(context.packageManager)
         // 判断是否选择
-
 
 
         return itemView!!

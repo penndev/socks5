@@ -1,4 +1,4 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <!-- Base application theme. -->
     <style name="Theme.Socks5" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- 设置 状态栏字体和背景色 -->

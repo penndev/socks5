@@ -83,16 +83,15 @@
                     android:id="@+id/handle_action_icon"
                     android:layout_width="90dp"
                     android:layout_height="90dp"
-                    android:src="@drawable/activity_main_start"
                     android:background="@drawable/activity_main_start_bg"/>
         </LinearLayout>
         <TextView
                 android:id="@+id/handle_action_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/activity_main_start_text"
+                android:layout_marginTop="2dp"
                 android:gravity="center"
-                />
+        />
 
 
     </LinearLayout>

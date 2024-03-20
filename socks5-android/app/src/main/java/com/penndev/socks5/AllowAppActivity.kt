@@ -14,7 +14,7 @@ class AllowAppActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_allowapp)
         val appListView = findViewById<ListView>(R.id.appList)
-        val adapter = AppListAdapter(this,  getInstalledApps() )
+        val adapter = AppListAdapter(this, getInstalledApps())
         appListView.adapter = adapter
     }
 
@@ -23,7 +23,7 @@ class AllowAppActivity : AppCompatActivity() {
         val installedApps: MutableList<ApplicationInfo> = ArrayList()
         val allApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
         for (app in allApps) {
-            val isNoSelf =  app.packageName != packageName
+            val isNoSelf = app.packageName != packageName
             if (isNoSelf) {
                 installedApps.add(app)
             }
@@ -32,7 +32,7 @@ class AllowAppActivity : AppCompatActivity() {
     }
 
 
-    fun handleBack(view:View) {
+    fun handleBack(view: View) {
         onBackPressed()
     }
 }

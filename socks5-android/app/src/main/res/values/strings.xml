@@ -14,4 +14,9 @@
     <string name="activity_main_start_text">点击连接</string>
     <string name="activity_main_start_close_text">关闭连接</string>
 
+
+    <!-- 通知-->
+    <string name="notify_channel_description">创建Socks5服务的状态通知</string>
+    <string name="notify_tile_text">Socks5 已连接</string>
+    <string name="notify_context_text">点击可停用Socks5连接</string>
 </resources>

@@ -1,15 +1,10 @@
 package com.penndev.socks5.service
 
-import android.annotation.SuppressLint
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.VpnService
-import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.util.Log
-import android.widget.RemoteViews
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.penndev.socks5.MainActivity
@@ -25,13 +20,22 @@ class Socks5Service : VpnService() {
 
     // 回调UI状态
     interface OnStatus {
-        fun start(){ status = true }
-        fun close() { status = false }
+        fun start() {
+            status = true
+        }
+
+        fun close() {
+            status = false
+        }
     }
 
     companion object {
-        var status:Boolean = false
+        var status: Boolean = false
         lateinit var onStatus: OnStatus
+
+        const val notifyID = 1
+        const val notifyChannelID = "com.penndev.socks5.vpnService"
+        const val notifyChannelName = "Socks5VpnService"
     }
 
 
@@ -59,7 +63,7 @@ class Socks5Service : VpnService() {
                 setupNotifyForeground()
                 onStatus.start()
             }
-        }catch (e: Socks5ServiceCloseException) {
+        } catch (e: Socks5ServiceCloseException) {
             onDestroy()
             Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) { //处理抛出异常问题
@@ -70,7 +74,7 @@ class Socks5Service : VpnService() {
     }
 
     // 启动初始化参数
-    private fun setupCommand(intent: Intent?) : String? {
+    private fun setupCommand(intent: Intent?): String? {
         if (intent == null) {
             return "传参错误"
         }
@@ -85,15 +89,15 @@ class Socks5Service : VpnService() {
 
         try {
             InetAddress.getByName(serviceHost)
-        }catch (e: Exception) {
+        } catch (e: Exception) {
             return "错误的host"
         }
 
         servicePort = intent.getIntExtra("port", 0)
-        if (servicePort < 1 || servicePort > 65025){
+        if (servicePort < 1 || servicePort > 65025) {
             return "错误的port"
         }
-        serviceUser =  intent.getStringExtra("user")!!
+        serviceUser = intent.getStringExtra("user")!!
         servicePass = intent.getStringExtra("pass")!!
         return null
     }
@@ -109,7 +113,6 @@ class Socks5Service : VpnService() {
 
         job = GlobalScope.launch {
             try {
-                updateNotification("发送通知完成")
             } catch (e: Exception) { //处理抛出异常问题
                 Log.e("penndev", "服务引起异常", e)
             }
@@ -125,50 +128,24 @@ class Socks5Service : VpnService() {
     }
 
     override fun onRevoke() {
-        //Toast.makeText(this, "TunVPN已停止", Toast.LENGTH_LONG).show()
         onDestroy()
     }
 
     //通知
-    private val notifyID = 1
-    private val notifyChannelID = "penndev.vpnService"
-    private val notifyChannelName = "penndev.vpnService"
-    private lateinit var notificationManager: NotificationManager
-    private lateinit var notificationBuilder: NotificationCompat.Builder
-    private lateinit var notificationView: RemoteViews
-    @SuppressLint("UnspecifiedImmutableFlag")
     protected fun setupNotifyForeground() {
-        notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        val resultPendingIntent = PendingIntent.getActivity(
+            this, 0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_NO_CREATE
+        )
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(notifyChannelID, notifyChannelName, NotificationManager.IMPORTANCE_DEFAULT)
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val intent = Intent(this, MainActivity::class.java)
-        //val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-
-
-        notificationView = RemoteViews(packageName, R.layout.notification_layout)
-        notificationView.setTextViewText(R.id.notificationTitle, "TunVPN")
-        notificationView.setTextViewText(R.id.notificationContent, "正在连接服务器")
-
-        notificationBuilder = NotificationCompat.Builder(this, notifyChannelID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setCustomContentView(notificationView)
-            .setContentIntent(pendingIntent)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
+        var notificationBuilder = NotificationCompat.Builder(this, notifyChannelID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(getString(R.string.notify_tile_text))
+            .setContentText(getString(R.string.notify_context_text))
+            .setContentIntent(resultPendingIntent)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-
         startForeground(notifyID, notificationBuilder.build())
-    }
-
-    protected fun updateNotification(contentText: String) {
-        notificationView.setTextViewText(R.id.notificationContent, contentText)
-        notificationManager.notify(notifyID, notificationBuilder.build())
     }
 }
 
