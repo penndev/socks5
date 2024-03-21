@@ -13,15 +13,49 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import com.penndev.socks5.databinding.ActivityMainBinding
 import com.penndev.socks5.service.Socks5Service
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.InetSocketAddress
+import java.net.Socket
 
 class MainActivity : AppCompatActivity() {
     //获取vpn启动权限标志 result 返回码
-    private val allowCreateService = 1
+    private val allowCreateService = 16
 
     // xml UI 实例
     private lateinit var binding: ActivityMainBinding
 
+    // 表单数据持久化
     private lateinit var sharedPreferences: SharedPreferences
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        //设置各种初始化
+        sharedPreferences = getSharedPreferences(packageName, Context.MODE_PRIVATE)
+        binding.inputHost.setText(sharedPreferences.getString("inputHost", ""))
+        binding.inputPort.setText(sharedPreferences.getString("inputPortStr", ""))
+        binding.inputUser.setText(sharedPreferences.getString("inputUser", ""))
+        binding.inputPass.setText(sharedPreferences.getString("inputPass", ""))
+        binding.handleActionIcon.setOnClickListener {
+            if (Socks5Service.status) onStopSocks5Service() else onStartSocks5Service()
+        }
+        binding.handleLoadInfo.setOnClickListener {
+            CoroutineScope(Dispatchers.IO).launch {
+                    val message = onCheckSocks5RTT()
+                    withContext(Dispatchers.Main) {
+                        binding.infoLoad.setText(message)
+                    }
+            }
+        }
+        Socks5Service.onStatus = onStatus()
+        createNotificationChannel()
+    }
 
     // 绑定UI和Socks5Service状态
     private fun onStatus(): Socks5Service.OnStatus {
@@ -57,23 +91,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        //设置各种初始化
-        sharedPreferences = getSharedPreferences(packageName, Context.MODE_PRIVATE)
-        binding.inputHost.setText(sharedPreferences.getString("inputHost", ""))
-        binding.inputPort.setText(sharedPreferences.getString("inputPortStr", ""))
-        binding.inputUser.setText(sharedPreferences.getString("inputUser", ""))
-        binding.inputPass.setText(sharedPreferences.getString("inputPass", ""))
-        binding.handleActionIcon.setOnClickListener {
-            if (Socks5Service.status) onStopSocks5Service() else onStartSocks5Service()
-        }
-        Socks5Service.onStatus = onStatus()
-        createNotificationChannel()
-    }
-
+    // 尽快创建通知通道。
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = Socks5Service.notifyChannelName
@@ -119,6 +137,39 @@ class MainActivity : AppCompatActivity() {
         }
         startService(Intent(this, Socks5Service::class.java).putExtras(bundle))
     }
+
+    // socks5 探测登录方式
+    private fun onCheckSocks5RTT():String {
+        var msg = ""
+        try {
+            val host:String = binding.inputHost.text.toString()
+            val port:Int = binding.inputPort.text.toString().toInt()
+            val timeout = 10000
+            val socket = Socket()
+            socket.connect(InetSocketAddress(host, port), timeout)
+            socket.soTimeout = timeout
+            val outputStream: OutputStream = socket.getOutputStream()
+            val inputStream: InputStream = socket.getInputStream()
+            val startTime = System.currentTimeMillis()
+            outputStream.write(byteArrayOf(0x05, 0x01, 0x00)); outputStream.flush() // 无密码探测
+            val packet = ByteArray(2)
+            val bytesRead = inputStream.read(packet)
+            val endTime = System.currentTimeMillis()
+            inputStream.close()
+            outputStream.close()
+            socket.close()
+            if (bytesRead == 2 && packet[0].toInt() == 0x05) {
+                msg = ("服务器连接成功 ${endTime-startTime} ms | ${packet.joinToString(" ")}")
+            }else{
+                msg = ("服务器握手失败 ${endTime-startTime} ms | ${packet.joinToString(" ")}")
+            }
+        }catch (e :Exception) {
+            msg = "异常" + e.message
+        }
+
+        return msg
+    }
+
 
     // 请求用户授权开启vpn的结果
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

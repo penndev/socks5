@@ -26,7 +26,7 @@
                     android:id="@+id/input_host"
                     android:layout_width="0dp"
                     android:layout_height="45dp"
-                    android:layout_weight="2"
+                    android:layout_weight="4"
                     android:hint="@string/activity_main_ip_hits"
                     android:paddingStart="6dp"
                     android:background="@drawable/activity_main_input_bg"
@@ -42,13 +42,26 @@
                     android:id="@+id/input_port"
                     android:layout_width="0dp"
                     android:layout_height="45dp"
-                    android:layout_weight="1"
+                    android:layout_weight="2"
                     android:inputType="number"
                     android:background="@drawable/activity_main_input_bg"
                     android:hint="@string/activity_main_port_hits"/>
+            <ImageButton
+                    android:id="@+id/handle_load_info"
+                    android:layout_width="0dp"
+                    android:layout_height="45dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/activity_main_input_bg"
+                    android:src="@drawable/activity_main_reload"
+                    />
 
         </LinearLayout>
-
+        <TextView
+            android:id="@+id/info_load"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="6dp"
+            />
 
         <EditText
                 android:id="@+id/input_user"

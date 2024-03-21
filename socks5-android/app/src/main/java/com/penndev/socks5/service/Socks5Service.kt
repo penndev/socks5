@@ -60,7 +60,7 @@ class Socks5Service : VpnService() {
             if (err != null) {
                 Toast.makeText(this, err, Toast.LENGTH_SHORT).show()
             } else {
-                setupNotifyForeground()
+                setupVpnServe()
                 onStatus.start()
             }
         } catch (e: Socks5ServiceCloseException) {
@@ -111,8 +111,21 @@ class Socks5Service : VpnService() {
             .addAddress("192.168.1.1", 32)
             .addDisallowedApplication(packageName).establish()
 
+        if (tun == null) {
+            throw Socks5ServiceCloseException("获取tun设备失败")
+        }
+        val tunFd = tun!!.fd.toLong()
+
         job = GlobalScope.launch {
             try {
+                //key.device = "fd://" + // <--- here
+                val stack = mobileStack.Stack()
+                stack.mtu = tunMtu.toLong()
+                stack.srvHost = serviceHost
+                stack.srvPort = servicePort.toLong()
+                stack.user = serviceUser
+                stack.pass = servicePass
+                stack.run()
             } catch (e: Exception) { //处理抛出异常问题
                 Log.e("penndev", "服务引起异常", e)
             }
