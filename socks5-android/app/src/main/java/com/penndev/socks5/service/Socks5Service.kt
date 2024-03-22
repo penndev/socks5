@@ -1,5 +1,6 @@
 package com.penndev.socks5.service
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.VpnService
@@ -40,18 +41,18 @@ class Socks5Service : VpnService() {
 
 
     // tun 设备
-    protected var tun: ParcelFileDescriptor? = null
+    private var tun: ParcelFileDescriptor? = null
 
     // 工作进程
-    protected var job: Job? = null
+    private var job: Job? = null
 
     //远程服务器认证
-    protected var serviceHost: String = ""
-    protected var servicePort: Int = 0
-    protected var serviceUser: String = ""
-    protected var servicePass: String = ""
-    protected var tunDNS: String = "8.8.8.8"
-    protected var tunMtu: Int = 1400
+    private var serviceHost: String = ""
+    private var servicePort: Int = 0
+    private var serviceUser: String = ""
+    private var servicePass: String = ""
+    private var tunDNS: String = "8.8.8.8"
+    private var tunMtu: Int = 1400
 
     // 启动
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -103,7 +104,7 @@ class Socks5Service : VpnService() {
     }
 
     // 启动VPN
-    fun setupVpnServe() {
+    private fun setupVpnServe() {
         setupNotifyForeground() //启动通知
 
         tun = Builder().setMtu(tunMtu).addDnsServer(tunDNS)
@@ -120,6 +121,7 @@ class Socks5Service : VpnService() {
             try {
                 //key.device = "fd://" + // <--- here
                 val stack = mobileStack.Stack()
+                stack.tunFd = tunFd
                 stack.mtu = tunMtu.toLong()
                 stack.srvHost = serviceHost
                 stack.srvPort = servicePort.toLong()
@@ -145,14 +147,17 @@ class Socks5Service : VpnService() {
     }
 
     //通知
-    protected fun setupNotifyForeground() {
+    @SuppressLint("UnspecifiedImmutableFlag")
+    private fun setupNotifyForeground() {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.action = Intent.ACTION_MAIN
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
         val resultPendingIntent = PendingIntent.getActivity(
-            this, 0,
-            Intent(this, MainActivity::class.java),
+            this, 0, intent,
             PendingIntent.FLAG_NO_CREATE
         )
 
-        var notificationBuilder = NotificationCompat.Builder(this, notifyChannelID)
+        val notificationBuilder = NotificationCompat.Builder(this, notifyChannelID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(getString(R.string.notify_tile_text))
             .setContentText(getString(R.string.notify_context_text))

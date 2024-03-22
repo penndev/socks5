@@ -53,15 +53,15 @@
                     android:layout_weight="1"
                     android:background="@drawable/activity_main_input_bg"
                     android:src="@drawable/activity_main_reload"
-                    />
+            />
 
         </LinearLayout>
         <TextView
-            android:id="@+id/info_load"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingStart="6dp"
-            />
+                android:id="@+id/info_load"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="6dp"
+        />
 
         <EditText
                 android:id="@+id/input_user"
@@ -96,6 +96,7 @@
                     android:id="@+id/handle_action_icon"
                     android:layout_width="90dp"
                     android:layout_height="90dp"
+                    android:src="@drawable/activity_main_start"
                     android:background="@drawable/activity_main_start_bg"/>
         </LinearLayout>
         <TextView

@@ -1,14 +1,17 @@
 package com.penndev.socks5
 
+import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Color
 import android.net.VpnService
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import com.penndev.socks5.databinding.ActivityMainBinding
@@ -23,14 +26,19 @@ import java.net.InetSocketAddress
 import java.net.Socket
 
 class MainActivity : AppCompatActivity() {
-    //获取vpn启动权限标志 result 返回码
-    private val allowCreateService = 16
-
     // xml UI 实例
     private lateinit var binding: ActivityMainBinding
 
     // 表单数据持久化
     private lateinit var sharedPreferences: SharedPreferences
+
+    private val activityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            onStartSocks5Service()
+        }else{
+            Toast.makeText(this, R.string.toast_main_reject, Toast.LENGTH_LONG).show()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,10 +55,10 @@ class MainActivity : AppCompatActivity() {
         }
         binding.handleLoadInfo.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
-                    val message = onCheckSocks5RTT()
-                    withContext(Dispatchers.Main) {
-                        binding.infoLoad.setText(message)
-                    }
+                val message = onCheckSocks5RTT()
+                withContext(Dispatchers.Main) {
+                    binding.infoLoad.text = message
+                }
             }
         }
         Socks5Service.onStatus = onStatus()
@@ -61,12 +69,12 @@ class MainActivity : AppCompatActivity() {
     private fun onStatus(): Socks5Service.OnStatus {
         // 初始化UI状态
         fun startUI() {
-            binding.handleActionIcon.setImageResource(R.drawable.activity_main_start_close)
+            binding.handleActionIcon.setColorFilter(Color.parseColor("#000000"))
             binding.handleActionText.setText(R.string.activity_main_start_close_text)
         }
 
         fun closeUI() {
-            binding.handleActionIcon.setImageResource(R.drawable.activity_main_start)
+            binding.handleActionIcon.setColorFilter(Color.parseColor("#888888"))
             binding.handleActionText.setText(R.string.activity_main_start_text)
         }
         if (Socks5Service.status) startUI() else closeUI()
@@ -115,7 +123,7 @@ class MainActivity : AppCompatActivity() {
     private fun onStartSocks5Service() {
         val intentPrepare = VpnService.prepare(this)
         if (intentPrepare != null) {
-            startActivityForResult(intentPrepare, allowCreateService)
+            activityResultLauncher.launch(intentPrepare)
             return
         }
 
@@ -139,11 +147,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     // socks5 探测登录方式
-    private fun onCheckSocks5RTT():String {
-        var msg = ""
+    private fun onCheckSocks5RTT(): String {
+        var msg: String
         try {
-            val host:String = binding.inputHost.text.toString()
-            val port:Int = binding.inputPort.text.toString().toInt()
+            val host: String = binding.inputHost.text.toString()
+            val port: Int = binding.inputPort.text.toString().toInt()
             val timeout = 10000
             val socket = Socket()
             socket.connect(InetSocketAddress(host, port), timeout)
@@ -158,30 +166,15 @@ class MainActivity : AppCompatActivity() {
             inputStream.close()
             outputStream.close()
             socket.close()
-            if (bytesRead == 2 && packet[0].toInt() == 0x05) {
-                msg = ("服务器连接成功 ${endTime-startTime} ms | ${packet.joinToString(" ")}")
-            }else{
-                msg = ("服务器握手失败 ${endTime-startTime} ms | ${packet.joinToString(" ")}")
+            msg = if (bytesRead == 2 && packet[0].toInt() == 0x05) {
+                getString(R.string.activity_main_try_srv_succeed, endTime - startTime)
+                //("服务器连接成功 ${endTime - startTime} ms [${packet[1]}]")
+            } else {
+                getString(R.string.activity_main_try_srv_fail, packet.joinToString(" |B"))
             }
-        }catch (e :Exception) {
-            msg = "异常" + e.message
+        } catch (e: Exception) {
+            msg =  getString(R.string.activity_main_try_srv_fail, e.message)
         }
-
         return msg
-    }
-
-
-    // 请求用户授权开启vpn的结果
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        when (requestCode) {
-            allowCreateService -> {
-                if (resultCode == RESULT_OK) {
-                    onStartSocks5Service()
-                } else {
-                    Toast.makeText(this, "您拒绝了VPN请求[$resultCode]", Toast.LENGTH_LONG).show()
-                }
-            }
-        }
     }
 }

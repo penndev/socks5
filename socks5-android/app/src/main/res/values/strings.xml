@@ -3,13 +3,15 @@
 
     <!-- Toast -->
     <string name="toast_main_param_error">输入参数错误</string>
+    <string name="toast_main_reject">您拒绝了VPN请求</string>
 
     <!-- main activity -->
     <string name="activity_main_ip_hits">Host</string>
     <string name="activity_main_port_hits">Port</string>
     <string name="activity_main_name_hits">User</string>
     <string name="activity_main_passwd_hits">Pass</string>
-    <!--<string name="activity_main_select_app">请选择代理的应用</string>-->
+    <string name="activity_main_try_srv_succeed">"服务器连接成功 %d ms"</string>
+    <string name="activity_main_try_srv_fail">"连接失败 %s "</string>
 
     <string name="activity_main_start_text">点击连接</string>
     <string name="activity_main_start_close_text">关闭连接</string>
