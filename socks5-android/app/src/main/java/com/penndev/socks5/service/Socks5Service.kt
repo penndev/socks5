@@ -12,6 +12,7 @@ import com.penndev.socks5.MainActivity
 import com.penndev.socks5.R
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.net.InetAddress
 
@@ -66,7 +67,6 @@ class Socks5Service : VpnService() {
             }
         } catch (e: Socks5ServiceCloseException) {
             onDestroy()
-            Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
         } catch (e: Exception) { //处理抛出异常问题
             onDestroy()
             Log.e("penndev", "启动异常", e)
@@ -77,13 +77,13 @@ class Socks5Service : VpnService() {
     // 启动初始化参数
     private fun setupCommand(intent: Intent?): String? {
         if (intent == null) {
-            return "传参错误"
+            return getString(R.string.toast_service_param_error)
         }
         if (intent.getBooleanExtra("close", false)) {
             throw Socks5ServiceCloseException("Closed")
         }
         if (status) {
-            return "正在运行中"
+            return getString(R.string.toast_service_always_run)
         }
 
         serviceHost = intent.getStringExtra("host")!!
@@ -91,12 +91,12 @@ class Socks5Service : VpnService() {
         try {
             InetAddress.getByName(serviceHost)
         } catch (e: Exception) {
-            return "错误的host"
+            return getString(R.string.toast_service_host_error)
         }
 
         servicePort = intent.getIntExtra("port", 0)
         if (servicePort < 1 || servicePort > 65025) {
-            return "错误的port"
+            return getString(R.string.toast_service_port_error)
         }
         serviceUser = intent.getStringExtra("user")!!
         servicePass = intent.getStringExtra("pass")!!
@@ -106,20 +106,17 @@ class Socks5Service : VpnService() {
     // 启动VPN
     private fun setupVpnServe() {
         setupNotifyForeground() //启动通知
-
         tun = Builder().setMtu(tunMtu).addDnsServer(tunDNS)
             .addRoute("0.0.0.0", 0)
             .addAddress("192.168.1.1", 32)
             .addDisallowedApplication(packageName).establish()
-
         if (tun == null) {
-            throw Socks5ServiceCloseException("获取tun设备失败")
+            throw Socks5ServiceCloseException(getString(R.string.toast_service_tun_null))
         }
         val tunFd = tun!!.fd.toLong()
 
         job = GlobalScope.launch {
             try {
-                //key.device = "fd://" + // <--- here
                 val stack = mobileStack.Stack()
                 stack.tunFd = tunFd
                 stack.mtu = tunMtu.toLong()
@@ -127,9 +124,13 @@ class Socks5Service : VpnService() {
                 stack.srvPort = servicePort.toLong()
                 stack.user = serviceUser
                 stack.pass = servicePass
-                stack.run()
+                val status = stack.run()
+                if (!status) {
+                    delay(200)
+                    onDestroy()
+                }
             } catch (e: Exception) { //处理抛出异常问题
-                Log.e("penndev", "服务引起异常", e)
+                Log.e("debug", "mobileStack.Stack", e)
             }
         }
     }
@@ -153,8 +154,7 @@ class Socks5Service : VpnService() {
         intent.action = Intent.ACTION_MAIN
         intent.addCategory(Intent.CATEGORY_LAUNCHER)
         val resultPendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_NO_CREATE
+            this, 0, intent, 0
         )
 
         val notificationBuilder = NotificationCompat.Builder(this, notifyChannelID)

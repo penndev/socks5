@@ -150,27 +150,27 @@ class MainActivity : AppCompatActivity() {
     private fun onCheckSocks5RTT(): String {
         var msg: String
         try {
-            val host: String = binding.inputHost.text.toString()
-            val port: Int = binding.inputPort.text.toString().toInt()
-            val timeout = 10000
-            val socket = Socket()
-            socket.connect(InetSocketAddress(host, port), timeout)
-            socket.soTimeout = timeout
-            val outputStream: OutputStream = socket.getOutputStream()
-            val inputStream: InputStream = socket.getInputStream()
-            val startTime = System.currentTimeMillis()
-            outputStream.write(byteArrayOf(0x05, 0x01, 0x00)); outputStream.flush() // 无密码探测
-            val packet = ByteArray(2)
-            val bytesRead = inputStream.read(packet)
-            val endTime = System.currentTimeMillis()
-            inputStream.close()
-            outputStream.close()
-            socket.close()
-            msg = if (bytesRead == 2 && packet[0].toInt() == 0x05) {
-                getString(R.string.activity_main_try_srv_succeed, endTime - startTime)
-                //("服务器连接成功 ${endTime - startTime} ms [${packet[1]}]")
-            } else {
-                getString(R.string.activity_main_try_srv_fail, packet.joinToString(" |B"))
+            msg = Socket().use { socket ->
+                val host: String = binding.inputHost.text.toString()
+                val port: Int = binding.inputPort.text.toString().toInt()
+                val timeout = 10000
+                socket.connect(InetSocketAddress(host, port), timeout)
+                socket.soTimeout = timeout
+                val outputStream: OutputStream = socket.getOutputStream()
+                val inputStream: InputStream = socket.getInputStream()
+
+                val startTime = System.currentTimeMillis()
+                outputStream.write(byteArrayOf(0x05, 0x01, 0x00)); outputStream.flush() // 无密码探测
+
+                val packet = ByteArray(2)
+                val bytesRead = inputStream.read(packet)
+                val endTime = System.currentTimeMillis()
+
+                if (bytesRead == 2 && packet[0].toInt() == 0x05) {
+                    getString(R.string.activity_main_try_srv_succeed, endTime - startTime)
+                } else {
+                    getString(R.string.activity_main_try_srv_fail, packet.joinToString(" |B"))
+                }
             }
         } catch (e: Exception) {
             msg =  getString(R.string.activity_main_try_srv_fail, e.message)

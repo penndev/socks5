@@ -4,6 +4,11 @@
     <!-- Toast -->
     <string name="toast_main_param_error">输入参数错误</string>
     <string name="toast_main_reject">您拒绝了VPN请求</string>
+    <string name="toast_service_tun_null">"启动tun失败"</string>
+    <string name="toast_service_param_error">"参数错误"</string>
+    <string name="toast_service_host_error">"主机错误"</string>
+    <string name="toast_service_port_error">"端口错误"</string>
+    <string name="toast_service_always_run">"Socks5已经是启动状态"</string>
 
     <!-- main activity -->
     <string name="activity_main_ip_hits">Host</string>

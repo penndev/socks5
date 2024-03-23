@@ -1,6 +1,15 @@
 
-## Socks5-Android 
+# Socks5-Android 
 
-Socks5 android 客户端
+> IP Stack By ../core
 
-logo https://pic.mksucai.com/00/17/88/7eb64eeb69e586e6.webp
+**待实现功能**
+
+- 选择应用
+- 选择路由
+- 选择DNS
+- 日志功能
+
+
+- 调整语言
+- 调整皮肤
