@@ -24,19 +24,18 @@ public class Socks5 {
                 Socks5.password = args[2];
             }
         }else if(args.length  > 1){
-            System.out.println("Error args:[port] [username] [password]");
+            System.out.println("Error args:[port] [?username] [?password]");
             return;
         }
-
-        System.out.println("Service start on:" + Socks5.Port);
-
-
-
+        // 打印启动参数
+        System.out.printf("Service args:[port=%d] [username=%s] [password=%s]\n",
+            Socks5.Port, Socks5.username, Socks5.password
+        );
         ServerSocket srvSocket = new ServerSocket(Socks5.Port);
         while (true) {
             Socket sock = srvSocket.accept();
-            //System.out.println(sock.getRemoteSocketAddress());
-            var t = new Thread(new Service(sock), "Service");
+            //System.out.printf("Conn from: [%s]:[%d] \n", sock.getRemoteSocketAddress(), sock.getPort());
+            Thread t = new Thread(new Service(sock), "Service");
             t.start();
         }
     }
