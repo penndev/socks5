@@ -10,43 +10,68 @@ import (
 	"github.com/penndev/socks5/core/stack"
 )
 
-type Handle interface {
-	Error(s string)
+func Version() string {
+	return "0.0.1"
 }
 
-type Option struct {
+type StackHandle interface {
+	Error(s string)
+	WriteByteLen(l int)
+	ReadByteLen(l int)
+}
+
+type Stack struct {
 	TunFd   int
-	MTU     uint32
+	MTU     int
 	User    string
 	Pass    string
 	SrvHost string
-	SrvPort uint16
+	SrvPort int
+	Handle  StackHandle
 }
 
-func New(option Option, handle Handle) error {
-	dev, err := fdtun.CreateTUN(option.TunFd, option.MTU)
-	if err != nil {
-		return err
+func (s *Stack) Run() (bool, error) {
+	if s.TunFd < 1 {
+		return false, fmt.Errorf("tunFd < 1:[%d]")
 	}
-	srvAddr := fmt.Sprintf("%s:%d", option.SrvHost, option.SrvPort)
+	if s.MTU < 64 {
+		return false, fmt.Errorf("mtu < 64:[%d]")
+	}
+	if len(s.SrvHost) < 4 {
+		return false, fmt.Errorf("srvHost < 4:[%d]")
+	}
+	if s.SrvPort < 1 {
+		return false, fmt.Errorf("srvPort < 1:[%d]")
+	}
+	dev, err := fdtun.CreateTUN(s.TunFd, uint32(s.MTU))
+	if err != nil {
+		return false, err
+	}
+	srvAddr := fmt.Sprintf("%s:%d", s.SrvHost, s.SrvPort)
 	stack.New(stack.Option{
 		EndPoint: dev,
 		HandleTCP: func(ftr *stack.ForwarderTCPRequest) {
 			defer ftr.Conn.Close()
-			s5, err := socks5.NewClient(srvAddr, option.User, option.Pass)
+			s5, err := socks5.NewClient(srvAddr, s.User, s.Pass)
 			if err != nil {
-				fmt.Println("socks5 connection err:", err)
+				if s.Handle != nil && s.Handle.Error != nil {
+					go s.Handle.Error(err.Error())
+				}
 				return
 			}
 			defer s5.Close()
 
 			remoteConn, err := s5.Dial("tcp", ftr.RemoteAddr)
 			if err != nil {
-				fmt.Println("socks5 remote err:", err)
+				if s.Handle != nil && s.Handle.Error != nil {
+					go s.Handle.Error(err.Error())
+				}
 				return
 			}
 			socks5.TunnelTCP(ftr.Conn, remoteConn)
 		},
 	})
-	return nil
+	return true, nil
 }
+
+func NewStack() *Stack { return &Stack{} }

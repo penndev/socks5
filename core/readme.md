@@ -22,5 +22,5 @@ netsh interface ipv4 set address name="wintun" source=static addr=10.10.100.251 
 go install golang.org/x/mobile/cmd/gomobile@latest
 go get golang.org/x/mobile/bind
 gomobile init
-gomobile bind -o mobileStack.aar -target android -androidapi 26 ./mobileStack
+gomobile bind -o mobileStack.aar -target android -androidapi 24 ./mobileStack
 ```
