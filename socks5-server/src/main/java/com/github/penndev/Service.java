@@ -193,88 +193,102 @@ public class Service implements Runnable {
     }
 
     public class UDPClient implements Runnable {
-        // udp 中继器
-        private final DatagramSocket udpSock;
-        //  客户端主机信息
-        String srcAddr;
+        private final DatagramSocket udpSock; // udp 中继器
+
+        String srcAddr; //  客户端主机信息
         int srcPort;
-        // 目标主机信息
-        String dstAddr;
+
+        String dstAddr; // 目标主机信息
         int dstPort;
 
-        // ....
         public UDPClient() throws SocketException {
-            //udpSock = new DatagramSocket(new InetSocketAddress(host, port));
-            udpSock = new DatagramSocket(8181);
+            udpSock = new DatagramSocket(new InetSocketAddress(host, port));
             port = udpSock.getLocalPort();
             System.out.printf("UDP listen [%s:%d] \n", host, port);
         }
 
+        //https://datatracker.ietf.org/doc/html/rfc1928#section-7
+        private int decodePacketHeader(byte[] packetData) throws IOException {
+            switch (packetData[3]) {
+                case 0x01: {
+                    dstAddr = InetAddress.getByAddress(
+                            Arrays.copyOfRange(packetData, 4, 8)).getHostAddress();
+                    dstPort = ((packetData[8] & 0xff) << 8) | (packetData[9] & 0xff);
+                    return 10;
+                }
+                case 0x03: {
+                    int domainToLen = packetData[4] + 5;
+                    dstAddr = new String(Arrays.copyOfRange(packetData, 5, domainToLen));
+                    dstPort = ((packetData[domainToLen] & 0xff) << 8) | (packetData[domainToLen + 1] & 0xff);
+                    return domainToLen + 2;
+                }
+                case 0x04: {
+                    dstAddr = new String(Arrays.copyOfRange(packetData, 4, 21));
+                    dstPort = ((packetData[21] & 0xff) << 8) | (packetData[22] & 0xff);
+                    return 23;
+                }
+                default: {
+                    throw new IOException("socks5 merge the host atyp:" + packetData[3]);
+                }
+            }
+        }
+
+        //https://datatracker.ietf.org/doc/html/rfc1928#section-7
+        private byte[] encodePacketHeader(String address, int port) throws IOException {
+            ByteArrayOutputStream replies = new ByteArrayOutputStream();
+            replies.write(new byte[]{0x00, 0x00, 0x00});
+            byte[] ip = InetAddress.getByName(address).getAddress();
+            if (ip.length == 4) {
+                replies.write(0x01);
+                replies.write(ip);
+            } else if (ip.length == 16) {
+                replies.write(0x04);
+                replies.write(ip);
+            } else {
+                replies.write(new byte[]{0x01, 0x00, 0x00, 0x00, 0x00});
+            }
+            replies.write(new byte[]{(byte) (port / 256), (byte) (port % 256)});
+            return replies.toByteArray();
+        }
+
         @Override
         public void run() {
-            byte[] buffer = new byte[1500];
             try {
                 while (true) {
+                    byte[] buffer = new byte[1024];
                     DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                     udpSock.receive(packet);
-                    byte[] uData = packet.getData();
-                    // 不处理数据分片 FRAG
-                    if (uData[2] != 0x00) {
-                        break;
-                    }
+                    byte[] packetData = packet.getData();
+                    int packetLen = packet.getLength();
 
-                    // 标注客户端连接
-                    if (uData[0] == 0x00 && uData[1] == 0x00) {
-                        byte[] payload;
-                        switch (uData[3]) {
-                            case 0x01: {
-                                dstAddr = InetAddress.getByAddress(Arrays.copyOfRange(uData, 4, 8)).getHostAddress();
-                                dstPort = ((uData[8] & 0xff) << 8) | (uData[9] & 0xff);
-                                payload = Arrays.copyOfRange(uData, 10, packet.getLength() + 1);
-                                break;
-                            }
-                            case 0x03: {
-                                int domainToLen = uData[4] + 5;
-                                dstAddr = new String(Arrays.copyOfRange(uData, 5, domainToLen));
-                                dstPort = ((uData[domainToLen] & 0xff) << 8) | (uData[domainToLen + 1] & 0xff);
-                                payload = Arrays.copyOfRange(uData, domainToLen + 1, packet.getLength() + 1);
-                                break;
-                            }
-                            case 0x04: {
-                                dstAddr = new String(Arrays.copyOfRange(uData, 4, 21));
-                                dstPort = ((uData[21] & 0xff) << 8) | (uData[22] & 0xff);
-                                payload = Arrays.copyOfRange(uData, 23, packet.getLength() + 1);
-                                break;
-                            }
-                            default: {
-                                throw new IOException("socks5 merge the host atyp:" + uData[3]);
-                            }
-                        }
-                        udpSock.send(new DatagramPacket(
-                                payload, payload.length,
-                                InetAddress.getByName(dstAddr), dstPort
-                        ));
+
+                    if (packetData[0] == 0x00 && packetData[1] == 0x00) { // 标注客户端连接
+                        if (packetData[2] != 0x00) continue; // 不处理数据分片 FRAG
+                        int fromLen = decodePacketHeader(packetData);
+                        byte[] payload = Arrays.copyOfRange(packetData, fromLen , packetLen);
+                        udpSock.send(new DatagramPacket( payload, payload.length,
+                                InetAddress.getByName(dstAddr), dstPort));
                         srcAddr = packet.getAddress().getHostAddress();
                         srcPort = packet.getPort();
                         System.out.printf("[%s:%d] --> [%s:%d] \n", srcAddr, srcPort, dstAddr, dstPort);
-
                     } else {
-                        String currentAddr = packet.getAddress().getHostAddress();
+                        String currentAddress = packet.getAddress().getHostAddress();
                         int currentPort = packet.getPort();
+                        if (currentAddress.equals(dstAddr) && currentPort == dstPort) {
+                            byte[] packetHeader = encodePacketHeader(dstAddr, dstPort);
+                            byte[] result = new byte[packetHeader.length + packetLen];
+                            System.arraycopy(packetHeader, 0, result, 0, packetHeader.length);
+                            System.arraycopy(packetData, 0, result, packetHeader.length, packetLen);
 
-                        if (currentAddr == dstAddr && currentPort == dstPort) {
-                            udpSock.send(new DatagramPacket(
-                                    packet.getData(), packet.getLength(),
-                                    InetAddress.getByName(srcAddr), srcPort
-                            ));
-                        } else if (currentAddr == srcAddr && currentPort == srcPort) {
-                            udpSock.send(new DatagramPacket(
-                                    packet.getData(), packet.getLength(),
-                                    InetAddress.getByName(dstAddr), dstPort
-                            ));
+                            udpSock.send(new DatagramPacket( result, result.length,
+                                    InetAddress.getByName(srcAddr), srcPort));
+
+                            System.out.println("UDP receive <- " + currentAddress + ":" + currentPort);
+                        } else if (currentAddress.equals(srcAddr) && currentPort == srcPort) {
+                            // 单次信息没传输完
+                            udpSock.send(new DatagramPacket( packet.getData(), packet.getLength(),
+                                    InetAddress.getByName(dstAddr), dstPort ));
                         }
-                        // 接收回复数据
-                        System.out.println("UDP receive <- " + currentAddr + ":" + currentPort);
                     }
 
                 }
