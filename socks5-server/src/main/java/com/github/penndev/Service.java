@@ -1,13 +1,17 @@
 package com.github.penndev;
 
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 
+@SuppressWarnings("FieldCanBeLocal")
 public class Service implements Runnable {
     private final Socket sock;
     private final OutputStream output;
@@ -17,6 +21,18 @@ public class Service implements Runnable {
     private byte method = 0x00;
     private byte cmd;
 
+    private final byte methodNoAcceptable = (byte) 0xff;
+    private final byte methodUsernamePassword = (byte) 0x02;
+
+    private final byte replySucceeded = 0x00;
+    private final byte replyNetworkUnreachable = 0x03;
+    private final byte replyHostUnreachable = 0x04;
+
+    private final int timeout = 30 * 1000;
+
+    /**
+     * proxy remote host and port
+     */
     private String host;
     private int port;
 
@@ -30,16 +46,29 @@ public class Service implements Runnable {
         }
     }
 
-    //https://datatracker.ietf.org/doc/html/rfc1928#section-3
-    private void HandShake() throws Socks5Exception, IOException {
-        var ver_n_method = input.readNBytes(2);
-        if (ver_n_method[0] != version || ver_n_method[1] < 1) {
-            output.write(new byte[]{0x05, (byte) 0xff});
-            throw new Socks5Exception("socks5 version error[" + ver_n_method[0] + "]");
+    @Override
+    public void run() {
+        try {
+            handShake();
+            requests();
+            System.out.printf("CMD(%d) -> [%s:%d] \n", cmd, host, port);
+            switch (cmd) {
+                case 0x01 -> cmdConnect(); // CONNECT X'01'
+                //case 0x02 -> // BIND X'02'
+                case 0x03 -> cmdUdp(); // UDP ASSOCIATE X'03'
+                default -> throw new Socks5Exception("Socks5 cmd Unexpected value:" + cmd);
+            }
+        } catch (Exception e) {
+            try {
+                sock.close();
+            } catch (Exception ignore) {
+            }
+            System.out.println(e.getMessage());
         }
-        // - handshake
-        var methods = input.readNBytes(ver_n_method[1]);
+        System.out.printf("Close from: [%s] \n", sock.getRemoteSocketAddress());
+    }
 
+    private boolean anyMatch(byte @NotNull [] methods, byte method) {
         boolean contains = false;
         for (byte i : methods) {
             if (i == method) {
@@ -47,30 +76,41 @@ public class Service implements Runnable {
                 break;
             }
         }
-        if (contains) {
-            output.write(new byte[]{0x05, method});
+        return contains;
+    }
+
+    private void handShake() throws IOException {
+        var verMethod = input.readNBytes(2);
+        if (verMethod[0] != version || verMethod[1] < 1) {
+            output.write(new byte[]{version, methodNoAcceptable});
+            throw new Socks5Exception("socks5 version error[" + verMethod[0] + "]");
+        }
+
+        var methods = input.readNBytes(verMethod[1]);
+        if (anyMatch(methods, method)) {
+            output.write(new byte[]{version, method});
         } else {
-            output.write(new byte[]{0x05, (byte) 0xff});
+            output.write(new byte[]{version, methodNoAcceptable});
             throw new Socks5Exception("socks5 not match method[" + method + "]");
         }
-        if (method == 0x02) { // https://datatracker.ietf.org/doc/html/rfc1929
-            if (input.readNBytes(1)[0] != 1) {
-                output.write(new byte[]{0x05, 0x01});
+        //
+        if (method == methodUsernamePassword) {
+            if (input.readNBytes(1)[0] != 0x01) {
+                output.write(new byte[]{0x01, 0x01});
                 throw new Socks5Exception("socks5 user pass VER error");
             }
             String username = new String(input.readNBytes(input.readNBytes(1)[0]));
             String password = new String(input.readNBytes(input.readNBytes(1)[0]));
             if (username.equals(Socks5.username) && password.equals(Socks5.password)) {
-                output.write(new byte[]{0x05, 0x00});
+                output.write(new byte[]{0x01, 0x00});
             } else {
-                output.write(new byte[]{0x05, (byte) 0xff});
+                output.write(new byte[]{0x01, 0x01});
                 throw new Socks5Exception("socks5 user pass not right");
             }
         }
     }
 
-    //https://datatracker.ietf.org/doc/html/rfc1928#section-4
-    public void Requests() throws Socks5Exception, IOException {
+    private void requests() throws IOException {
         var d = input.readNBytes(4);
         if (d[0] != version || d.length != 4) {
             throw new Socks5Exception("socks5 version error 01");
@@ -86,8 +126,7 @@ public class Service implements Runnable {
         port = (portByte[0] & 0xff) * 256 + (portByte[1] & 0xff);
     }
 
-    //https://datatracker.ietf.org/doc/html/rfc1928#section-6
-    public void replies(byte[] ip, int port, byte rep) throws IOException {
+    public void replies(byte @NotNull [] ip, int port, byte rep) throws IOException {
         ByteArrayOutputStream replies = new ByteArrayOutputStream();
         replies.write(new byte[]{version, rep, 0x00});
         if (ip.length == 4) {
@@ -103,137 +142,163 @@ public class Service implements Runnable {
         output.write(replies.toByteArray());
     }
 
-    private void CmdConnect() throws IOException, Socks5Exception {
+    private void cmdConnect() throws IOException {
         Socket remote = new Socket();
-        byte[] ip;
-        //System.out.println(host + ":" + port);
-        try {
-            remote.setSoTimeout(30000);
-            remote.connect(new InetSocketAddress(host, port));
-            ip = remote.getInetAddress().getAddress();
-        } catch (Exception e) {
-            replies(new byte[]{0, 0, 0, 0}, port, (byte) 0x06);
-            throw new Socks5Exception("Socks5 remote not connect");
-        }
+        remote.setSoTimeout(timeout);
+        remote.connect(new InetSocketAddress(host, port));
+        byte[] ip = remote.getInetAddress().getAddress();
         if (remote.isConnected()) {
-            replies(ip, port, (byte) 0x00);
-            new Thread(() -> { // 远程传输给本地。
+            replies(ip, port, replySucceeded);
+            CompletableFuture.runAsync(() -> {
                 try {
                     remote.getInputStream().transferTo(output);
                 } catch (IOException e) {
-                } finally {
-                    if (!remote.isClosed()) try {
+                    try {
                         remote.close();
-                    } catch (IOException e) {
+                    } catch (IOException ignore) {
+                    }
+                    try {
+                        sock.close();
+                    } catch (IOException ignore) {
                     }
                 }
-            }).start();
-
-            try { // 本地传输给远程
+            });
+            try {
                 input.transferTo(remote.getOutputStream());
             } catch (IOException e) {
+                try {
+                    remote.close();
+                } catch (IOException ignore) {
+                }
+                try {
+                    sock.close();
+                } catch (IOException ignore) {
+                }
             }
         } else {
-            replies(ip, port, (byte) 0x04);
+            replies(ip, port, replyHostUnreachable);
         }
     }
 
     private void cmdUdp() throws IOException {
         Thread t;
-        port = 0;
-        host = sock.getLocalAddress().getHostAddress();
-        byte[] lip = InetAddress.getByName(host).getAddress();
+        UDPClient udpClient;
         try {
-            UDPClient uc = new UDPClient();
-            t = new Thread(uc, "UDP");
+            port = 0;
+            host = sock.getLocalAddress().getHostAddress();
+            udpClient = new UDPClient();
+            t = new Thread(udpClient);
+            t.start();
         } catch (Exception e) {
-            // udp fail
-            replies(lip, port, (byte) 0x03);
+            var hostAddress = InetAddress.getByName(host).getAddress();
+            replies(hostAddress, port, replyNetworkUnreachable);
             throw e;
-            //return;
         }
-        t.start();
-        replies(lip, port, (byte) 0x00);
+        var hostAddress = InetAddress.getByName(host).getAddress();
+        replies(hostAddress, port, replySucceeded);
 
-        byte[] buffer = new byte[1024];
-        int read;
-        while ((read = input.read(buffer, 0, 1024)) >= 0) {
-            byte[] slice = Arrays.copyOfRange(buffer, 0, read);
-            System.out.println(Arrays.toString(slice));
+        var buffer = new byte[16];
+        //noinspection StatementWithEmptyBody
+        while ((input.read(buffer, 0, 16)) >= 0) {
         }
-        t.interrupt();
+        udpClient.close();
     }
 
-    @Override
-    public void run() {
-        try {
-            HandShake();
-            Requests();
-            System.out.printf("CMD(%d) -> [%s:%d] \n", cmd, host, port);
-            switch (cmd) {
-                case 0x01 -> CmdConnect(); // CONNECT X'01'
-                //case 0x02 -> // BIND X'02'
-                case 0x03 -> cmdUdp(); // UDP ASSOCIATE X'03'
-                default -> throw new Socks5Exception("Socks5 cmd Unexpected value:" + cmd);
-            }
-        } catch (Socks5Exception e) {
-            // 正常审核错误
-            System.out.println(e.getMessage());
-        } catch (IOException e) {
-            // 读写抛出错误
-            System.out.println(e.getMessage());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            if (!sock.isClosed()) try {
-                sock.close();
-            } catch (IOException e) {
-            }
-        }
-    }
 
     public class UDPClient implements Runnable {
+
         private final DatagramSocket udpSock; // udp 中继器
 
-        String srcAddr; //  客户端主机信息
-        int srcPort;
+        private String srcAddress; //  客户端主机信息
+        private int srcPort;
 
-        String dstAddr; // 目标主机信息
-        int dstPort;
+        private String dstAddress; // 目标主机信息
+        private int dstPort;
 
         public UDPClient() throws SocketException {
             udpSock = new DatagramSocket(new InetSocketAddress(host, port));
             port = udpSock.getLocalPort();
-            System.out.printf("UDP listen [%s:%d] \n", host, port);
+            //System.out.printf("UDP listen [%s:%d] \n", host, port);
         }
 
-        //https://datatracker.ietf.org/doc/html/rfc1928#section-7
+        public void close() {
+            try {
+                udpSock.close();
+            } catch (Exception ignore) {
+            }
+            try {
+                sock.close();
+            } catch (Exception ignore) {
+            }
+        }
+
+        @Override
+        public void run() {
+            try {
+                //noinspection InfiniteLoopStatement
+                while (true) {
+                    byte[] buffer = new byte[1024];
+                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                    udpSock.receive(packet);
+                    byte[] packetData = packet.getData();
+                    int packetLen = packet.getLength();
+
+                    if (packetData[0] == 0x00 && packetData[1] == 0x00) {
+                        if (packetData[2] != 0x00) continue; // TODO FRAG
+                        int fromLen = decodePacketHeader(packetData);
+                        byte[] payload = Arrays.copyOfRange(packetData, fromLen, packetLen);
+                        udpSock.send(new DatagramPacket(payload, payload.length,
+                                InetAddress.getByName(dstAddress), dstPort));
+                        srcAddress = packet.getAddress().getHostAddress();
+                        srcPort = packet.getPort();
+                        //System.out.printf("[%s:%d] --> [%s:%d] \n", srcAddress, srcPort, dstAddress, dstPort);
+                    } else {
+                        String currentAddress = packet.getAddress().getHostAddress();
+                        int currentPort = packet.getPort();
+                        if (currentAddress.equals(dstAddress) && currentPort == dstPort) {
+                            byte[] packetHeader = encodePacketHeader(dstAddress, dstPort);
+                            byte[] result = new byte[packetHeader.length + packetLen];
+                            System.arraycopy(packetHeader, 0, result, 0, packetHeader.length);
+                            System.arraycopy(packetData, 0, result, packetHeader.length, packetLen);
+
+                            udpSock.send(new DatagramPacket(result, result.length,
+                                    InetAddress.getByName(srcAddress), srcPort));
+
+                            //System.out.println("UDP receive <- " + currentAddress + ":" + currentPort);
+                        } else if (currentAddress.equals(srcAddress) && currentPort == srcPort) {
+                            // 单次信息没传输完
+                            udpSock.send(new DatagramPacket(packet.getData(), packet.getLength(),
+                                    InetAddress.getByName(dstAddress), dstPort));
+                        }
+                    }
+                }
+            } catch (Exception ignore) {
+            }
+        }
+
         private int decodePacketHeader(byte[] packetData) throws IOException {
             switch (packetData[3]) {
-                case 0x01: {
-                    dstAddr = InetAddress.getByAddress(
+                case 0x01 -> {
+                    dstAddress = InetAddress.getByAddress(
                             Arrays.copyOfRange(packetData, 4, 8)).getHostAddress();
                     dstPort = ((packetData[8] & 0xff) << 8) | (packetData[9] & 0xff);
                     return 10;
                 }
-                case 0x03: {
+                case 0x03 -> {
                     int domainToLen = packetData[4] + 5;
-                    dstAddr = new String(Arrays.copyOfRange(packetData, 5, domainToLen));
+                    dstAddress = new String(Arrays.copyOfRange(packetData, 5, domainToLen));
                     dstPort = ((packetData[domainToLen] & 0xff) << 8) | (packetData[domainToLen + 1] & 0xff);
                     return domainToLen + 2;
                 }
-                case 0x04: {
-                    dstAddr = new String(Arrays.copyOfRange(packetData, 4, 21));
+                case 0x04 -> {
+                    dstAddress = new String(Arrays.copyOfRange(packetData, 4, 21));
                     dstPort = ((packetData[21] & 0xff) << 8) | (packetData[22] & 0xff);
                     return 23;
                 }
-                default: {
-                    throw new IOException("socks5 merge the host atyp:" + packetData[3]);
-                }
+                default -> throw new IOException("socks5 merge the host atyp:" + packetData[3]);
             }
         }
 
-        //https://datatracker.ietf.org/doc/html/rfc1928#section-7
         private byte[] encodePacketHeader(String address, int port) throws IOException {
             ByteArrayOutputStream replies = new ByteArrayOutputStream();
             replies.write(new byte[]{0x00, 0x00, 0x00});
@@ -251,50 +316,5 @@ public class Service implements Runnable {
             return replies.toByteArray();
         }
 
-        @Override
-        public void run() {
-            try {
-                while (true) {
-                    byte[] buffer = new byte[1024];
-                    DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                    udpSock.receive(packet);
-                    byte[] packetData = packet.getData();
-                    int packetLen = packet.getLength();
-
-
-                    if (packetData[0] == 0x00 && packetData[1] == 0x00) { // 标注客户端连接
-                        if (packetData[2] != 0x00) continue; // 不处理数据分片 FRAG
-                        int fromLen = decodePacketHeader(packetData);
-                        byte[] payload = Arrays.copyOfRange(packetData, fromLen , packetLen);
-                        udpSock.send(new DatagramPacket( payload, payload.length,
-                                InetAddress.getByName(dstAddr), dstPort));
-                        srcAddr = packet.getAddress().getHostAddress();
-                        srcPort = packet.getPort();
-                        System.out.printf("[%s:%d] --> [%s:%d] \n", srcAddr, srcPort, dstAddr, dstPort);
-                    } else {
-                        String currentAddress = packet.getAddress().getHostAddress();
-                        int currentPort = packet.getPort();
-                        if (currentAddress.equals(dstAddr) && currentPort == dstPort) {
-                            byte[] packetHeader = encodePacketHeader(dstAddr, dstPort);
-                            byte[] result = new byte[packetHeader.length + packetLen];
-                            System.arraycopy(packetHeader, 0, result, 0, packetHeader.length);
-                            System.arraycopy(packetData, 0, result, packetHeader.length, packetLen);
-
-                            udpSock.send(new DatagramPacket( result, result.length,
-                                    InetAddress.getByName(srcAddr), srcPort));
-
-                            System.out.println("UDP receive <- " + currentAddress + ":" + currentPort);
-                        } else if (currentAddress.equals(srcAddr) && currentPort == srcPort) {
-                            // 单次信息没传输完
-                            udpSock.send(new DatagramPacket( packet.getData(), packet.getLength(),
-                                    InetAddress.getByName(dstAddr), dstPort ));
-                        }
-                    }
-
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 }

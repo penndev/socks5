@@ -1,6 +1,8 @@
 package com.github.penndev;
 
-public class Socks5Exception extends Exception {
+import java.io.IOException;
+
+public class Socks5Exception extends IOException {
     public Socks5Exception(String message) {
         super(message);
     }
