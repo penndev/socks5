@@ -176,7 +176,7 @@ func (c *Conn) Dial(network, address string) (net.Conn, error) {
 			if err != nil {
 				return nil, err
 			}
-			host, strPort, _ := net.SplitHostPort(address)
+			host, strPort, err := net.SplitHostPort(address)
 			if err != nil {
 				return nil, err
 			}
