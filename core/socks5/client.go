@@ -85,6 +85,30 @@ func NewClient(address, user, pass string) (Conn, error) {
 	switch buf[1] {
 	case METHOD_NO_AUTH:
 		return Conn{rw: conn}, err
+	case METHOD_USER:
+		buf := []byte{0x01, byte(len(user))}
+		buf = append(buf, []byte(user)...)
+		buf = append(buf, byte(len(pass)))
+		buf = append(buf, []byte(pass)...)
+		if _, err := conn.Write(buf); err != nil {
+			conn.Close()
+			return Conn{}, err
+		}
+		resBuf := make([]byte, 2)
+		rn, err := conn.Read(resBuf)
+		if err != nil {
+			conn.Close()
+			return Conn{}, err
+		}
+		if rn != 2 || resBuf[0] != 0x01 {
+			conn.Close()
+			return Conn{}, errors.New("error socks5 username/password Version")
+		}
+		if resBuf[1] != 0x00 {
+			conn.Close()
+			return Conn{}, errors.New("error socks5 username/password")
+		}
+		return Conn{rw: conn}, err
 	default:
 		conn.Close()
 		return Conn{}, fmt.Errorf("error socks method not match [%d]", buf[1])

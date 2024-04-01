@@ -29,6 +29,22 @@ func ExampleNewClient() {
 	// Output: HTTP/1.1 400 Bad Request
 }
 
+func TestUsername(t *testing.T) {
+	s5, err := socks5.NewClient("127.0.0.1:1080", "penndev", "123456")
+	if err != nil {
+		panic(err)
+	}
+	conn, err := s5.Dial("tcp", "www.baidu.com:80")
+	if err != nil {
+		panic(err)
+	}
+	_, err = conn.Write([]byte("get / \r\n"))
+	if err != nil {
+		panic(err)
+	}
+	// Output: HTTP/1.1 400 Bad Request
+}
+
 func TestUDP(t *testing.T) {
 	s5, err := socks5.NewClient("127.0.0.1:1080", "", "")
 	if err != nil {
