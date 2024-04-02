@@ -1,7 +1,6 @@
 package stack
 
 import (
-	"errors"
 	"fmt"
 	"net"
 
@@ -18,19 +17,9 @@ import (
 )
 
 type ForwarderUDPRequest struct {
-	*udp.ForwarderRequest
-}
-
-func (r *ForwarderUDPRequest) UDPConn() (net.Conn, error) {
-	var (
-		waiterQueue waiter.Queue
-	)
-	endPoint, err := r.CreateEndpoint(&waiterQueue)
-	if err != nil {
-		return nil, errors.New(err.String())
-	}
-	localConn := gonet.NewUDPConn(&waiterQueue, endPoint)
-	return localConn, nil
+	Conn       net.Conn
+	RemoteAddr string
+	LocalAddr  string
 }
 
 type ForwarderTCPRequest struct {
@@ -81,7 +70,19 @@ func New(option Option) {
 	}
 
 	if option.HandlerUDP != nil {
-		udpForwarder := udp.NewForwarder(s, func(fr *udp.ForwarderRequest) { option.HandlerUDP(&ForwarderUDPRequest{fr}) })
+		udpForwarder := udp.NewForwarder(s, func(r *udp.ForwarderRequest) {
+			var fur ForwarderUDPRequest
+			var waiterQueue waiter.Queue
+			if endPoint, err := r.CreateEndpoint(&waiterQueue); err == nil {
+				fur.Conn = gonet.NewUDPConn(&waiterQueue, endPoint)
+			} else {
+				return
+			}
+			addrInfo := r.ID()
+			fur.LocalAddr = fmt.Sprintf("%s:%d", addrInfo.RemoteAddress, addrInfo.RemotePort)
+			fur.RemoteAddr = fmt.Sprintf("%s:%d", addrInfo.LocalAddress, addrInfo.LocalPort)
+			go option.HandlerUDP(&fur)
+		})
 		s.SetTransportProtocolHandler(udp.ProtocolNumber, udpForwarder.HandlePacket)
 	}
 

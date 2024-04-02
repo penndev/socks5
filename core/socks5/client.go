@@ -33,7 +33,6 @@ func (c *UDPClient) Read(b []byte) (int, error) {
 	return bufLen, err
 }
 
-// return int is not right
 func (c *UDPClient) Write(data []byte) (int, error) {
 	datagram := UDPDatagram{
 		DST_ADDR: c.DST_ADDR,
@@ -41,7 +40,14 @@ func (c *UDPClient) Write(data []byte) (int, error) {
 		DATA:     data,
 	}
 	if d, err := datagram.Encode(); err == nil {
-		return c.Conn.Write(d)
+		n, err := c.Conn.Write(d)
+		if err != nil {
+			return 0, err
+		}
+		if n != len(d) {
+			return 0, errors.New("write byte len error")
+		}
+		return len(data), nil
 	} else {
 		return 0, err
 	}

@@ -1,46 +1,25 @@
-// go:build windows
 package main
 
-import (
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
+import "flag"
 
-	"github.com/penndev/socks5/core/socks5"
-	"github.com/penndev/socks5/core/stack"
-	"github.com/penndev/socks5/core/tun"
+type Config struct {
+	Proxy   string
+	TunName string
+	TunIP   string
+	TunMtu  int
+}
+
+var (
+	versionFlag = false
+	version     = "0.0.1"
+	config      = Config{}
 )
 
-func main() {
-	dev, err := tun.CreateTUN("wintun", 0)
-	if err != nil {
-		panic(err)
-	}
-	if err := tun.Cfg(dev.Name(), "10.10.100.251", "255.255.255.255"); err != nil {
-		panic("cant set ip")
-	}
-	stack.New(stack.Option{
-		EndPoint: dev,
-		HandleTCP: func(ftr *stack.ForwarderTCPRequest) {
-			defer ftr.Conn.Close()
-			s5, err := socks5.NewClient("127.0.0.1:1080", "", "")
-			if err != nil {
-				log.Println("socks5 connection err:", err)
-				return
-			}
-			defer s5.Close()
-
-			remoteConn, err := s5.Dial("tcp", ftr.RemoteAddr)
-			if err != nil {
-				log.Println("socks5 remote err:", err)
-				return
-			}
-			socks5.TunnelTCP(ftr.Conn, remoteConn)
-		},
-	})
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-	<-sigCh
+func init() {
+	flag.StringVar(&config.Proxy, "proxy", "", "Set remote socks5 service example socks5://user:pass@192.168.0.1:1080")
+	flag.StringVar(&config.TunIP, "ip", "10.10.10.10", "Set device static ip")
+	flag.IntVar(&config.TunMtu, "mtu", 0, "Set tun device mtu")
+	flag.StringVar(&config.TunName, "name", "socks5", "Set device name")
+	flag.BoolVar(&versionFlag, "version", false, "Show version and then quit")
+	flag.Parse()
 }

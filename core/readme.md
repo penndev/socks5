@@ -4,13 +4,13 @@
 
 **https://github.com/WireGuard/wintun**
 
-设置网卡IP
+设置网卡IP命令
 
 ```
-netsh interface ipv4 set address name="wintun" source=static addr=10.10.100.251 mask=255.255.255.255
+netsh interface ipv4 set address name="wintun" source=static addr=10.10.10.10 mask=255.255.255.255
 
-\ netsh interface ipv4 add route 0.0.0.0/0 10.10.100.251
-\ route add 0.0.0.0/0 10.10.100.251
+\ netsh interface ipv4 add route 0.0.0.0/0 10.10.10.10
+\ route add 0.0.0.0/0 10.10.10.10
 ```
 
 

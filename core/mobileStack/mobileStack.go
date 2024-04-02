@@ -60,7 +60,6 @@ func (s *Stack) Run() (bool, error) {
 				return
 			}
 			defer s5.Close()
-
 			remoteConn, err := s5.Dial("tcp", ftr.RemoteAddr)
 			if err != nil {
 				if s.Handle != nil && s.Handle.Error != nil {
