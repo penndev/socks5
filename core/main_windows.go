@@ -52,11 +52,11 @@ func main() {
 
 			remoteConn, err := s5.Dial("tcp", ftr.RemoteAddr)
 			if err != nil {
-				log.Println("socks5 remote err:", err)
+				log.Println("socks5 tcp remote err:", err)
 				return
 			}
 			log.Printf("tcp %s <-> %s", ftr.LocalAddr, ftr.RemoteAddr)
-			tunnel.Tunnel(ftr.Conn, remoteConn, 32*1024, 30*time.Second)
+			tunnel.Tunnel(ftr.Conn, remoteConn, 32*1024, 0)
 		},
 		HandlerUDP: func(fur *stack.ForwarderUDPRequest) {
 			defer fur.Conn.Close()
@@ -69,7 +69,7 @@ func main() {
 
 			remoteConn, err := s5.Dial("udp", fur.RemoteAddr)
 			if err != nil {
-				log.Println("socks5 remote err:", err)
+				log.Println("socks5 udp remote err:", err)
 				return
 			}
 			log.Printf("tcp %s <-> %s", fur.LocalAddr, fur.RemoteAddr)
