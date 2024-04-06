@@ -1,31 +1,55 @@
 package tunnel
 
 import (
-	"io"
+	"net"
 	"time"
 )
 
-func Tunnel(dst, src io.ReadWriteCloser, bufferLen int, timeout time.Duration) {
-	fn := func(rw io.ReadWriteCloser, ch chan []byte) {
-		defer close(ch)
+type Option struct {
+	Src        net.Conn
+	SrcReadLen func(int)
+	Dst        net.Conn
+	DstReadLen func(int)
+	BufLen     int
+	Timeout    time.Duration
+}
+
+func readChan(ch chan []byte, conn net.Conn, bufLen int, readLen func(int)) {
+	defer close(ch)
+	if readLen == nil {
 		for {
-			buf := make([]byte, bufferLen)
-			n, err := rw.Read(buf)
+			buf := make([]byte, bufLen)
+			n, err := conn.Read(buf)
+			if err != nil {
+				break
+			}
+			ch <- buf[:n]
+		}
+	} else {
+		for {
+			buf := make([]byte, bufLen)
+			n, err := conn.Read(buf)
+			readLen(n)
 			if err != nil {
 				break
 			}
 			ch <- buf[:n]
 		}
 	}
+}
+
+func Tunnel(option Option) {
+	if option.Src == nil || option.Dst == nil || option.BufLen <= 1 {
+		return
+	}
+	srcChan := make(chan []byte)
+	go readChan(srcChan, option.Src, option.BufLen, option.SrcReadLen)
 
 	dstChan := make(chan []byte)
-	go fn(dst, dstChan)
+	go readChan(dstChan, option.Dst, option.BufLen, option.DstReadLen)
 
-	srcChan := make(chan []byte)
-	go fn(src, srcChan)
-
-	if timeout > 0 {
-		timer := time.NewTimer(timeout)
+	if option.Timeout > 0 {
+		timer := time.NewTimer(option.Timeout)
 		defer timer.Stop()
 		for {
 			select {
@@ -35,18 +59,18 @@ func Tunnel(dst, src io.ReadWriteCloser, bufferLen int, timeout time.Duration) {
 				if !ok {
 					return
 				}
-				if n, err := src.Write(buf); err != nil || n != len(buf) {
+				if n, err := option.Src.Write(buf); err != nil || n != len(buf) {
 					return
 				}
 			case buf, ok := <-srcChan:
 				if !ok {
 					return
 				}
-				if n, err := dst.Write(buf); err != nil || n != len(buf) {
+				if n, err := option.Dst.Write(buf); err != nil || n != len(buf) {
 					return
 				}
 			}
-			timer.Reset(timeout)
+			timer.Reset(option.Timeout)
 		}
 	} else {
 		for {
@@ -55,14 +79,14 @@ func Tunnel(dst, src io.ReadWriteCloser, bufferLen int, timeout time.Duration) {
 				if !ok {
 					return
 				}
-				if n, err := src.Write(buf); err != nil || n != len(buf) {
+				if n, err := option.Src.Write(buf); err != nil || n != len(buf) {
 					return
 				}
 			case buf, ok := <-srcChan:
 				if !ok {
 					return
 				}
-				if n, err := dst.Write(buf); err != nil || n != len(buf) {
+				if n, err := option.Dst.Write(buf); err != nil || n != len(buf) {
 					return
 				}
 			}

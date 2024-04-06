@@ -56,7 +56,11 @@ func main() {
 				return
 			}
 			log.Printf("tcp %s <-> %s", ftr.LocalAddr, ftr.RemoteAddr)
-			tunnel.Tunnel(ftr.Conn, remoteConn, 32*1024, 0)
+			tunnel.Tunnel(tunnel.Option{
+				Src:    ftr.Conn,
+				Dst:    remoteConn,
+				BufLen: 32 * 1024,
+			})
 		},
 		HandlerUDP: func(fur *stack.ForwarderUDPRequest) {
 			defer fur.Conn.Close()
@@ -72,8 +76,13 @@ func main() {
 				log.Println("socks5 udp remote err:", err)
 				return
 			}
-			log.Printf("tcp %s <-> %s", fur.LocalAddr, fur.RemoteAddr)
-			tunnel.Tunnel(fur.Conn, remoteConn, 1024, 30*time.Second)
+			log.Printf("udp %s <-> %s", fur.LocalAddr, fur.RemoteAddr)
+			tunnel.Tunnel(tunnel.Option{
+				Src:     fur.Conn,
+				Dst:     remoteConn,
+				BufLen:  1024,
+				Timeout: 30 * time.Second,
+			})
 		},
 	})
 

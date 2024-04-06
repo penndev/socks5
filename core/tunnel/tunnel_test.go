@@ -16,7 +16,12 @@ func ExampleTunnel() {
 
 	lr, lw := net.Pipe()
 
-	go tunnel.Tunnel(remoteConn, lw, 1024, 10*time.Second)
+	go tunnel.Tunnel(tunnel.Option{
+		Src:     remoteConn,
+		Dst:     lw,
+		BufLen:  1024,
+		Timeout: 10 * time.Second,
+	})
 
 	if _, err = lr.Write([]byte("get / \r\n")); err != nil {
 		panic(err)
