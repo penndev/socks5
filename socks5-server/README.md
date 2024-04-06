@@ -15,3 +15,8 @@ java -jar target/socks5-1.0.jar 1080 admin 123456
 - BID CMD
 - UDP FLAG
 - IPv6 验证
+
+
+** linux 终端代理工具 **
+
+- socksify 

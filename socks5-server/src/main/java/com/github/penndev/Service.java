@@ -28,7 +28,7 @@ public class Service implements Runnable {
     private final byte replyNetworkUnreachable = 0x03;
     private final byte replyHostUnreachable = 0x04;
 
-    private final int timeout = 30 * 1000;
+    private final int timeout = 5 * 1000;
 
     /**
      * proxy remote host and port
@@ -38,6 +38,7 @@ public class Service implements Runnable {
 
     public Service(Socket sock) throws IOException {
         this.sock = sock;
+        this.sock.setKeepAlive(true);
         this.input = sock.getInputStream();
         this.output = sock.getOutputStream();
         // 确定当前支持的认证方法。
@@ -51,7 +52,6 @@ public class Service implements Runnable {
         try {
             handShake();
             requests();
-            System.out.printf("CMD(%d) -> [%s:%d] \n", cmd, host, port);
             switch (cmd) {
                 case 0x01 -> cmdConnect(); // CONNECT X'01'
                 //case 0x02 -> // BIND X'02'
@@ -65,7 +65,7 @@ public class Service implements Runnable {
             }
             System.out.println(e.getMessage());
         }
-        System.out.printf("Close from: [%s] \n", sock.getRemoteSocketAddress());
+        //System.out.printf("Close from: [%s] \n", sock.getRemoteSocketAddress());
     }
 
     private boolean anyMatch(byte @NotNull [] methods, byte method) {
@@ -142,16 +142,29 @@ public class Service implements Runnable {
         output.write(replies.toByteArray());
     }
 
+    public void tunnel( InputStream input, OutputStream out) throws IOException {
+        var bufferSize = 8192;
+        byte[] buffer = new byte[bufferSize];
+        int read;
+        while ((read = input.read(buffer, 0, bufferSize)) >= 0) {
+            out.write(buffer, 0, read);
+            out.flush();
+        }
+        throw new Socks5Exception("input close");
+    }
+
     private void cmdConnect() throws IOException {
+        System.out.printf("CMD(%d) -> [%s:%d] \n", cmd, host, port);
         Socket remote = new Socket();
         remote.setSoTimeout(timeout);
+        remote.setKeepAlive(true);
         remote.connect(new InetSocketAddress(host, port));
         byte[] ip = remote.getInetAddress().getAddress();
         if (remote.isConnected()) {
             replies(ip, port, replySucceeded);
             CompletableFuture.runAsync(() -> {
                 try {
-                    remote.getInputStream().transferTo(output);
+                    tunnel(remote.getInputStream(), output);
                 } catch (IOException e) {
                     try {
                         remote.close();
@@ -164,7 +177,7 @@ public class Service implements Runnable {
                 }
             });
             try {
-                input.transferTo(remote.getOutputStream());
+                tunnel(input, remote.getOutputStream());
             } catch (IOException e) {
                 try {
                     remote.close();
@@ -177,6 +190,14 @@ public class Service implements Runnable {
             }
         } else {
             replies(ip, port, replyHostUnreachable);
+            try {
+                remote.close();
+            } catch (IOException ignore) {
+            }
+            try {
+                sock.close();
+            } catch (IOException ignore) {
+            }
         }
     }
 

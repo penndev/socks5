@@ -40,7 +40,7 @@ public class Socks5 {
             //noinspection InfiniteLoopStatement
             while (true) {
                 Socket sock = srvSocket.accept();
-                System.out.printf("Conn from: [%s] \n", sock.getRemoteSocketAddress());
+                //System.out.printf("Conn from: [%s] \n", sock.getRemoteSocketAddress());
                 Thread t = new Thread(new Service(sock));
                 t.start();
             }
