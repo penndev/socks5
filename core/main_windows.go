@@ -31,13 +31,16 @@ func main() {
 	host := u.Host
 	user := u.User.Username()
 	pass, _ := u.User.Password()
-
+	if err := tun.SetFilterIP("add", u.Hostname(), "255.255.255.255"); err != nil {
+		panic(err)
+	}
+	defer tun.SetFilterIP("delete", u.Hostname(), "255.255.255.255")
 	dev, err := tun.CreateTUN(config.TunName, 0)
 	if err != nil {
 		panic(err)
 	}
-	if err := tun.Cfg(dev.Name(), config.TunIP, "255.255.255.255"); err != nil {
-		panic("cant set static ip")
+	if err := tun.SetAddress(dev.Name(), config.TunIP, "255.255.255.255"); err != nil {
+		panic(err)
 	}
 	stack.New(stack.Option{
 		EndPoint: dev,
