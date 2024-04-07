@@ -160,36 +160,7 @@ public class Service implements Runnable {
         remote.setKeepAlive(true);
         remote.connect(new InetSocketAddress(host, port));
         byte[] ip = remote.getInetAddress().getAddress();
-        if (remote.isConnected()) {
-            replies(ip, port, replySucceeded);
-            CompletableFuture.runAsync(() -> {
-                try {
-                    tunnel(remote.getInputStream(), output);
-                } catch (IOException e) {
-                    try {
-                        remote.close();
-                    } catch (IOException ignore) {
-                    }
-                    try {
-                        sock.close();
-                    } catch (IOException ignore) {
-                    }
-                }
-            });
-            try {
-                tunnel(input, remote.getOutputStream());
-            } catch (IOException e) {
-                try {
-                    remote.close();
-                } catch (IOException ignore) {
-                }
-                try {
-                    sock.close();
-                } catch (IOException ignore) {
-                }
-            }
-        } else {
-            replies(ip, port, replyHostUnreachable);
+        Runnable close = () -> {
             try {
                 remote.close();
             } catch (IOException ignore) {
@@ -198,6 +169,24 @@ public class Service implements Runnable {
                 sock.close();
             } catch (IOException ignore) {
             }
+        };
+        if (remote.isConnected()) {
+            replies(ip, port, replySucceeded);
+            CompletableFuture.runAsync(() -> {
+                try {
+                    tunnel(remote.getInputStream(), output);
+                } catch (IOException e) {
+                    close.run();
+                }
+            });
+            try {
+                tunnel(input, remote.getOutputStream());
+            } catch (IOException e) {
+                close.run();
+            }
+        } else {
+            replies(ip, port, replyHostUnreachable);
+            close.run();
         }
     }
 

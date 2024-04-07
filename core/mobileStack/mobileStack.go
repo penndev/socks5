@@ -70,13 +70,22 @@ func (s *Stack) Run() (bool, error) {
 				}
 				return
 			}
-			tunnel.Tunnel(tunnel.Option{
+			option := tunnel.Option{
 				Src:        ftr.Conn,
 				SrcReadLen: s.Handle.WriteLen,
 				Dst:        remoteConn,
 				DstReadLen: s.Handle.ReadLen,
 				BufLen:     32 * 1024,
-			})
+			}
+			if s.Handle != nil {
+				if s.Handle.WriteLen != nil {
+					option.SrcReadLen = s.Handle.WriteLen
+				}
+				if s.Handle.ReadLen != nil {
+					option.DstReadLen = s.Handle.ReadLen
+				}
+			}
+			tunnel.Tunnel(option)
 		},
 		HandlerUDP: func(fur *stack.ForwarderUDPRequest) {
 			defer fur.Conn.Close()
