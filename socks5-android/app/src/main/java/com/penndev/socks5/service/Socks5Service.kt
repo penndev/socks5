@@ -106,9 +106,11 @@ class Socks5Service : VpnService() {
     // 启动VPN
     private fun setupVpnServe() {
         setupNotifyForeground() //启动通知
-        tun = Builder().setMtu(tunMtu).addDnsServer(tunDNS)
+        tun = Builder()
+            .setMtu(tunMtu)
+            .addDnsServer(tunDNS)
             .addRoute("0.0.0.0", 0)
-            .addAddress("192.168.1.1", 32)
+            .addAddress("192.168.0.1", 32)
             .addDisallowedApplication(packageName).establish()
         if (tun == null) {
             throw Socks5ServiceCloseException(getString(R.string.toast_service_tun_null))
@@ -124,6 +126,17 @@ class Socks5Service : VpnService() {
                 stack.srvPort = servicePort.toLong()
                 stack.user = serviceUser
                 stack.pass = servicePass
+                //stack.handle = object : mobileStack.StackHandle{
+                //    override fun error(err: String?) {
+                //        err?.let { Log.e("error", it) }
+                //    }
+                //    override fun readLen(i: Long) {
+                //        Log.d("readLen", i.toString())
+                //    }
+                //    override fun writeLen(i: Long) {
+                //        Log.d("writeLen", i.toString())
+                //    }
+                //}
                 val status = stack.run()
                 if (!status) {
                     delay(200)
