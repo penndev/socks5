@@ -71,11 +71,9 @@ func (s *Stack) Run() (bool, error) {
 				return
 			}
 			option := tunnel.Option{
-				Src:        ftr.Conn,
-				SrcReadLen: s.Handle.WriteLen,
-				Dst:        remoteConn,
-				DstReadLen: s.Handle.ReadLen,
-				BufLen:     32 * 1024,
+				Src:    ftr.Conn,
+				Dst:    remoteConn,
+				BufLen: 32 * 1024,
 			}
 			if s.Handle != nil {
 				if s.Handle.WriteLen != nil {
@@ -101,12 +99,21 @@ func (s *Stack) Run() (bool, error) {
 			if err != nil {
 				fmt.Println(err)
 			}
-			tunnel.Tunnel(tunnel.Option{
+			option := tunnel.Option{
 				Src:     fur.Conn,
 				Dst:     remoteConn,
 				BufLen:  32 * 1024,
 				Timeout: 30 * time.Second,
-			})
+			}
+			if s.Handle != nil {
+				if s.Handle.WriteLen != nil {
+					option.SrcReadLen = s.Handle.WriteLen
+				}
+				if s.Handle.ReadLen != nil {
+					option.DstReadLen = s.Handle.ReadLen
+				}
+			}
+			tunnel.Tunnel(option)
 		},
 	})
 	return true, nil
