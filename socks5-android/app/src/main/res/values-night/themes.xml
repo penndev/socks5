@@ -1,4 +1,4 @@
 <resources>
-    <style name="Theme.Socks5" parent="Theme.Material3.Dark.NoActionBar">
+    <style name="Theme.Socks5" parent="Theme.AppCompat.NoActionBar">
     </style>
 </resources>

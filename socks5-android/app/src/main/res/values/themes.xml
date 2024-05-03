@@ -1,10 +1,4 @@
 <resources>
-    <style name="Theme.Socks5" parent="Theme.Material3.Light.NoActionBar">
-        <item name="colorPrimary">@color/black</item>
-        <item name="colorPrimaryVariant">@color/black</item>
-
-        <!-- 设置 状态栏字体和背景色 -->
-        <item name="android:statusBarColor">@color/white</item>
-        <item name="android:windowLightStatusBar">true</item>
+    <style name="Theme.Socks5" parent="Theme.AppCompat.Light.NoActionBar">
     </style>
 </resources>
