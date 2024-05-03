@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Socks5</string>
+    <string name="title_home">Home</string>
+    <string name="title_monitor">Monitor</string>
+
+    <!-- Toast -->
+    <string name="toast_main_param_error">输入参数错误</string>
+    <string name="toast_main_reject">您拒绝了VPN请求</string>
+    <string name="toast_service_tun_null">"启动tun失败"</string>
+    <string name="toast_service_param_error">"参数错误"</string>
+    <string name="toast_service_host_error">"主机错误"</string>
+    <string name="toast_service_port_error">"端口错误"</string>
+    <string name="toast_service_always_run">"Socks5已经是启动状态"</string>
+
+    <!-- main activity -->
+    <string name="activity_main_ip_hits">Host</string>
+    <string name="activity_main_port_hits">Port</string>
+    <string name="activity_main_name_hits">User</string>
+    <string name="activity_main_passwd_hits">Pass</string>
+    <string name="activity_main_try_srv_succeed">"服务器连接成功 %d ms"</string>
+    <string name="activity_main_try_srv_fail">"连接失败 %s "</string>
+
+    <string name="activity_main_start_text">点击连接</string>
+    <string name="activity_main_start_close_text">关闭连接</string>
+
+
+    <!-- 通知-->
+    <string name="notify_channel_description">创建Socks5服务的状态通知</string>
+    <string name="notify_tile_text">Socks5 已连接</string>
+    <string name="notify_context_text">点击可停用Socks5连接</string>
+</resources>

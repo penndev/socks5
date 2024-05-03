@@ -1,5 +1,10 @@
 <resources>
     <string name="app_name">Socks5</string>
+    <string name="title_home">项目主页</string>
+    <string name="title_monitor">监控模式</string>
+
+
+
 
     <!-- Toast -->
     <string name="toast_main_param_error">输入参数错误</string>
