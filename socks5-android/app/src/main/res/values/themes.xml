@@ -1,4 +1,16 @@
 <resources>
+    <color name="theme_background">#FFF3F3F3</color>
+    <color name="theme_background_main">#FFFFFFFF</color>
+    
+    
+    <color name="theme_text">#FF999999</color>
+    <color name="theme_text_main">#FF333333</color>
+    <color name="theme_text_light">#FFCCCCCC</color>
+    <color name="theme_text_link">#FF0D53FF</color>
+    <color name="theme_text_status_succeed">#FF34A853</color>
+    
     <style name="Theme.Socks5" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/theme_background_main</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

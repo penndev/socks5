@@ -4,110 +4,297 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/theme_background"
     android:orientation="vertical"
-    android:paddingHorizontal="8dp"
     tools:context=".MainActivity">
+
+    <FrameLayout
+        android:id="@+id/activity_setting_bar"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:paddingHorizontal="8dp"/>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="none"
+        android:overScrollMode="never">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="6dp"
+            android:orientation="vertical">
+
+            <!--运行状态栏-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/activity_main_background_radius">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:gravity="center"
+                    android:text="192.168.7.1"
+                    android:textSize="16sp"
+                    />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/activity_main_background_radius" >
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/activity_main_background_radius" >
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:gravity="center"
+                            android:text="上传"
+                            android:textSize="18sp"
+                            />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:gravity="center"
+                            android:text="15kbps"
+                            android:textSize="16sp"
+                            />
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_weight="1"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/setting"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/activity_main_background_radius" >
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:gravity="center"
+                            android:text="上传"
+                            android:textSize="18sp"
+                            />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:gravity="center"
+                            android:text="15kbps"
+                            android:textSize="16sp"
+                            />
+                    </LinearLayout>
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:gravity="center"
+                    android:text="192.168.7.1:10800"
+                    android:textSize="16sp"
+                    />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="20dp"
+                    android:gravity="center"
+                    android:text="已连接:30分钟"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="20dp"
+                    />
+            </LinearLayout>
+
+            <!--节点选择栏-->
+            <FrameLayout
+                android:id="@+id/activity_node_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <!--应用选择栏-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="20dp"
+                android:gravity="center_vertical"
+                android:orientation="vertical"
+                android:background="@drawable/activity_main_background_radius">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                <ImageView
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+                    android:src="@drawable/apps" />
+                <TextView
+                    android:gravity="center"
+                    android:layout_marginHorizontal="8dp"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:textSize="14sp"
+                    android:textColor="@color/theme_text_light"
+                    android:text="@string/app_mode" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textColor="@color/theme_text_main"
+                    android:text="全局模式" />
+                </LinearLayout>
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/theme_text_light" />
+                <LinearLayout
+                    android:layout_marginTop="20dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+                    <ScrollView
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="20sp"
+                                android:textColor="@color/theme_text_light"
+                                android:text="请添加应用" />
+                        </LinearLayout>
+                    </ScrollView>
+                    <ImageView
+                        android:layout_width="25dp"
+                        android:layout_height="25dp"
+                        android:src="@drawable/more" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!--废弃哈-->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginRight="20dp"
+                android:layout_marginTop="120dp"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:background="@drawable/activity_main_input_bg">
+
+                    <EditText
+                        android:id="@+id/input_host"
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:layout_weight="4"
+                        android:hint="@string/activity_main_ip_hits"
+                        android:paddingStart="6dp"
+                        android:background="@drawable/activity_main_input_bg"
+                        />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=":"
+                        android:gravity="center_vertical"/>
+
+                    <EditText
+                        android:id="@+id/input_port"
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:layout_weight="2"
+                        android:inputType="number"
+                        android:background="@drawable/activity_main_input_bg"
+                        android:hint="@string/activity_main_port_hits"/>
+                    <ImageButton
+                        android:id="@+id/handle_load_info"
+                        android:layout_width="0dp"
+                        android:layout_height="45dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/activity_main_input_bg"
+                        android:src="@drawable/activity_main_reload"
+                        />
+
+                </LinearLayout>
+                <TextView
+                    android:id="@+id/info_load"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="6dp"
+                    />
+
+                <EditText
+                    android:id="@+id/input_user"
+                    android:inputType="text"
+                    android:layout_width="match_parent"
+                    android:layout_height="45dp"
+                    android:layout_marginTop="15dp"
+                    android:hint="@string/activity_main_name_hits"
+                    android:paddingStart="6dp"
+                    android:background="@drawable/activity_main_input_bg"
+                    ></EditText>
+
+                <EditText
+                    android:id="@+id/input_pass"
+                    android:inputType="textPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="45dp"
+                    android:layout_marginTop="15dp"
+                    android:hint="@string/activity_main_passwd_hits"
+                    android:paddingStart="6dp"
+                    android:background="@drawable/activity_main_input_bg"
+                    ></EditText>
+
+                <LinearLayout
+                    android:id="@+id/handle_action"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="30dp"
+                    android:gravity="center_horizontal">
+
+                    <ImageButton
+                        android:id="@+id/handle_action_icon"
+                        android:layout_width="90dp"
+                        android:layout_height="90dp"
+                        android:src="@drawable/activity_main_start"
+                        android:background="@drawable/activity_main_background_radius"/>
+                </LinearLayout>
+                <TextView
+                    android:id="@+id/handle_action_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    />
+
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
-        android:layout_marginTop="120dp"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="@drawable/activity_main_input_bg">
-
-            <EditText
-                android:id="@+id/input_host"
-                android:layout_width="0dp"
-                android:layout_height="45dp"
-                android:layout_weight="4"
-                android:hint="@string/activity_main_ip_hits"
-                android:paddingStart="6dp"
-                android:background="@drawable/activity_main_input_bg"
-                />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=":"
-                android:gravity="center_vertical"/>
-
-            <EditText
-                android:id="@+id/input_port"
-                android:layout_width="0dp"
-                android:layout_height="45dp"
-                android:layout_weight="2"
-                android:inputType="number"
-                android:background="@drawable/activity_main_input_bg"
-                android:hint="@string/activity_main_port_hits"/>
-            <ImageButton
-                android:id="@+id/handle_load_info"
-                android:layout_width="0dp"
-                android:layout_height="45dp"
-                android:layout_weight="1"
-                android:background="@drawable/activity_main_input_bg"
-                android:src="@drawable/activity_main_reload"
-                />
-
-        </LinearLayout>
-        <TextView
-            android:id="@+id/info_load"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingStart="6dp"
-            />
-
-        <EditText
-            android:id="@+id/input_user"
-            android:inputType="text"
-            android:layout_width="match_parent"
-            android:layout_height="45dp"
-            android:layout_marginTop="15dp"
-            android:hint="@string/activity_main_name_hits"
-            android:paddingStart="6dp"
-            android:background="@drawable/activity_main_input_bg"
-            ></EditText>
-
-        <EditText
-            android:id="@+id/input_pass"
-            android:inputType="textPassword"
-            android:layout_width="match_parent"
-            android:layout_height="45dp"
-            android:layout_marginTop="15dp"
-            android:hint="@string/activity_main_passwd_hits"
-            android:paddingStart="6dp"
-            android:background="@drawable/activity_main_input_bg"
-            ></EditText>
-
-        <LinearLayout
-            android:id="@+id/handle_action"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="30dp"
-            android:gravity="center_horizontal">
-
-            <ImageButton
-                android:id="@+id/handle_action_icon"
-                android:layout_width="90dp"
-                android:layout_height="90dp"
-                android:src="@drawable/activity_main_start"
-                android:background="@drawable/activity_main_start_bg"/>
-        </LinearLayout>
-        <TextView
-            android:id="@+id/handle_action_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:gravity="center"
-            />
-
-
+        android:layout_height="50dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:background="@color/theme_background_main"
+        >
     </LinearLayout>
 
 </androidx.appcompat.widget.LinearLayoutCompat>

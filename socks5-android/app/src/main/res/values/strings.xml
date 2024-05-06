@@ -1,9 +1,11 @@
 <resources>
     <string name="app_name">Socks5</string>
+
     <string name="title_home">项目主页</string>
     <string name="title_monitor">监控模式</string>
 
-
+    <string name="node">节点</string>
+    <string name="app_mode">应用模式</string>
 
 
     <!-- Toast -->
@@ -31,4 +33,17 @@
     <string name="notify_channel_description">创建Socks5服务的状态通知</string>
     <string name="notify_tile_text">Socks5 已连接</string>
     <string name="notify_context_text">点击可停用Socks5连接</string>
+    <!-- Preference Titles -->
+	<string name="messages_header">Messages</string>
+	<string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+	<string name="signature_title">Your signature</string>
+	<string name="reply_title">Default reply action</string>
+
+    <!-- Sync Preferences -->
+	<string name="sync_title">Sync email periodically</string>
+	<string name="attachment_title">Download incoming attachments</string>
+	<string name="attachment_summary_on">Automatically download attachments for incoming emails</string>
+	<string name="attachment_summary_off">Only download attachments when manually requested</string>
 </resources>

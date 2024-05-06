@@ -16,6 +16,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import com.penndev.socks5.databinding.ActivityMainBinding
 import com.penndev.socks5.service.Socks5Service
+import com.penndev.socks5.ui.NodeFragment
+import com.penndev.socks5.ui.SettingFragment
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -25,25 +27,24 @@ import java.io.OutputStream
 import java.net.InetSocketAddress
 import java.net.Socket
 
+
 class MainActivity : AppCompatActivity() {
-    // xml UI 实例
+
     private lateinit var binding: ActivityMainBinding
 
-    // 表单数据持久化
-    private lateinit var sharedPreferences: SharedPreferences
-
-    private val activityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            onStartSocks5Service()
-        }else{
-            Toast.makeText(this, R.string.toast_main_reject, Toast.LENGTH_LONG).show()
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+
         binding = ActivityMainBinding.inflate(layoutInflater)
+        super.onCreate(savedInstanceState)
         setContentView(binding.root)
+
+        //initUV
+        supportFragmentManager
+            .beginTransaction()
+            .replace(binding.activitySettingBar.id, SettingFragment())
+            .replace(binding.activityNodeBar.id, NodeFragment())
+            .commit()
+
         //设置各种初始化
         sharedPreferences = getSharedPreferences(packageName, Context.MODE_PRIVATE)
         binding.inputHost.setText(sharedPreferences.getString("inputHost", ""))
@@ -63,7 +64,25 @@ class MainActivity : AppCompatActivity() {
         }
         Socks5Service.onStatus = onStatus()
         createNotificationChannel()
+
+
+
+
+
     }
+
+    // 表单数据持久化
+    private lateinit var sharedPreferences: SharedPreferences
+
+    private val activityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            onStartSocks5Service()
+        }else{
+            Toast.makeText(this, R.string.toast_main_reject, Toast.LENGTH_LONG).show()
+        }
+    }
+
+
 
     // 绑定UI和Socks5Service状态
     private fun onStatus(): Socks5Service.OnStatus {
