@@ -31,10 +31,13 @@ import java.net.Socket
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var bindingNode: NodeFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
+        bindingNode = NodeFragment()
+
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
@@ -42,37 +45,10 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager
             .beginTransaction()
             .replace(binding.activitySettingBar.id, SettingFragment())
-            .replace(binding.activityNodeBar.id, NodeFragment())
+            .replace(binding.activityNodeBar.id, bindingNode)
             .commit()
 
-        //设置各种初始化
-        sharedPreferences = getSharedPreferences(packageName, Context.MODE_PRIVATE)
-        binding.inputHost.setText(sharedPreferences.getString("inputHost", ""))
-        binding.inputPort.setText(sharedPreferences.getString("inputPortStr", ""))
-        binding.inputUser.setText(sharedPreferences.getString("inputUser", ""))
-        binding.inputPass.setText(sharedPreferences.getString("inputPass", ""))
-        binding.handleActionIcon.setOnClickListener {
-            if (Socks5Service.status) onStopSocks5Service() else onStartSocks5Service()
-        }
-        binding.handleLoadInfo.setOnClickListener {
-            CoroutineScope(Dispatchers.IO).launch {
-                val message = onCheckSocks5RTT()
-                withContext(Dispatchers.Main) {
-                    binding.infoLoad.text = message
-                }
-            }
-        }
-        Socks5Service.onStatus = onStatus()
-        createNotificationChannel()
-
-
-
-
-
     }
-
-    // 表单数据持久化
-    private lateinit var sharedPreferences: SharedPreferences
 
     private val activityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -85,38 +61,38 @@ class MainActivity : AppCompatActivity() {
 
 
     // 绑定UI和Socks5Service状态
-    private fun onStatus(): Socks5Service.OnStatus {
-        // 初始化UI状态
-        fun startUI() {
-            binding.handleActionIcon.setColorFilter(Color.parseColor("#000000"))
-            binding.handleActionText.setText(R.string.activity_main_start_close_text)
-        }
-
-        fun closeUI() {
-            binding.handleActionIcon.setColorFilter(Color.parseColor("#888888"))
-            binding.handleActionText.setText(R.string.activity_main_start_text)
-        }
-        if (Socks5Service.status) startUI() else closeUI()
-        return object : Socks5Service.OnStatus {
-            override fun start() {
-                super.start()
-                startUI()
-                // 保存表单数据
-                sharedPreferences.edit {
-                    putString("inputHost", binding.inputHost.text.toString())
-                    putString("inputPortStr", binding.inputPort.text.toString())
-                    putString("inputUser", binding.inputUser.text.toString())
-                    putString("inputPass", binding.inputPass.text.toString())
-                    apply()
-                }
-            }
-
-            override fun close() {
-                super.close()
-                closeUI()
-            }
-        }
-    }
+//    private fun onStatus(): Socks5Service.OnStatus {
+//        // 初始化UI状态
+//        fun startUI() {
+////            binding.handleActionIcon.setColorFilter(Color.parseColor("#000000"))
+////            binding.handleActionText.setText(R.string.activity_main_start_close_text)
+//        }
+//
+//        fun closeUI() {
+////            binding.handleActionIcon.setColorFilter(Color.parseColor("#888888"))
+////            binding.handleActionText.setText(R.string.activity_main_start_text)
+//        }
+//        if (Socks5Service.status) startUI() else closeUI()
+//        return object : Socks5Service.OnStatus {
+//            override fun start() {
+//                super.start()
+//                startUI()
+//                // 保存表单数据
+////                sharedPreferences.edit {
+////                    putString("inputHost", binding.inputHost.text.toString())
+////                    putString("inputPortStr", binding.inputPort.text.toString())
+////                    putString("inputUser", binding.inputUser.text.toString())
+////                    putString("inputPass", binding.inputPass.text.toString())
+////                    apply()
+////                }
+//            }
+//
+//            override fun close() {
+//                super.close()
+//                closeUI()
+//            }
+//        }
+//    }
 
     // 尽快创建通知通道。
     private fun createNotificationChannel() {
@@ -146,54 +122,25 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val inputHost = binding.inputHost.text.toString()
-        val inputPortStr = binding.inputPort.text.toString()
-        val inputUser = binding.inputUser.text.toString()
-        val inputPass = binding.inputPass.text.toString()
-        if (inputHost == "" || inputPortStr == "") {
-            Toast.makeText(this, getString(R.string.toast_main_param_error), Toast.LENGTH_LONG).show()
-            return
-        }
-        val inputPort = inputPortStr.toInt()
+//        val inputHost = binding.inputHost.text.toString()
+//        val inputPortStr = binding.inputPort.text.toString()
+//        val inputUser = binding.inputUser.text.toString()
+//        val inputPass = binding.inputPass.text.toString()
+//        if (inputHost == "" || inputPortStr == "") {
+//            Toast.makeText(this, getString(R.string.toast_main_param_error), Toast.LENGTH_LONG).show()
+//            return
+//        }
+//        val inputPort = inputPortStr.toInt()
 
         val bundle = Bundle().apply {
-            putString("host", inputHost)
-            putInt("port", inputPort)
-            putString("user", inputUser)
-            putString("pass", inputPass)
+//            putString("host", inputHost)
+//            putInt("port", inputPort)
+//            putString("user", inputUser)
+//            putString("pass", inputPass)
         }
         startService(Intent(this, Socks5Service::class.java).putExtras(bundle))
     }
 
-    // socks5 探测登录方式
-    private fun onCheckSocks5RTT(): String {
-        var msg: String
-        try {
-            msg = Socket().use { socket ->
-                val host: String = binding.inputHost.text.toString()
-                val port: Int = binding.inputPort.text.toString().toInt()
-                val timeout = 10000
-                socket.connect(InetSocketAddress(host, port), timeout)
-                socket.soTimeout = timeout
-                val outputStream: OutputStream = socket.getOutputStream()
-                val inputStream: InputStream = socket.getInputStream()
 
-                val startTime = System.currentTimeMillis()
-                outputStream.write(byteArrayOf(0x05, 0x01, 0x00)); outputStream.flush() // 无密码探测
 
-                val packet = ByteArray(2)
-                val bytesRead = inputStream.read(packet)
-                val endTime = System.currentTimeMillis()
-
-                if (bytesRead == 2 && packet[0].toInt() == 0x05) {
-                    getString(R.string.activity_main_try_srv_succeed, endTime - startTime)
-                } else {
-                    getString(R.string.activity_main_try_srv_fail, packet.joinToString(" |B"))
-                }
-            }
-        } catch (e: Exception) {
-            msg =  getString(R.string.activity_main_try_srv_fail, e.message)
-        }
-        return msg
-    }
 }

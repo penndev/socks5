@@ -8,7 +8,7 @@
     android:paddingVertical="20dp"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:background="@drawable/activity_main_background_radius">
+    android:background="@drawable/main_radius">
     <ImageView
         android:layout_width="25dp"
         android:layout_height="25dp"
@@ -22,19 +22,21 @@
         android:textColor="@color/theme_text_light"
         android:text="@string/node" />
     <TextView
+        android:id="@+id/current_node_host"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textSize="16sp"
         android:textColor="@color/theme_text_link"
-        android:text="192.168.0.1:1080" />
+        android:text="@string/node_current_host" />
     <TextView
+        android:id="@+id/current_node_speed"
         android:layout_width="0dp"
         android:layout_weight="2"
         android:gravity="center"
         android:layout_height="wrap_content"
         android:textSize="14sp"
         android:textColor="@color/theme_text_status_succeed"
-        android:text="100ms" />
+        android:text="" />
     <ImageView
         android:layout_width="20dp"
         android:layout_height="20dp"
