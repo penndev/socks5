@@ -14,13 +14,13 @@
         android:layout_height="25dp"
         android:src="@drawable/internet" />
     <TextView
-        android:layout_width="0dp"
-        android:layout_weight="1"
         android:gravity="center"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="3dp"
         android:textSize="14sp"
         android:textColor="@color/theme_text_light"
-        android:text="@string/node" />
+        android:text="@string/node_hint" />
     <TextView
         android:id="@+id/current_node_host"
         android:layout_width="wrap_content"
@@ -31,12 +31,11 @@
     <TextView
         android:id="@+id/current_node_speed"
         android:layout_width="0dp"
-        android:layout_weight="2"
+        android:layout_weight="1"
         android:gravity="center"
         android:layout_height="wrap_content"
         android:textSize="14sp"
-        android:textColor="@color/theme_text_status_succeed"
-        android:text="" />
+        android:textColor="@color/theme_text_status_succeed" />
     <ImageView
         android:layout_width="20dp"
         android:layout_height="20dp"

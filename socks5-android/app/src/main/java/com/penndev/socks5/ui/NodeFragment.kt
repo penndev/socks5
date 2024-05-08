@@ -72,6 +72,10 @@ class NodeFragment : Fragment() {
             setNodeSpeed()
         }
         binding.root.setOnClickListener{
+            if (Host != null) bottomSheetView.findViewById<EditText>(R.id.input_host)?.setText(Host)
+            if (Port != null) bottomSheetView.findViewById<EditText>(R.id.input_port)?.setText(Port)
+            if (user != null) bottomSheetView.findViewById<EditText>(R.id.input_user)?.setText(user)
+            if (pass != null) bottomSheetView.findViewById<EditText>(R.id.input_pass)?.setText(pass)
             bottomSheetDialog.show()
         }
         setNodeSpeed()

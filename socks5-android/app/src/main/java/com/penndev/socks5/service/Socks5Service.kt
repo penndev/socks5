@@ -26,7 +26,7 @@ class Socks5Service : VpnService() {
             status = true
         }
 
-        fun close() {
+        fun stop() {
             status = false
         }
     }
@@ -151,7 +151,7 @@ class Socks5Service : VpnService() {
     override fun onDestroy() {
         job?.cancel()
         tun?.close()
-        onStatus.close()
+        onStatus.stop()
         stopForeground(true)
         super.onDestroy()
     }
@@ -161,7 +161,7 @@ class Socks5Service : VpnService() {
     }
 
     //通知
-    @SuppressLint("UnspecifiedImmutableFlag")
+    @SuppressLint("UnspecifiedImmutableFlag", "ForegroundServiceType")
     private fun setupNotifyForeground() {
         val intent = Intent(this, MainActivity::class.java)
         intent.action = Intent.ACTION_MAIN
@@ -179,4 +179,3 @@ class Socks5Service : VpnService() {
         startForeground(notifyID, notificationBuilder.build())
     }
 }
-
