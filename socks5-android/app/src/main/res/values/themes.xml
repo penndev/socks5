@@ -10,8 +10,8 @@
     <color name="theme_text_link">#FF0d53ff</color>
     <color name="theme_text_status_succeed">#FF34A853</color>
     
-    <style name="Theme.Socks5" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="android:statusBarColor">@color/theme_background_main</item>
+    <style name="Theme.Socks5" parent="Theme.AppCompat.Light">
+        <item name="android:statusBarColor">@color/white</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

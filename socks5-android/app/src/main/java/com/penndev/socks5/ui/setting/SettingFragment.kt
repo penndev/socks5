@@ -1,4 +1,4 @@
-package com.penndev.socks5.ui
+package com.penndev.socks5.ui.setting
 
 import android.os.Bundle
 import android.view.LayoutInflater

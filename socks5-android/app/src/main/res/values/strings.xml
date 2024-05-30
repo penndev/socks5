@@ -1,28 +1,34 @@
 <resources>
-    <string name="app_name">Socks5</string>
-    <string name="app_mode">应用模式</string>
-
-    <string name="node_hint">当前节点</string>
-    <string name="node_add">存储节点</string>
-    <string name="node_current_host">请点击输入节点信息</string>
-    <string name="node_input_host_hint">Host</string>
-    <string name="node_input_port_hint">Port</string>
-    <string name="node_input_user_hint">User</string>
-    <string name="node_input_pass_hint">Pass</string>
-
-    <!-- Toast -->
-    <string name="toast_main_param_error">输入参数错误</string>
-    <string name="toast_main_reject">您拒绝了VPN请求</string>
-
-    <string name="toast_service_tun_null">"启动tun失败"</string>
-    <string name="toast_service_param_error">"参数错误"</string>
-    <string name="toast_service_host_error">"主机错误"</string>
-    <string name="toast_service_port_error">"端口错误"</string>
-    <string name="toast_service_always_run">"Socks5已经是启动状态"</string>
-
-    <!-- 通知-->
-    <string name="notify_channel_description">创建Socks5服务的状态通知</string>
-    <string name="notify_tile_text">Socks5 已连接</string>
-    <string name="notify_context_text">点击可停用Socks5连接</string>
+	<string name="app_name">Socks5</string>
+	<string name="app_mode">应用模式</string>
+	
+	<string name="menu_home">项目主页</string>
+	<string name="menu_setting">应用设置</string>
+	
+	
+	<string name="node_hint">当前节点</string>
+	<string name="node_add">存储节点</string>
+	<string name="node_current_host">请点击输入节点信息</string>
+	<string name="node_input_host_hint">Host</string>
+	<string name="node_input_port_hint">Port</string>
+	<string name="node_input_user_hint">User</string>
+	<string name="node_input_pass_hint">Pass</string>
+	
+	<!-- Toast -->
+	<string name="toast_main_param_error">输入参数错误</string>
+	<string name="toast_main_reject">您拒绝了VPN请求</string>
+	
+	<string name="toast_service_tun_null">"启动tun失败"</string>
+	<string name="toast_service_param_error">"参数错误"</string>
+	<string name="toast_service_host_error">"主机错误"</string>
+	<string name="toast_service_port_error">"端口错误"</string>
+	<string name="toast_service_always_run">"Socks5已经是启动状态"</string>
+	
+	<!-- 通知-->
+	<string name="notify_channel_description">创建Socks5服务的状态通知</string>
+	<string name="notify_tile_text">Socks5 已连接</string>
+	<string name="notify_context_text">点击可停用Socks5连接</string>
+	<!-- TODO: Remove or change this placeholder text -->
+	<string name="hello_blank_fragment">Hello blank fragment1123123</string>
 
 </resources>
