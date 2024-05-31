@@ -10,8 +10,22 @@
     <color name="theme_text_link">#FF0d53ff</color>
     <color name="theme_text_status_succeed">#FF34A853</color>
     
-    <style name="Theme.Socks5" parent="Theme.AppCompat.Light">
+    <style name="Theme.Socks5" parent="Theme.AppCompat.Light.NoActionBar">
+        <!--处理顶部状态栏-->
         <item name="android:statusBarColor">@color/white</item>
         <item name="android:windowLightStatusBar">true</item>
+        <!-- 设置主 -->
+        <item name="colorPrimary">@color/black</item>
+        <item name="colorPrimaryVariant">@color/black_51</item>
+        <item name="colorOnPrimary">@color/black_153</item>
+        
+        <!--menu-->
+        <item name="itemIconTint">@color/nav_item_color</item>
+        <item name="itemTextColor">@color/nav_item_color</item>
+        <item name="itemIconSize">@dimen/design_bottom_navigation_icon_size</item>
+        <!--<item name="itemTextAppearance">@dimen/design_bottom_navigation_active_text_size</item>-->
+        <!--<item name="itemTextAppearanceActive">@dimen/design_bottom_navigation_active_text_size</item>-->
+
     </style>
+    
 </resources>
