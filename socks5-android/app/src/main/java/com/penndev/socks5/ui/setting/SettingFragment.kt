@@ -21,11 +21,6 @@ class SettingFragment : Fragment() {
     }
 
     private fun initView() {
-        val bottomSheetDialog = BottomSheetDialog(requireContext())
-        val bottomSheetView: View = layoutInflater.inflate(R.layout.dialog_setting, null)
-        bottomSheetDialog.setContentView(bottomSheetView)
-        binding.openDialogSetting.setOnClickListener{
-            bottomSheetDialog.show()
-        }
+
     }
 }

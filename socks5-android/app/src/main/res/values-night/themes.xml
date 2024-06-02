@@ -1,17 +1,14 @@
 <resources>
-    <color name="theme_background">#FF333333</color>
-    <color name="theme_background_main">#FF000000</color>
+    <style name="Theme.Socks5" parent="Theme.AppCompat">
 
-    <color name="theme_icon">#FFFFFFFF</color>
+        <item name="colorPrimary">@color/black</item>
 
-    <color name="theme_text">#FFFFFFFF</color>
-    <color name="theme_text_main">#FFFFFFFF</color>
-    <color name="theme_text_light">#FFCCCCCC</color>
-    <color name="theme_text_link">#FF0d53ff</color>
-    <color name="theme_text_status_succeed">#FF34A853</color>
-
-    <style name="Theme.Socks5" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:statusBarColor">@color/theme_background_main</item>
+        <!--状态栏-->
+        <item name="android:statusBarColor">@color/black</item>
         <item name="android:windowLightStatusBar">false</item>
+        <!--默认背景栏-->
+        <item name="android:windowBackground">@color/black_33</item>
+
     </style>
+
 </resources>

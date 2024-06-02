@@ -1,7 +1,10 @@
 <resources>
     <item name="ic_launcher" type="mipmap">@mipmap/ic_launcher</item>
-    <style name="BottomNavigationViewStyle" parent="Widget.MaterialComponents.BottomNavigationView">
-        <item name="labelVisibilityMode">labeled</item>
+    <style name="Socks5BottomNavigationView">
+        <item name="itemIconTint">@color/nav_item_color</item>
+        <item name="itemTextColor">@color/nav_item_color</item>
     </style>
+
+
 </resources>
 

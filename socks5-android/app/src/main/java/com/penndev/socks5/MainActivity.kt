@@ -21,14 +21,15 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val navView = binding.navView
-        val navController = findNavController(R.id.nav_host_fragment_activity_main)
-        navView.setupWithNavController(navController)
-
-        initView()
+        //val navView = binding.navView
+        //val navController = findNavController(R.id.nav_host_fragment_activity_main)
+        //navView.setupWithNavController(navController)
+        //
+        //initView()
     }
 
     private fun initView() {
+        setTitle(R.string.app_name)
         createNotificationChannel()
     }
 

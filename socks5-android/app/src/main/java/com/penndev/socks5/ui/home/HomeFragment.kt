@@ -18,7 +18,6 @@ class HomeFragment : Fragment() {
     }
 
     private fun initView() {
-
     }
 
 }

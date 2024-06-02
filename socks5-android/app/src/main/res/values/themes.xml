@@ -1,31 +1,14 @@
 <resources>
-    <color name="theme_background">#FFF3F3F3</color>
-    <color name="theme_background_main">#FFFFFFFF</color>
+    <style name="Theme.Socks5" parent="Theme.AppCompat.Light">
 
-    <color name="theme_icon">#FF000000</color>
-    
-    <color name="theme_text">#FF999999</color>
-    <color name="theme_text_main">#FF333333</color>
-    <color name="theme_text_light">#FFCCCCCC</color>
-    <color name="theme_text_link">#FF0d53ff</color>
-    <color name="theme_text_status_succeed">#FF34A853</color>
-    
-    <style name="Theme.Socks5" parent="Theme.AppCompat.Light.NoActionBar">
-        <!--处理顶部状态栏-->
+        <item name="colorPrimary">@color/white</item>
+
+        <!--状态栏-->
         <item name="android:statusBarColor">@color/white</item>
         <item name="android:windowLightStatusBar">true</item>
-        <!-- 设置主 -->
-        <item name="colorPrimary">@color/black</item>
-        <item name="colorPrimaryVariant">@color/black_51</item>
-        <item name="colorOnPrimary">@color/black_153</item>
-        
-        <!--menu-->
-        <item name="itemIconTint">@color/nav_item_color</item>
-        <item name="itemTextColor">@color/nav_item_color</item>
-        <item name="itemIconSize">@dimen/design_bottom_navigation_icon_size</item>
-        <!--<item name="itemTextAppearance">@dimen/design_bottom_navigation_active_text_size</item>-->
-        <!--<item name="itemTextAppearanceActive">@dimen/design_bottom_navigation_active_text_size</item>-->
+        <!--默认背景栏-->
+        <item name="android:windowBackground">@color/white_f2</item>
 
     </style>
-    
+
 </resources>
