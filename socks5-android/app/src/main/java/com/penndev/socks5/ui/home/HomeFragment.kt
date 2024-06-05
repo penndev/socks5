@@ -6,15 +6,13 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.VpnService
 import android.os.Bundle
-import android.util.TypedValue
-import android.view.Gravity
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import com.google.android.material.snackbar.Snackbar
+import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.Fragment
 import com.penndev.socks5.R
 import com.penndev.socks5.databinding.FragmentHomeBinding
 import com.penndev.socks5.service.Socks5Service
@@ -61,13 +59,17 @@ class HomeFragment : Fragment() {
             val port = sharedPreferences?.getInt("port", 1080)
             var user = sharedPreferences?.getString("user", null)
             var pass = sharedPreferences?.getString("pass", null)
+            // 做测速
+
             binding.mainAction.setOnClickListener {
                 if (Socks5Service.status) onStopSocks5Service() else onStartSocks5Service()
             }
         }else{
             binding.mainAction.setOnClickListener {
-                var snackbar = Snackbar.make(binding.root.rootView, R.string.home_srv_no_node, Snackbar.LENGTH_LONG)
-                snackbar.show()
+
+                var alert = AlertDialog.Builder(requireContext())
+                alert.setMessage(R.string.home_node_current_host)
+                alert.show()
             }
         }
 
