@@ -6,10 +6,11 @@ import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.findNavController
-import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.penndev.socks5.databinding.ActivityMainBinding
 import com.penndev.socks5.service.Socks5Service
+import androidx.navigation.findNavController
+import androidx.navigation.ui.setupWithNavController
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,15 +22,15 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        //val navView = binding.navView
-        //val navController = findNavController(R.id.nav_host_fragment_activity_main)
-        //navView.setupWithNavController(navController)
-        //
-        //initView()
+        val navView: BottomNavigationView = binding.navView
+
+        val navController = findNavController(R.id.nav_host_fragment_activity_main)
+        navView.setupWithNavController(navController)
+
+        initView()
     }
 
     private fun initView() {
-        setTitle(R.string.app_name)
         createNotificationChannel()
     }
 
