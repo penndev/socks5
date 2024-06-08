@@ -4,12 +4,9 @@ package mobileStack
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/penndev/socks5/core/fdtun"
-	"github.com/penndev/socks5/core/socks5"
 	"github.com/penndev/socks5/core/stack"
-	"github.com/penndev/socks5/core/tunnel"
 )
 
 func Version() string {
@@ -23,13 +20,17 @@ type StackHandle interface {
 }
 
 type Stack struct {
-	TunFd   int
-	MTU     int
-	User    string
-	Pass    string
+	TunFd int //tun设置代理
+	MTU   int //mtu掩码
+
 	SrvHost string
 	SrvPort int
-	Handle  StackHandle
+	User    string
+	Pass    string
+
+	TcpEnable bool        //是否启用tcp代理
+	UdpEnable bool        //是否启用udp代理
+	Handle    StackHandle //各种事件回调
 }
 
 func (s *Stack) Run() (bool, error) {
@@ -49,14 +50,13 @@ func (s *Stack) Run() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	srvAddr := fmt.Sprintf("%s:%d", s.SrvHost, s.SrvPort)
 
 	stackOption := stack.Option{
 		EndPoint: dev,
 	}
 
-	stackOption.HandleTCP = HandleSocks5TCP()
-	stackOption.HandlerUDP = HandleSocks5UDP()
+	stackOption.HandleTCP = HandleSocks5TCP(s)
+	stackOption.HandlerUDP = HandleSocks5UDP(s)
 	stack.New(stackOption)
 	return true, nil
 }
