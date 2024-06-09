@@ -1,67 +1,74 @@
 package com.penndev.socks5.ui.home
 
-import android.R
-import android.content.Context
-import android.content.SharedPreferences
+
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.edit
+import com.penndev.socks5.R
 import com.penndev.socks5.databinding.ActivityHomeNodeBinding
+import com.penndev.socks5.databinding.NodeData
 
 
 class HomeNodeActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityHomeNodeBinding
 
-    private var sharedPreferences: SharedPreferences? = null
-        get() {
-            return getSharedPreferences(packageName, Context.MODE_PRIVATE)
-        }
+    private lateinit var nodedata: NodeData
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityHomeNodeBinding.inflate(layoutInflater)
+        nodedata = NodeData(this)
         setContentView(binding.root)
         initView()
     }
 
     private fun initView() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        // set old value.
+        binding.inputType.setSelection(nodedata.type!!)
+        binding.inputHost.setText(nodedata.host)
+        nodedata.port?.let{if(it > 0)binding.inputPort.setText(it.toString())}
+        binding.inputUser.setText(nodedata.user)
+        binding.inputPass.setText(nodedata.pass)
+        // set action
         binding.inputPassShow.setOnCheckedChangeListener { _, isChecked ->
             binding.inputPass.inputType = if (isChecked) InputType.TYPE_CLASS_TEXT
             else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
+        Toast.makeText(this,nodedata.typeSelected, Toast.LENGTH_LONG).show()
         binding.inputSubmit.setOnClickListener {
-            var host = binding.inputHost.text.toString()
-            var port = binding.inputPort.text.toString().toInt()
-            var user = binding.inputUser.text.toString()
-            var pass = binding.inputPass.text.toString()
-            sharedPreferences?.edit {
-                putString("host", host)
-                putInt("port", port)
-                putString("user", user)
-                putString("pass", pass)
-                apply()
+            nodedata.type = binding.inputType.selectedItemPosition
+            nodedata.host = binding.inputHost.text.toString()
+            nodedata.port = binding.inputPort.text.toString().toIntOrNull()
+            nodedata.user = binding.inputUser.text.toString()
+            nodedata.pass = binding.inputPass.text.toString()
+            if(nodedata.host == null || nodedata.host == ""){
+                binding.inputHost.requestFocus()
+                binding.inputHost.error = getString(R.string.home_node_input_not_null)
+                return@setOnClickListener
+            }
+            if(nodedata.port == 0){
+                binding.inputPort.requestFocus()
+                binding.inputPort.error = getString(R.string.home_node_input_not_null)
+                return@setOnClickListener
             }
             finish()
         }
-        binding.inputHost.setText(sharedPreferences?.getString("host", ""))
-        val port = sharedPreferences?.getInt("port", 0)
-        if (port != null && port > 0) binding.inputPort.setText(port.toString())
-        binding.inputUser.setText(sharedPreferences?.getString("user", ""))
-        binding.inputPass.setText(sharedPreferences?.getString("pass", ""))
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.home -> {
+            android.R.id.home -> {
                 finish()
                 true
             }
-            else -> super.onOptionsItemSelected(item)
+            else ->  {
+                super.onOptionsItemSelected(item)
+            }
         }
     }
 

@@ -8,6 +8,13 @@
     android:paddingTop="20dp"
     tools:context=".ui.home.HomeNodeActivity">
 
+    <Spinner
+        style="@style/Socks5NodeInput"
+        android:id="@+id/input_type"
+        android:layout_marginTop="1dp"
+        android:entries="@array/nodeInputType"
+        />
+
     <EditText
         style="@style/Socks5NodeInput"
         android:id="@+id/input_host"

@@ -38,6 +38,8 @@ class Socks5Service : VpnService() {
         const val notifyID = 1
         const val notifyChannelID = "com.penndev.socks5.vpnService"
         const val notifyChannelName = "Socks5VpnService"
+        var readByteLen: Long = 0
+        var writeByteLen: Long = 0
     }
 
 
@@ -126,17 +128,19 @@ class Socks5Service : VpnService() {
                 stack.srvPort = servicePort.toLong()
                 stack.user = serviceUser
                 stack.pass = servicePass
-                //stack.handle = object : mobileStack.StackHandle{
-                //    override fun error(err: String?) {
-                //        err?.let { Log.e("error", it) }
-                //    }
-                //    override fun readLen(i: Long) {
-                //        Log.d("readLen", i.toString())
-                //    }
-                //    override fun writeLen(i: Long) {
-                //        Log.d("writeLen", i.toString())
-                //    }
-                //}
+                stack.tcpEnable = false
+                stack.udpEnable = false
+                stack.handle = object : mobileStack.StackHandle{
+                    override fun error(err: String?) {
+                        err?.let { Log.e("go_error", it) }
+                    }
+                    override fun readLen(i: Long) {
+                        writeByteLen += i
+                    }
+                    override fun writeLen(i: Long) {
+                        writeByteLen += i
+                    }
+                }
                 val status = stack.run()
                 if (!status) {
                     delay(200)
@@ -167,7 +171,7 @@ class Socks5Service : VpnService() {
         intent.action = Intent.ACTION_MAIN
         intent.addCategory(Intent.CATEGORY_LAUNCHER)
         val resultPendingIntent = PendingIntent.getActivity(
-            this, 0, intent, 0
+            this, 0, intent, PendingIntent.FLAG_IMMUTABLE
         )
 
         val notificationBuilder = NotificationCompat.Builder(this, notifyChannelID)
