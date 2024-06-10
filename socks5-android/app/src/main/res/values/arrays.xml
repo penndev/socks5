@@ -4,6 +4,5 @@
         <item>@string/home_node_input_type_tcp</item>
         <item>@string/home_node_input_type_udp</item>
         <item>@string/home_node_input_type_all</item>
-        <item>@string/home_node_input_type_local</item>
     </string-array>
 </resources>

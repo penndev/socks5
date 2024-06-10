@@ -33,6 +33,25 @@ class NodeData(context: Context) {
             }
         }
 
+    var typeTcpEnable: Boolean? = false
+        get() {
+            return when(typeSelected) {
+                ctx.getString(R.string.home_node_input_type_tcp) -> true
+                ctx.getString(R.string.home_node_input_type_all) -> true
+                else -> false
+            }
+
+        }
+
+    var typeUdpEnable: Boolean? = false
+        get() {
+            return when(typeSelected) {
+                ctx.getString(R.string.home_node_input_type_udp) -> true
+                ctx.getString(R.string.home_node_input_type_all) -> true
+                else -> false
+            }
+
+        }
 
     var host: String?
         get() = sharedPreferences.getString("inputHost", null)

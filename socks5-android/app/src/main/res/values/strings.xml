@@ -11,10 +11,11 @@
 	<string name="home_node_hint">节点:</string>
     <string name="home_node_add">存储节点</string>
     <string name="home_node_current_host">请点击输入节点信息</string>
+    <!--代理模式选择列表-->
     <string name="home_node_input_type_tcp">仅代理TCP</string>
     <string name="home_node_input_type_udp">仅代理UDP</string>
     <string name="home_node_input_type_all">全局代理模式</string>
-    <string name="home_node_input_type_local">本地监控模式（无代理）</string>
+    <!--其他信息输入框-->
     <string name="home_node_input_host_hint">输入服务器地址</string>
     <string name="home_node_input_port_hint">输入服务器端口</string>
     <string name="home_node_input_user_hint">输入用户名（选填）</string>

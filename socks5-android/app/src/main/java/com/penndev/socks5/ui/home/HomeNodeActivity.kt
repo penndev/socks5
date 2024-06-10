@@ -39,7 +39,7 @@ class HomeNodeActivity : AppCompatActivity() {
             binding.inputPass.inputType = if (isChecked) InputType.TYPE_CLASS_TEXT
             else InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
-        Toast.makeText(this,nodedata.typeSelected, Toast.LENGTH_LONG).show()
+        //Toast.makeText(this,"${nodedata.typeSelected} |tcp-> ${nodedata.typeTcpEnable} |udp-> ${nodedata.typeUdpEnable}", Toast.LENGTH_LONG).show()
         binding.inputSubmit.setOnClickListener {
             nodedata.type = binding.inputType.selectedItemPosition
             nodedata.host = binding.inputHost.text.toString()

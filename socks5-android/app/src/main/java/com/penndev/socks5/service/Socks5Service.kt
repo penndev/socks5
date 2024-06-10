@@ -81,7 +81,7 @@ class Socks5Service : VpnService() {
         if (intent == null) {
             return getString(R.string.toast_service_param_error)
         }
-        if (intent.getBooleanExtra("close", false)) {
+        if (intent.getBooleanExtra("status", false)) {
             throw Socks5ServiceCloseException("Closed")
         }
         if (status) {

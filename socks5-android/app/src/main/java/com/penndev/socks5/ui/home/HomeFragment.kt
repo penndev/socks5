@@ -109,7 +109,7 @@ class HomeFragment : Fragment() {
 
     private fun onStopSocks5Service() {
         val intent = Intent(activity, Socks5Service::class.java).apply {
-            putExtra("close", true)
+            putExtra("status", true)
         }
         activity?.startService(intent)
     }
@@ -139,13 +139,9 @@ class HomeFragment : Fragment() {
             return
         }
 
-        val bundle = Bundle().apply {
-            putString("host", nodedata.host)
-            putInt("port", nodedata.port!!)
-            putString("user", nodedata.user)
-            putString("pass", nodedata.pass)
-        }
-        activity?.startService(Intent(activity, Socks5Service::class.java).putExtras(bundle))
+        activity?.startService(Intent(activity, Socks5Service::class.java).apply {
+            putExtra("status", false)
+        })
     }
 
 }
