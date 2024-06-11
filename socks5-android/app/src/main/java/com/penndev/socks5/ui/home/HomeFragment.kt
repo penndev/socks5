@@ -25,11 +25,11 @@ import java.net.Socket
 class HomeFragment : Fragment() {
 
     private lateinit var binding: FragmentHomeBinding
-    private lateinit var nodedata: NodeData
+    private lateinit var nodeData: NodeData
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         binding = FragmentHomeBinding.inflate(inflater, container, false)
-        nodedata = NodeData(requireContext())
+        nodeData = NodeData(requireContext())
         createView()
         return binding.root
     }
@@ -64,10 +64,10 @@ class HomeFragment : Fragment() {
 
     private fun initView() {
         if (Socks5Service.status) onStartUI() else onStopUI()
-        var host = nodedata.host
-        var port = nodedata.port
+        var host = nodeData.host
+        var port = nodeData.port
         if(host != null && port!! > 0){
-            val hoststr = "${nodedata.host}:${nodedata.port}"
+            val hoststr = "${nodeData.host}:${nodeData.port}"
             binding.currentNodeHost.setText(hoststr)
             CoroutineScope(Dispatchers.IO).launch {
                 var ms = hostSocks5RTT(host!!, port!!.toInt())
@@ -126,7 +126,7 @@ class HomeFragment : Fragment() {
 
     // 启动vpn
     private fun onStartSocks5Service() {
-        if(nodedata.host == null || nodedata.host == "") {
+        if(nodeData.host == null || nodeData.host == "") {
             var alert = AlertDialog.Builder(requireContext())
             alert.setMessage(R.string.home_node_current_host)
             alert.show()

@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.penndev.socks5.MainActivity
 import com.penndev.socks5.R
+import com.penndev.socks5.databinding.NodeData
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -42,7 +43,6 @@ class Socks5Service : VpnService() {
         var writeByteLen: Long = 0
     }
 
-
     // tun 设备
     private var tun: ParcelFileDescriptor? = null
 
@@ -50,16 +50,19 @@ class Socks5Service : VpnService() {
     private var job: Job? = null
 
     //远程服务器认证
-    private var serviceHost: String = ""
-    private var servicePort: Int = 0
-    private var serviceUser: String = ""
-    private var servicePass: String = ""
+    //private var serviceHost: String = ""
+    //private var servicePort: Int = 0
+    //private var serviceUser: String = ""
+    //private var servicePass: String = ""
+    private lateinit var nodeData: NodeData
+
     private var tunDNS: String = "8.8.8.8"
     private var tunMtu: Int = 1400
 
     // 启动
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         try {
+            nodeData = NodeData(this)
             val err = setupCommand(intent)
             if (err != null) {
                 Toast.makeText(this, err, Toast.LENGTH_SHORT).show()
@@ -88,48 +91,48 @@ class Socks5Service : VpnService() {
             return getString(R.string.toast_service_always_run)
         }
 
-        serviceHost = intent.getStringExtra("host")!!
-
         try {
-            InetAddress.getByName(serviceHost)
+            InetAddress.getByName(nodeData.host)
         } catch (e: Exception) {
+            Log.e("debug", "nodeData.host ${nodeData.host} err", e)
             return getString(R.string.toast_service_host_error)
         }
 
-        servicePort = intent.getIntExtra("port", 0)
+        val servicePort = nodeData.port!!
         if (servicePort < 1 || servicePort > 65025) {
             return getString(R.string.toast_service_port_error)
         }
-        serviceUser = intent.getStringExtra("user")!!
-        servicePass = intent.getStringExtra("pass")!!
         return null
     }
 
     // 启动VPN
     private fun setupVpnServe() {
         setupNotifyForeground() //启动通知
-        tun = Builder()
+        val tunDevice = Builder()
             .setMtu(tunMtu)
             .addDnsServer(tunDNS)
             .addRoute("0.0.0.0", 0)
             .addAddress("192.168.0.1", 32)
             .addDisallowedApplication(packageName).establish()
-        if (tun == null) {
-            throw Socks5ServiceCloseException(getString(R.string.toast_service_tun_null))
-        }
-        val tunFd = tun!!.fd.toLong()
+            ?: throw Socks5ServiceCloseException(getString(R.string.toast_service_tun_null))
+        tun = tunDevice
 
+        val tunFd = tunDevice.fd.toLong()
         job = GlobalScope.launch {
             try {
                 val stack = mobileStack.Stack()
                 stack.tunFd = tunFd
                 stack.mtu = tunMtu.toLong()
-                stack.srvHost = serviceHost
-                stack.srvPort = servicePort.toLong()
-                stack.user = serviceUser
-                stack.pass = servicePass
-                stack.tcpEnable = false
-                stack.udpEnable = false
+                stack.srvHost = nodeData.host
+                stack.srvPort = nodeData.port!!.toLong()
+                stack.user = nodeData.user
+                stack.pass = nodeData.pass
+                if(nodeData.typeTcpEnable == true) {
+                    stack.tcpEnable = true
+                }
+                if(nodeData.typeUdpEnable == true) {
+                    stack.udpEnable = true
+                }
                 stack.handle = object : mobileStack.StackHandle{
                     override fun error(err: String?) {
                         err?.let { Log.e("go_error", it) }
@@ -138,7 +141,7 @@ class Socks5Service : VpnService() {
                         writeByteLen += i
                     }
                     override fun writeLen(i: Long) {
-                        writeByteLen += i
+                        readByteLen += i
                     }
                 }
                 val status = stack.run()
