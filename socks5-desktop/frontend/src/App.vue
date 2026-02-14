@@ -31,16 +31,13 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { WindowSetSize } from '@wails/runtime'
+import { WindowSetSize, WindowGetSize } from '@wails/runtime'
 
-
+// 主屏应用宽度
 const appWidth = ref(400)
 const selectedServer = ref(null)
-const appMinWidth = 300
+const appMinWidth = 400
 const appMaxWidth = 600
-
-
-
 
 // 调整左右布局宽度拖拽
 const socks5Dragging = ref(false)
@@ -74,9 +71,21 @@ watch(socks5Dragging, (val) => {
 // 是否展示拓展屏
 const extensionVisible = ref(true)
 
-const hanleToggleExtension = () => {
+
+watch(extensionVisible, (newVal) => {
+  if (newVal) {
+    appWidth.value = appMinWidth
+  } else {
+    appWidth.value = Math.max(window.innerWidth, appMinWidth)
+  }
+})
+
+const hanleToggleExtension = async () => {
+  const {h} =await WindowGetSize()
   if (extensionVisible.value && appWidth.value < appMaxWidth) {
-    WindowSetSize(appMaxWidth + 400, window.innerHeight)
+    WindowSetSize(appMaxWidth + 400, h)
+  }else{
+    WindowSetSize(appMinWidth, h)
   }
 }
 
@@ -90,13 +99,6 @@ const onSystemProxyChange = (enabled) => {
   console.log('系统代理:', enabled)
 }
 
-watch(extensionVisible, (newVal) => {
-  if (newVal) {
-    appWidth.value = appMinWidth
-  } else {
-    appWidth.value = Math.max(window.innerWidth, appMinWidth)
-  }
-})
 
 onMounted(() => {
   window.addEventListener('resize', () => {

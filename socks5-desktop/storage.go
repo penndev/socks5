@@ -7,12 +7,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/dgraph-io/badger/v4"
+	bolt "go.etcd.io/bbolt"
 )
+
+const bucketName = "data"
 
 type Storage struct {
 	ctx context.Context
-	db  *badger.DB
+	db  *bolt.DB
 }
 
 // Wails 启动钩子
@@ -30,11 +32,23 @@ func NewStorage() (*Storage, error) {
 		return nil, err
 	}
 
-	dbPath := filepath.Join(upath, "Socks5Desktop")
+	dbDir := filepath.Join(upath, "Socks5Desktop")
+	if err := os.MkdirAll(dbDir, 0700); err != nil {
+		return nil, err
+	}
 
-	opts := badger.DefaultOptions(dbPath).WithLogger(nil)
-	db, err := badger.Open(opts)
+	dbPath := filepath.Join(dbDir, "data.db")
+	db, err := bolt.Open(dbPath, 0600, nil)
 	if err != nil {
+		return nil, err
+	}
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
+		return err
+	})
+	if err != nil {
+		db.Close()
 		return nil, err
 	}
 
@@ -57,8 +71,9 @@ func (s *Storage) Set(key string, value any) error {
 		return err
 	}
 
-	return s.db.Update(func(txn *badger.Txn) error {
-		return txn.Set([]byte(key), data)
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucketName))
+		return b.Put([]byte(key), data)
 	})
 }
 
@@ -73,23 +88,18 @@ func (s *Storage) Get(key string) (any, error) {
 
 	var result any
 
-	err := s.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(key))
-		if err != nil {
-			if errors.Is(err, badger.ErrKeyNotFound) {
-				result = nil
-				return nil
-			}
-			return err
+	err := s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucketName))
+		v := b.Get([]byte(key))
+		if v == nil {
+			result = nil
+			return nil
 		}
 
-		data, err := item.ValueCopy(nil)
-		if err != nil {
-			return err
-		}
+		data := make([]byte, len(v))
+		copy(data, v)
 
 		if err := json.Unmarshal(data, &result); err != nil {
-			// 兼容旧版 gob 格式数据，解析失败时返回空
 			result = nil
 		}
 		return nil
@@ -107,8 +117,9 @@ func (s *Storage) Delete(key string) error {
 		return errors.New("key不能为空")
 	}
 
-	return s.db.Update(func(txn *badger.Txn) error {
-		return txn.Delete([]byte(key))
+	return s.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucketName))
+		return b.Delete([]byte(key))
 	})
 }
 

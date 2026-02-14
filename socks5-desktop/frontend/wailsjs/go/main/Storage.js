@@ -17,3 +17,7 @@ export function Get(arg1) {
 export function Set(arg1, arg2) {
   return window['go']['main']['Storage']['Set'](arg1, arg2);
 }
+
+export function Startup(arg1) {
+  return window['go']['main']['Storage']['Startup'](arg1);
+}
