@@ -249,8 +249,8 @@ onMounted(() => {
 
 <style scoped>
 .socks5-server-card {
+  min-height: 400px;
   flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   border-radius: 14px;
@@ -259,16 +259,12 @@ onMounted(() => {
 
 .socks5-server-card :deep(.ant-card-body) {
   flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .server-list-scroll {
   flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   margin-bottom: 12px;
 }
 
@@ -308,4 +304,4 @@ onMounted(() => {
   font-size: 12px;
   color: #6b7280;
 }
-</style>
+</style> 

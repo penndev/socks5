@@ -141,14 +141,13 @@ onMounted(() => {
 
     .socks5-app-body {
       flex: 1;
-      min-height: 0;
       padding: 16px;
       font-size: 14px;
       color: #374151;
       display: flex;
       flex-direction: column;
       gap: 16px;
-      overflow: hidden;
+      overflow-y: auto;
     }
   }
 
