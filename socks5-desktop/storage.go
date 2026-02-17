@@ -7,24 +7,19 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/wailsapp/wails/v3/pkg/application"
 	bolt "go.etcd.io/bbolt"
 )
 
 const bucketName = "data"
 
 type Storage struct {
-	ctx context.Context
-	db  *bolt.DB
+	db *bolt.DB
 }
 
-// Wails 启动钩子
-func (s *Storage) Startup(ctx context.Context) {
-	s.ctx = ctx
+func (s *Storage) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
+	return nil
 }
-
-//
-// ===== 初始化 =====
-//
 
 func NewStorage() (*Storage, error) {
 	upath, err := os.UserConfigDir()
@@ -52,42 +47,28 @@ func NewStorage() (*Storage, error) {
 		return nil, err
 	}
 
-	return &Storage{
-		db: db,
-	}, nil
+	return &Storage{db: db}, nil
 }
-
-//
-// ========== Set (JS 可调用) ==========
-//
 
 func (s *Storage) Set(key string, value any) error {
 	if key == "" {
 		return errors.New("key不能为空")
 	}
-
 	data, err := json.Marshal(value)
 	if err != nil {
 		return err
 	}
-
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		return b.Put([]byte(key), data)
 	})
 }
 
-//
-// ========== Get (JS 可调用) ==========
-//
-
 func (s *Storage) Get(key string) (any, error) {
 	if key == "" {
 		return nil, errors.New("key不能为空")
 	}
-
 	var result any
-
 	err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		v := b.Get([]byte(key))
@@ -95,37 +76,25 @@ func (s *Storage) Get(key string) (any, error) {
 			result = nil
 			return nil
 		}
-
 		data := make([]byte, len(v))
 		copy(data, v)
-
 		if err := json.Unmarshal(data, &result); err != nil {
 			result = nil
 		}
 		return nil
 	})
-
 	return result, err
 }
-
-//
-// ========== Delete (JS 可调用) ==========
-//
 
 func (s *Storage) Delete(key string) error {
 	if key == "" {
 		return errors.New("key不能为空")
 	}
-
 	return s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		return b.Delete([]byte(key))
 	})
 }
-
-//
-// ========== Close（可选） ==========
-//
 
 func (s *Storage) Close() error {
 	return s.db.Close()

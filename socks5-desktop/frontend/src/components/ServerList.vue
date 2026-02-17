@@ -2,41 +2,41 @@
   <a-card class="socks5-server-card" title="节点列表">
     <div class="server-list-scroll" v-if="servers.length > 0">
       <a-list :data-source="servers" bordered>
-      <template #renderItem="{ item }">
-        <a-list-item
-          :class="{ active: selectedId === item.id }"
-          @click="selectServer(item)"
-        >
-          <template #actions>
-            <a-button type="text" size="small" @click.stop="editServer(item)">
-              <template #icon><EditOutlined /></template>
-            </a-button>
-            <a-popconfirm
-              title="确定要删除该节点吗？"
-              ok-text="删除"
-              cancel-text="取消"
-              ok-type="danger"
-              @confirm="removeServer(item.id)"
-            >
-              <a-button type="text" danger size="small" @click.stop>
-                <template #icon><DeleteOutlined /></template>
+        <template #renderItem="{ item }">
+          <a-list-item
+            :class="{ active: selectedId === item.id }"
+            @click="selectServer(item)"
+          >
+            <template #actions>
+              <a-button type="text" size="small" @click.stop="editServer(item)">
+                <template #icon><EditOutlined /></template>
               </a-button>
-            </a-popconfirm>
-          </template>
-          <a-list-item-meta>
-            <template #title>
-              <span class="server-host">
-                <CheckCircleFilled v-if="selectedId === item.id" class="selected-icon" />
-                {{ item.host }}
-              </span>
+              <a-popconfirm
+                title="确定要删除该节点吗？"
+                ok-text="删除"
+                cancel-text="取消"
+                ok-type="danger"
+                @confirm="removeServer(item.id)"
+              >
+                <a-button type="text" danger size="small" @click.stop>
+                  <template #icon><DeleteOutlined /></template>
+                </a-button>
+              </a-popconfirm>
             </template>
-            <template #description>
-              <span class="server-meta">{{ item.protocol }} | {{ item.username || '无认证' }}</span>
-            </template>
-          </a-list-item-meta>
-        </a-list-item>
-      </template>
-    </a-list>
+            <a-list-item-meta>
+              <template #title>
+                <span class="server-host">
+                  <CheckCircleFilled v-if="selectedId === item.id" class="selected-icon" />
+                  {{ item.host }}
+                </span>
+              </template>
+              <template #description>
+                <span class="server-meta">{{ item.protocol }} | {{ item.username || "无认证" }}</span>
+              </template>
+            </a-list-item-meta>
+          </a-list-item>
+        </template>
+      </a-list>
     </div>
 
     <div class="server-list-empty" v-else>
@@ -48,7 +48,6 @@
       添加节点
     </a-button>
 
-    <!-- 添加/编辑弹窗 -->
     <a-modal
       v-model:open="modalVisible"
       :title="editingServer ? '编辑节点' : '添加节点'"
@@ -56,26 +55,13 @@
       @ok="handleSubmit"
       @cancel="handleCancel"
     >
-      <a-form
-        ref="formRef"
-        :model="formState"
-        :rules="formRules"
-        layout="vertical"
-      >
+      <a-form ref="formRef" :model="formState" :rules="formRules" layout="vertical">
         <a-form-item label="地址" name="host">
-          <a-input
-            v-model:value="formState.host"
-            placeholder="127.0.0.1:1080"
-            allow-clear
-          />
+          <a-input v-model:value="formState.host" placeholder="127.0.0.1:1080" allow-clear />
         </a-form-item>
 
         <a-form-item label="协议" name="protocol">
-          <a-select
-            v-model:value="formState.protocol"
-            placeholder="选择协议"
-            allow-clear
-          >
+          <a-select v-model:value="formState.protocol" placeholder="选择协议" allow-clear>
             <a-select-option value="socks5">SOCKS5</a-select-option>
             <a-select-option value="socks4">SOCKS4</a-select-option>
           </a-select>
@@ -90,11 +76,7 @@
         </a-form-item>
 
         <a-form-item label="密码" name="password">
-          <a-input-password
-            v-model:value="formState.password"
-            placeholder="可选"
-            allow-clear
-          />
+          <a-input-password v-model:value="formState.password" placeholder="可选" allow-clear />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -102,149 +84,140 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
-import { CheckCircleFilled, DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons-vue'
-import { Get, Set } from '@wails/go/main/Storage'
-import { message } from 'ant-design-vue'
+import { ref, reactive, computed, onMounted } from "vue";
+import { CheckCircleFilled, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons-vue";
+import { Get, Set } from "../../bindings/socks5-desktop/storage.js";
+import { message } from "ant-design-vue";
 
 const props = defineProps({
   selectedServer: { type: Object, default: null },
-})
+});
 
-const emit = defineEmits(['select', 'update:selectedServer'])
+const emit = defineEmits(["select", "update:selectedServer"]);
 
-const STORAGE_KEY = 'servers'
+const STORAGE_KEY = "servers";
 
-const servers = ref([])
-
-const selectedId = computed(() => props.selectedServer?.id ?? null)
-const modalVisible = ref(false)
-const submitLoading = ref(false)
-const formRef = ref(null)
-const editingServer = ref(null)
+const servers = ref([]);
+const selectedId = computed(() => props.selectedServer?.id ?? null);
+const modalVisible = ref(false);
+const submitLoading = ref(false);
+const formRef = ref(null);
+const editingServer = ref(null);
 
 const defaultFormState = () => ({
-  host: '',
-  username: '',
-  password: '',
-  protocol: 'socks5',
-})
+  host: "",
+  username: "",
+  password: "",
+  protocol: "socks5",
+});
 
-const formState = reactive(defaultFormState())
+const formState = reactive(defaultFormState());
 
 const formRules = {
   host: [
-    { required: true, message: '请输入地址' },
-    { pattern: /^[^:]+:\d{1,5}$/, message: '格式为 host:port，如 127.0.0.1:1080' },
+    { required: true, message: "请输入地址" },
+    { pattern: /^[^:]+:\d{1,5}$/, message: "格式为 host:port，如 127.0.0.1:1080" },
   ],
-  protocol: [{ required: true, message: '请选择协议' }],
-}
+  protocol: [{ required: true, message: "请选择协议" }],
+};
 
-// 加载数据
 const loadServers = async () => {
   try {
-    const data = await Get(STORAGE_KEY)
-    servers.value = Array.isArray(data) ? data : []
+    const data = await Get(STORAGE_KEY);
+    servers.value = Array.isArray(data) ? data : [];
   } catch (e) {
-    message.error('加载节点列表失败')
-    servers.value = []
+    message.error("加载节点列表失败");
+    servers.value = [];
   }
-}
+};
 
-// 保存数据
 const saveServers = async () => {
   try {
-    await Set(STORAGE_KEY, servers.value)
+    await Set(STORAGE_KEY, servers.value);
   } catch (e) {
-    message.error('保存失败')
-    throw e
+    message.error("保存失败");
+    throw e;
   }
-}
+};
 
-// 打开添加弹窗
 const openAddModal = () => {
-  editingServer.value = null
-  Object.assign(formState, defaultFormState())
-  modalVisible.value = true
-}
+  editingServer.value = null;
+  Object.assign(formState, defaultFormState());
+  modalVisible.value = true;
+};
 
-// 编辑节点
 const editServer = (item) => {
-  editingServer.value = item
-  formState.host = item.host
-  formState.username = item.username || ''
-  formState.password = item.password || ''
-  formState.protocol = item.protocol || 'socks5'
-  modalVisible.value = true
-}
+  editingServer.value = item;
+  formState.host = item.host;
+  formState.username = item.username || "";
+  formState.password = item.password || "";
+  formState.protocol = item.protocol || "socks5";
+  modalVisible.value = true;
+};
 
-// 提交表单（添加/编辑）
 const handleSubmit = async () => {
   try {
-    await formRef.value.validate()
-    submitLoading.value = true
+    await formRef.value.validate();
+    submitLoading.value = true;
 
     if (editingServer.value) {
-      const idx = servers.value.findIndex(s => s.id === editingServer.value.id)
+      const idx = servers.value.findIndex((s) => s.id === editingServer.value.id);
       if (idx >= 0) {
         servers.value[idx] = {
           ...servers.value[idx],
           host: formState.host.trim(),
-          username: formState.username?.trim() || '',
-          password: formState.password || '',
+          username: formState.username?.trim() || "",
+          password: formState.password || "",
           protocol: formState.protocol,
-        }
+        };
       }
-      message.success('修改成功')
+      message.success("修改成功");
     } else {
       const newServer = {
         id: Date.now().toString(),
         host: formState.host.trim(),
-        username: formState.username?.trim() || '',
-        password: formState.password || '',
+        username: formState.username?.trim() || "",
+        password: formState.password || "",
         protocol: formState.protocol,
-      }
-      servers.value.push(newServer)
-      message.success('添加成功')
+      };
+      servers.value.push(newServer);
+      message.success("添加成功");
     }
 
-    await saveServers()
-    modalVisible.value = false
+    await saveServers();
+    modalVisible.value = false;
   } catch (e) {
-    if (e?.errorFields) return
-    message.error(e?.message || '操作失败')
+    if (e?.errorFields) return;
+    message.error(e?.message || "操作失败");
   } finally {
-    submitLoading.value = false
+    submitLoading.value = false;
   }
-}
+};
 
-// 取消弹窗
 const handleCancel = () => {
-  modalVisible.value = false
-  formRef.value?.resetFields()
-}
+  modalVisible.value = false;
+  formRef.value?.resetFields();
+};
 
-// 删除节点
 const removeServer = async (id) => {
   try {
-    servers.value = servers.value.filter(s => s.id !== id)
-    if (props.selectedServer?.id === id) emit('update:selectedServer', null)
-    await saveServers()
-    message.success('已删除')
+    servers.value = servers.value.filter((s) => s.id !== id);
+    if (props.selectedServer?.id === id) emit("update:selectedServer", null);
+    await saveServers();
+    message.success("已删除");
   } catch (e) {
-    message.error('删除失败')
+    message.error("删除失败");
   }
-}
+};
 
-// 选中节点
 const selectServer = (item) => {
-  emit('update:selectedServer', item)
-  emit('select', item)
-}
+  emit("update:selectedServer", item);
+  emit("select", item);
+};
 
 onMounted(() => {
-  loadServers()
-})
+  loadServers();
+});
 </script>
 
 <style scoped>
@@ -304,4 +277,4 @@ onMounted(() => {
   font-size: 12px;
   color: #6b7280;
 }
-</style> 
+</style>

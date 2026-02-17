@@ -5,18 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build:dev": "vite build --minify false --mode development",
+    "build": "vite build --mode production",
     "preview": "vite preview"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
+    "@wailsio/runtime": "latest",
     "ant-design-vue": "^4.2.6",
-    "vue": "^3.2.37"
+    "vue": "^3.2.45"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^3.0.3",
+    "@vitejs/plugin-vue": "^6.0.4",
     "sass": "^1.97.3",
     "unplugin-vue-components": "^31.0.0",
-    "vite": "^3.0.7"
+    "vite": "^7.3.1"
   }
 }

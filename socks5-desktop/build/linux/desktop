@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=socks5-desktop
+Comment=Socks5 代理桌面应用
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/socks5-desktop %u
+Terminal=false
+Type=Application
+Icon=socks5-desktop
+Categories=Utility;
+StartupWMClass=socks5-desktop
+
+ 

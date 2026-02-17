@@ -9,12 +9,7 @@
       请先在下方列表中选择节点
     </div>
 
-    <a-radio-group
-      v-else
-      v-model:value="proxyMode"
-      class="proxy-mode-group"
-      @change="onModeChange"
-    >
+    <a-radio-group v-else v-model:value="proxyMode" class="proxy-mode-group" @change="onModeChange">
       <a-radio-button value="off">关闭</a-radio-button>
       <a-radio-button value="tun">TUN 模式</a-radio-button>
       <a-radio-button value="system">系统代理</a-radio-button>
@@ -28,32 +23,34 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch } from "vue";
 
 const props = defineProps({
   selectedServer: { type: Object, default: null },
-})
+});
 
-const emit = defineEmits(['tun-change', 'system-proxy-change'])
+const emit = defineEmits(["tun-change", "system-proxy-change"]);
 
-const proxyMode = ref('off') // off | tun | system
+const proxyMode = ref("off");
 
 const serverLabel = computed(() => {
-  if (!props.selectedServer) return '未选择节点'
-  return props.selectedServer.host
-})
+  if (!props.selectedServer) return "未选择节点";
+  return props.selectedServer.host;
+});
 
-// 切换节点时重置模式
-watch(() => props.selectedServer, () => {
-  proxyMode.value = 'off'
-  emit('tun-change', false)
-  emit('system-proxy-change', false)
-})
+watch(
+  () => props.selectedServer,
+  () => {
+    proxyMode.value = "off";
+    emit("tun-change", false);
+    emit("system-proxy-change", false);
+  }
+);
 
 const onModeChange = () => {
-  emit('tun-change', proxyMode.value === 'tun')
-  emit('system-proxy-change', proxyMode.value === 'system')
-}
+  emit("tun-change", proxyMode.value === "tun");
+  emit("system-proxy-change", proxyMode.value === "system");
+};
 </script>
 
 <style scoped>
