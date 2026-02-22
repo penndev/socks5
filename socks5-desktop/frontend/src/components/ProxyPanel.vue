@@ -10,14 +10,13 @@
     </div>
 
     <a-radio-group v-else v-model:value="proxyMode" class="proxy-mode-group" @change="onModeChange">
-      <a-radio-button value="off">关闭</a-radio-button>
+      <a-radio-button value="manual">手动模式</a-radio-button>
       <a-radio-button value="tun">TUN 模式</a-radio-button>
       <a-radio-button value="system">系统代理</a-radio-button>
     </a-radio-group>
+
     <div class="proxy-mode-desc" v-if="selectedServer">
-      <span v-if="proxyMode === 'tun'">虚拟网卡，全局流量</span>
-      <span v-else-if="proxyMode === 'system'">设置系统代理</span>
-      <span v-else>未启用代理</span>
+      <span>{{ modeMessage }}</span>
     </div>
   </a-card>
 </template>
@@ -29,27 +28,28 @@ const props = defineProps({
   selectedServer: { type: Object, default: null },
 });
 
-const emit = defineEmits(["tun-change", "system-proxy-change"]);
-
-const proxyMode = ref("off");
-
 const serverLabel = computed(() => {
   if (!props.selectedServer) return "未选择节点";
   return props.selectedServer.host;
 });
 
+const emit = defineEmits(["tun-change", "system-proxy-change"]);
+
+const proxyMode = ref("off");
+
 watch(
   () => props.selectedServer,
   () => {
     proxyMode.value = "off";
-    emit("tun-change", false);
-    emit("system-proxy-change", false);
   }
 );
 
+watch(proxyMode, async(newValue, oldValue) => {
+  console.log(newValue, oldValue);
+});
+
 const onModeChange = () => {
-  emit("tun-change", proxyMode.value === "tun");
-  emit("system-proxy-change", proxyMode.value === "system");
+  
 };
 </script>
 

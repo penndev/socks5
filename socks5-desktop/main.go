@@ -47,26 +47,21 @@ func main() {
 	})
 
 	var lastX, lastY int
-	var hasSavedPosition bool
+	showAtLastPosition := func() {
+		if lastX != 0 && lastY != 0 {
+			window.SetPosition(lastX, lastY)
+		}
+		window.Show()
+	}
 
 	window.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {
 		lastX, lastY = window.Position()
-		hasSavedPosition = true
 		window.Hide()
 		e.Cancel()
 	})
 
 	systray := app.SystemTray.New()
 	systray.SetIcon(appIcon)
-	systray.SetLabel("Socks5")
-	systray.SetTooltip("Socks5 代理")
-
-	showAtLastPosition := func() {
-		if hasSavedPosition {
-			window.SetPosition(lastX, lastY)
-		}
-		window.Show()
-	}
 
 	menu := app.NewMenu()
 	menu.Add("显示主窗口").OnClick(func(ctx *application.Context) {
@@ -79,7 +74,6 @@ func main() {
 	systray.OnClick(func() {
 		if window.IsVisible() {
 			lastX, lastY = window.Position()
-			hasSavedPosition = true
 			window.Hide()
 		} else {
 			showAtLastPosition()

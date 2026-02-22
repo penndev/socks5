@@ -7,7 +7,7 @@
       </div>
 
       <div class="socks5-app-body">
-        <proxy-pa nel
+        <proxy-panel
           :selected-server="selectedServer"
         />
         <server-list v-model:selected-server="selectedServer" />
