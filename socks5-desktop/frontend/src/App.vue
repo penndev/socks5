@@ -7,10 +7,8 @@
       </div>
 
       <div class="socks5-app-body">
-        <proxy-panel
-          :selected-server="selectedServer"
-        />
-        <server-list v-model:selected-server="selectedServer" />
+        <proxy-panel />
+        <server-list />
       </div>
     </div>
 
@@ -28,16 +26,9 @@ import { ref, onMounted, watch } from "vue";
 import { Window } from "@wailsio/runtime";
 import Settings from "./components/Settings.vue";
 
-
-
-const selectedServer = ref(null);
-
 const appMinWidth = 400;
 const appMaxWidth = 600;
-
-
 const appWidth = ref(400);
-
 
 // 判断是否显示扩展窗口
 const extensionVisible = ref(true);

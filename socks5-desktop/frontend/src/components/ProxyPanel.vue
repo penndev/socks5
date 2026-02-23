@@ -22,82 +22,65 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, watch } from "vue";
 
-const props = defineProps({
-  selectedServer: { type: Object, default: null },
-});
+const serverLabel = ref("未选择节点");
 
-const serverLabel = computed(() => {
-  if (!props.selectedServer) return "未选择节点";
-  return props.selectedServer.host;
-});
+const proxyMode = ref("manual");
 
-const emit = defineEmits(["tun-change", "system-proxy-change"]);
-
-const proxyMode = ref("off");
-
-watch(
-  () => props.selectedServer,
-  () => {
-    proxyMode.value = "off";
-  }
-);
+const modeMessage = ref("启动中");
 
 watch(proxyMode, async(newValue, oldValue) => {
   console.log(newValue, oldValue);
 });
 
-const onModeChange = () => {
-  
-};
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .proxy-panel {
   flex-shrink: 0;
   border-radius: 14px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
-}
 
-.proxy-current-server {
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-radius: 8px;
-}
+  .proxy-current-server {
+    margin-bottom: 12px;
+    padding: 4px 6px;
+    background: #f5f5f5;
+    border-radius: 8px;
 
-.proxy-label {
-  font-size: 12px;
-  color: #6b7280;
-  margin-right: 8px;
-}
+    .proxy-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-right: 8px;
+    }
 
-.proxy-value {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1677ff;
-}
+    .proxy-value {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1677ff;
+    }
+  }
 
-.proxy-mode-tip {
-  font-size: 13px;
-  color: #8c8c8c;
-  padding: 12px 0;
-}
+  .proxy-mode-tip {
+    font-size: 13px;
+    color: #8c8c8c;
+    padding: 12px 0;
+  }
 
-.proxy-mode-group {
-  width: 100%;
-  margin-bottom: 8px;
-  display: flex;
-}
+  .proxy-mode-group {
+    width: 100%;
+    margin-bottom: 8px;
+    display: flex;
 
-.proxy-mode-group :deep(.ant-radio-button-wrapper) {
-  flex: 1;
-  text-align: center;
-}
+    :deep(.ant-radio-button-wrapper) {
+      flex: 1;
+      text-align: center;
+    }
+  }
 
-.proxy-mode-desc {
-  font-size: 12px;
-  color: #6b7280;
+  .proxy-mode-desc {
+    font-size: 12px;
+    color: #6b7280;
+  }
 }
 </style>
