@@ -3,7 +3,7 @@
     <div class="server-list-scroll" v-if="servers.length > 0">
       <a-list :data-source="servers" bordered>
         <template #renderItem="{ item }">
-          <a-list-item :class="{ active: selectedServer?.id === item.id }" @click="selectedServer = item">
+          <a-list-item :class="{ active: selectedServer?.id === item.id }" @click="serverStore.selectedServer = item">
             <template #actions>
               <a-button type="text" size="small" @click.stop="edit.open(item)">
                 <EditOutlined />
@@ -76,9 +76,10 @@ import { ref, reactive, computed, onMounted } from "vue";
 import { CheckCircleFilled, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons-vue";
 import { Modal, message } from "ant-design-vue";
 import { Get, Set } from "@bindings/socks5-desktop/storage";
+import { useServerStore } from "../stores/server";
 
-// 启动的节点
-const selectedServer = ref(null);
+const serverStore = useServerStore();
+const selectedServer = computed(() => serverStore.selectedServer);
 
 // 所有节点
 const servers = ref([]);
@@ -129,8 +130,8 @@ const edit = reactive({
         const idx = servers.value.findIndex((s) => s.id === edit.id);
         if (idx >= 0) servers.value[idx] = { ...servers.value[idx], ...payload };
 
-        if (selectedServer.value?.id === edit.id)
-          selectedServer.value = { ...selectedServer.value, ...payload };
+        if (selectedServer?.id === edit.id)
+          serverStore.selectedServer = { ...selectedServer, ...payload };
 
         message.success("修改成功");
       } else {
@@ -159,7 +160,7 @@ function deleteModal(item) {
     cancelText: "取消",
     async onOk() {
       servers.value = servers.value.filter((s) => s.id !== item.id);
-      if (selectedServer.value?.id === item.id) selectedServer.value = null;
+      if (selectedServer?.id === item.id) serverStore.selectedServer = null;
       await Set(STORAGE_KEY, servers.value);
       message.success("已删除");
     },

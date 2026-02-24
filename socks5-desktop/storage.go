@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
 
-	"github.com/wailsapp/wails/v3/pkg/application"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -15,10 +13,6 @@ const bucketName = "data"
 
 type Storage struct {
 	db *bolt.DB
-}
-
-func (s *Storage) ServiceStartup(ctx context.Context, options application.ServiceOptions) error {
-	return nil
 }
 
 func NewStorage() (*Storage, error) {

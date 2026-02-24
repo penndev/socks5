@@ -29,6 +29,7 @@ func main() {
 		Services: []application.Service{
 			application.NewService(storage),
 			application.NewService(&App{}),
+			application.NewService(&Proxy{}),
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: false,

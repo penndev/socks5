@@ -37,6 +37,7 @@
 import { reactive, onMounted, watch } from "vue";
 import { Get, Set } from "@bindings/socks5-desktop/storage";
 import { message } from "ant-design-vue";
+import { debounce } from "@/utils";
 
 const KEY = "settings";
 
@@ -52,25 +53,12 @@ async function save() {
   }
 }
 
-
-function debounce(fn, delay = 1000) {
-  let timer = null;
-
-  return function (...args) {
-    clearTimeout(timer);
-
-    timer = setTimeout(() => {
-      fn.apply(this, args);
-    }, delay);
-  };
-}
-
 const form = reactive({
   proxy: { host: "127.0.0.1", port: 1080, username: "", password: "" },
   system: { language: "zh-CN", startupOnBoot:false },
 });
 
-async function load() {
+onMounted(async() => {
   try {
     const d = await Get(KEY);
     if (d?.proxy) Object.assign(form.proxy, d.proxy);
@@ -78,11 +66,8 @@ async function load() {
   } catch (e) {
     message.error("加载设置失败");
   }
-}
-
-watch(form, debounce(save));
-
-onMounted(load);
+  watch(form, debounce(save), { deep: true });
+});
 
 </script>
 
