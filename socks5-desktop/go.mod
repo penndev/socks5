@@ -3,6 +3,7 @@ module socks5-desktop
 go 1.25
 
 require (
+	github.com/penndev/gopkg v0.4.1
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.72
 	go.etcd.io/bbolt v1.4.3
 )

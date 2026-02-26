@@ -3,7 +3,7 @@
     <div class="socks5-app" :style="{ width: appWidth + 'px' }">
       <div class="socks5-app-header">
         <div class="socks5-app-title">Socks5 App</div>
-        <a-switch v-model:checked="extensionVisible" @click="toggleExtension" size="small" />
+        <a-switch v-model:checked="extensionVisible" size="small" />
       </div>
 
       <div class="socks5-app-body">
@@ -33,24 +33,21 @@ const appWidth = ref(400);
 // 判断是否显示扩展窗口
 const extensionVisible = ref(true);
 
-// 用户切换扩展窗口显示状态
-const toggleExtension = async () => {
-  const { height } = await Window.Size();
-  if (extensionVisible.value && appWidth.value < appMaxWidth) {
-    await Window.SetSize(appMaxWidth + 400, height);
-  } else {
-    await Window.SetSize(appMinWidth, height);
-  }
-};
-
-// 
-watch(extensionVisible, (newVal) => {
-  if (newVal < appMinWidth) {
-    appWidth.value = appMinWidth;
-  } else {
-    appWidth.value = Math.max(window.innerWidth, appMinWidth);
-  }
-});
+// 扩展面板显示状态变化时同步窗口尺寸与主区宽度（immediate: true 保证初始为 true 时也会执行）
+watch(
+  extensionVisible,
+  async (newVal) => {
+    const { height } = await Window.Size();
+    if (newVal) {
+      await Window.SetSize(appMaxWidth + 400, height);
+      appWidth.value = appMinWidth;
+    } else {
+      await Window.SetSize(appMinWidth, height);
+      appWidth.value = appMinWidth;
+    }
+  },
+  { immediate: true }
+);
 
 // 拖拽窗口条大小事件
 const socks5Dragging = ref(false);

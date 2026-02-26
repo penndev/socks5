@@ -6,14 +6,32 @@
 // @ts-ignore: Unused imports
 import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as socks5$0 from "../github.com/penndev/gopkg/socks5/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as net$0 from "../net/models.js";
+
+/**
+ * @param {net$0.Conn} conn
+ * @param {socks5$0.Requests} req
+ * @param {any} replies
+ * @returns {$CancellablePromise<void>}
+ */
+export function HandleConnect(conn, req, replies) {
+    return $Call.ByID(921839284, conn, req, replies);
+}
+
 /**
  * @param {string} host
  * @param {string} user
  * @param {string} pass
+ * @param {string} rtype
  * @returns {$CancellablePromise<void>}
  */
-export function SetRemote(host, user, pass) {
-    return $Call.ByID(1742491558, host, user, pass);
+export function SetRemote(host, user, pass, rtype) {
+    return $Call.ByID(1742491558, host, user, pass, rtype);
 }
 
 /**

@@ -38,7 +38,7 @@ func main() {
 
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:            "socks5-desktop",
-		Width:            400,
+		Width:            1000,
 		Height:           800,
 		BackgroundColour: application.NewRGB(27, 38, 54),
 		URL:              "/",

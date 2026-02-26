@@ -35,7 +35,7 @@
 import { ref, watch, computed } from "vue";
 import { message } from "ant-design-vue";
 import { useServerStore } from "../stores/server";
-import { Start, Stop } from "@bindings/socks5-desktop/proxy";
+import { Start, Stop, SetRemote } from "@bindings/socks5-desktop/proxy";
 
 const serverStore = useServerStore();
 const selectedServer = computed(() => serverStore.selectedServer);
@@ -46,12 +46,10 @@ const modeMessage = ref("启动中");
 watch(
   selectedServer,
   async (newServer, oldServer) => {
-    if (oldServer) {
-      await Stop();
-    }
     if (newServer) {
-      await Start(newServer.host, newServer.username, newServer.password);
-    }
+      const { host, username, password, protocol } = newServer;
+      await SetRemote(host, username ?? "", password ?? "", protocol ?? "Socks5");
+     }
   },
   { immediate: true }
 );
