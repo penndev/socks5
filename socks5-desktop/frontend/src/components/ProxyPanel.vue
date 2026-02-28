@@ -3,14 +3,8 @@
     <div class="proxy-current-server">
       <span class="proxy-label">当前节点</span>
       <span class="proxy-value">{{ selectedServer?.host ?? "未选择节点" }}</span>
-      <a-button
-        v-if="selectedServer"
-        type="link"
-        size="small"
-        danger
-        class="remove-btn"
-        @click="serverStore.selectedServer = null"
-      >
+      <a-button v-if="selectedServer" type="link" size="small" danger class="remove-btn"
+        @click="serverStore.selectedServer = null">
         移除
       </a-button>
     </div>
@@ -26,7 +20,7 @@
     </a-radio-group>
 
     <div class="proxy-mode-desc" v-if="selectedServer">
-      <span>{{ modeMessage }}</span>
+      <pre>{{ modeMessage }}</pre>
     </div>
   </a-card>
 </template>
@@ -36,20 +30,49 @@ import { ref, watch, computed } from "vue";
 import { message } from "ant-design-vue";
 import { useServerStore } from "../stores/server";
 import { Start, Stop, SetRemote } from "@bindings/socks5-desktop/proxy";
+import { Get } from "@bindings/socks5-desktop/storage";
+import { Events } from "@wailsio/runtime";
 
 const serverStore = useServerStore();
 const selectedServer = computed(() => serverStore.selectedServer);
 
 const proxyMode = ref("manual");
-const modeMessage = ref("启动中");
+const modeMessage = ref("");
+
+// 后端通过事件推送一些状态时，附加到文案中（如当前使用的本地地址等）
+Events.On("logServerStatus", (ev) => {
+  const msg = ev?.data != null ? ev.data : ev;
+  modeMessage.value +=  msg;
+});
+
+const SETTINGS_KEY = "settings";
+
 
 watch(
   selectedServer,
   async (newServer, oldServer) => {
+    console.log(newServer, oldServer);
+
+    // 第一次选择节点时，按设置中的本地代理配置启动本地 socks5
+    if (!oldServer && newServer) {
+      const data = await Get(SETTINGS_KEY);
+      const proxy = data?.proxy || {};
+      const host = proxy.host || "127.0.0.1";
+      const port = proxy.port || 1080;
+      const username = proxy.username || "";
+      const password = proxy.password || "";
+      await Start(`${host}:${port}`, username, password);
+    }
+
+    // 不管是否第一次选择节点，都更新远程节点信息
     if (newServer) {
       const { host, username, password, protocol } = newServer;
       await SetRemote(host, username ?? "", password ?? "", protocol ?? "Socks5");
-     }
+    } else if (oldServer) {
+      // 取消选择节点时，停止本地服务
+      await Stop();
+      modeMessage.value = "已停止";
+    }
   },
   { immediate: true }
 );

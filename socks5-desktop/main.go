@@ -13,13 +13,15 @@ var assets embed.FS
 //go:embed build/appicon.png
 var appIcon []byte
 
+var app *application.App
+
 func main() {
 	storage, err := NewStorage()
 	if err != nil {
 		panic(err)
 	}
 
-	app := application.New(application.Options{
+	app = application.New(application.Options{
 		Name:        "socks5-desktop",
 		Description: "Socks5 代理桌面应用",
 		Icon:        appIcon,

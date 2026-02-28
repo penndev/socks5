@@ -1,22 +1,29 @@
 <template>
   <div class="socks5-layout">
-    <div class="socks5-app" :style="{ width: appWidth + 'px' }">
-      <div class="socks5-app-header">
-        <div class="socks5-app-title">Socks5 App</div>
-        <a-switch v-model:checked="extensionVisible" size="small" />
+    <div class="socks5-main">
+      <div class="socks5-app" :style="{ width: appWidth + 'px' }">
+        <div class="socks5-app-header">
+          <div class="socks5-app-title">Socks5 App</div>
+          <a-switch v-model:checked="extensionVisible" size="small" />
+        </div>
+
+        <div class="socks5-app-body">
+          <proxy-panel />
+          <server-list />
+        </div>
       </div>
 
-      <div class="socks5-app-body">
-        <proxy-panel />
-        <server-list />
+      <div v-if="extensionVisible" class="socks5-extension">
+        <div class="socks5-divider" @mousedown="socks5Dragging = true"></div>
+        <div class="socks5-extension-body">
+          <settings />
+        </div>
       </div>
     </div>
 
-    <div v-if="extensionVisible" class="socks5-extension">
-      <div class="socks5-divider" @mousedown="socks5Dragging = true"></div>
-      <div class="socks5-extension-body">
-        <settings />
-      </div>
+    <!-- 底部连接日志状态栏组件 -->
+    <div class="socks5-bottom">
+      <proxy-log-bar />
     </div>
   </div>
 </template>
@@ -25,6 +32,7 @@
 import { ref, onMounted, watch } from "vue";
 import { Window } from "@wailsio/runtime";
 import Settings from "./components/Settings.vue";
+import ProxyLogBar from "./components/ProxyLogBar.vue";
 
 const appMinWidth = 400;
 const appMaxWidth = 600;
@@ -93,8 +101,15 @@ onMounted(() => {
 <style lang="scss" scoped>
 .socks5-layout {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   background: #f7f9fc;
+
+  .socks5-main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
 
   .socks5-app {
     display: flex;
@@ -152,6 +167,12 @@ onMounted(() => {
       color: #374151;
       background: #ffffff;
     }
+  }
+
+  .socks5-bottom {
+    flex-shrink: 0;
+    border-top: 1px solid #e5e7eb;
+    background: #ffffff;
   }
 }
 </style>
