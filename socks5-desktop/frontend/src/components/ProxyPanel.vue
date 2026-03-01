@@ -19,7 +19,7 @@
       <a-radio-button value="system">系统代理</a-radio-button>
     </a-radio-group>
 
-    <div class="proxy-mode-desc" v-if="selectedServer">
+    <div class="proxy-mode-desc">
       <pre>{{ modeMessage }}</pre>
     </div>
   </a-card>
@@ -48,11 +48,10 @@ Events.On("logServerStatus", (ev) => {
 const SETTINGS_KEY = "settings";
 
 
-watch(
-  selectedServer,
-  async (newServer, oldServer) => {
-    console.log(newServer, oldServer);
 
+
+// 选择节点时，启动或停止本地 socks5
+watch(selectedServer, async (newServer, oldServer) => {
     // 第一次选择节点时，按设置中的本地代理配置启动本地 socks5
     if (!oldServer && newServer) {
       const data = await Get(SETTINGS_KEY);
