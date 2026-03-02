@@ -15,7 +15,7 @@
 
             <a-list-item-meta>
               <template #title>
-                <span class="server-host">
+                <span class="server-host" :title="item.host">
                   <CheckCircleFilled v-if="selectedServer?.id === item.id" class="selected-icon" />
                   {{ item.host }}
                 </span>
@@ -178,22 +178,29 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 .socks5-server-card {
-  min-height: 400px;
+  min-height: 200px;
   flex: 1;
   display: flex;
   flex-direction: column;
-  border-radius: 14px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
   :deep(.ant-card-body) {
     flex: 1;
     display: flex;
     flex-direction: column;
+    padding: 12px;
+  }
+
+  :deep(.ant-list-item-meta-title) {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .server-list-scroll {
     flex: 1;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    min-height: 0;
   }
 
   .server-list-empty {
@@ -220,6 +227,10 @@ onMounted(async () => {
       display: flex;
       align-items: center;
       gap: 6px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .selected-icon {

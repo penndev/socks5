@@ -80,7 +80,7 @@ onMounted(async() => {
       font-size: 14px;
       font-weight: 500;
       color: rgba(0, 0, 0, 0.88);
-      margin: 16px 0 12px;
+      margin: 12px 0 8px;
       padding: 0;
 
       &:first-child {

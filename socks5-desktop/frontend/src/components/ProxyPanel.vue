@@ -2,7 +2,7 @@
   <a-card class="proxy-panel" title="代理面板">
     <div class="proxy-current-server">
       <span class="proxy-label">当前节点</span>
-      <span class="proxy-value">{{ selectedServer?.host ?? "未选择节点" }}</span>
+      <span class="proxy-value" :title="selectedServer?.host ?? ''">{{ selectedServer?.host ?? "未选择节点" }}</span>
       <a-button v-if="selectedServer" type="link" size="small" danger class="remove-btn"
         @click="serverStore.selectedServer = null">
         移除
@@ -27,7 +27,6 @@
 
 <script setup>
 import { ref, watch, computed } from "vue";
-import { message } from "ant-design-vue";
 import { useServerStore } from "../stores/server";
 import { Start, Stop, SetRemote } from "@bindings/socks5-desktop/proxy";
 import { Get } from "@bindings/socks5-desktop/storage";
@@ -76,27 +75,23 @@ watch(selectedServer, async (newServer, oldServer) => {
   { immediate: true }
 );
 
-watch(proxyMode, (newValue, oldValue) => {
-  console.log(newValue, oldValue);
-});
-
 </script>
 
 <style lang="scss" scoped>
 .proxy-panel {
   flex-shrink: 0;
-  border-radius: 14px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
   .proxy-current-server {
-    margin-bottom: 12px;
-    padding: 4px 6px;
+    margin-bottom: 8px;
+    padding: 4px 8px;
     background: #f5f5f5;
     border-radius: 8px;
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-wrap: nowrap;
+    gap: 6px;
 
     .proxy-label {
       font-size: 12px;
@@ -105,10 +100,14 @@ watch(proxyMode, (newValue, oldValue) => {
     }
 
     .proxy-value {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       color: #1677ff;
       flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .remove-btn {
@@ -120,12 +119,12 @@ watch(proxyMode, (newValue, oldValue) => {
   .proxy-mode-tip {
     font-size: 13px;
     color: #8c8c8c;
-    padding: 12px 0;
+    padding: 6px 0;
   }
 
   .proxy-mode-group {
     width: 100%;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     display: flex;
 
     :deep(.ant-radio-button-wrapper) {

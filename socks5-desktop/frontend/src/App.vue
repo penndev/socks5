@@ -117,8 +117,8 @@ onMounted(() => {
     background: #fff;
 
     .socks5-app-header {
-      height: 56px;
-      padding: 0 16px;
+      height: 48px;
+      padding: 0 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -132,12 +132,12 @@ onMounted(() => {
 
     .socks5-app-body {
       flex: 1;
-      padding: 16px;
+      padding: 10px 12px;
       font-size: 14px;
       color: #374151;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 10px;
       overflow-y: auto;
     }
   }
@@ -162,7 +162,7 @@ onMounted(() => {
 
     .socks5-extension-body {
       flex: 1;
-      padding: 16px;
+      padding: 10px 12px;
       font-size: 14px;
       color: #374151;
       background: #ffffff;
