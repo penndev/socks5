@@ -15,9 +15,9 @@
 
             <a-list-item-meta>
               <template #title>
-                <span class="server-host" :title="item.host">
+                <span class="server-host" :title="item.remark || item.host">
                   <CheckCircleFilled v-if="selectedServer?.id === item.id" class="selected-icon" />
-                  {{ item.host }}
+                  {{ item.remark || item.host }}
                 </span>
               </template>
               <template #description>
@@ -52,10 +52,14 @@
           <a-input v-model:value="edit.form.host" placeholder="127.0.0.1:1080" allow-clear />
         </a-form-item>
 
+        <a-form-item label="备注" name="remark">
+          <a-input v-model:value="edit.form.remark" placeholder="可选" allow-clear />
+        </a-form-item>
+
         <a-form-item label="协议" name="protocol">
           <a-select v-model:value="edit.form.protocol" placeholder="选择协议">
             <a-select-option value="Socks5">Socks5</a-select-option>
-            <a-select-option value="Socks5OverTls">Socks5OverTls</a-select-option>
+            <a-select-option value="Socks5OverTLS">Socks5OverTLS</a-select-option>
           </a-select>
         </a-form-item>
 
@@ -92,6 +96,7 @@ const edit = reactive({
   id: 0,
   form: {
     host: "",
+    remark: "",
     username: "",
     password: "",
     protocol: "Socks5",
@@ -108,6 +113,7 @@ const edit = reactive({
     edit.id = server?.id ?? null;
     edit.title = edit.id ? "编辑节点" : "添加节点";
     edit.form.host = server?.host ?? "";
+    edit.form.remark = server?.remark ?? "";
     edit.form.username = server?.username ?? "";
     edit.form.password = server?.password ?? "";
     edit.form.protocol = server?.protocol ?? "Socks5";
@@ -121,6 +127,7 @@ const edit = reactive({
 
       const payload = {
         host: edit.form.host.trim(),
+        remark: edit.form.remark?.trim() ?? "",
         username: edit.form.username?.trim() ?? "",
         password: edit.form.password ?? "",
         protocol: edit.form.protocol,
@@ -154,7 +161,7 @@ const STORAGE_KEY = "servers";
 function deleteModal(item) {
   Modal.confirm({
     title: "删除节点",
-    content: `确定删除节点 ${item.host} 吗？`,
+    content: `确定删除节点 ${item.remark || item.host} 吗？`,
     okType: "danger",
     okText: "删除",
     cancelText: "取消",

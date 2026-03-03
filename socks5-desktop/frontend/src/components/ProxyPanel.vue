@@ -2,7 +2,9 @@
   <a-card class="proxy-panel" title="代理面板">
     <div class="proxy-current-server">
       <span class="proxy-label">当前节点</span>
-      <span class="proxy-value" :title="selectedServer?.host ?? ''">{{ selectedServer?.host ?? "未选择节点" }}</span>
+      <span class="proxy-value" :title="selectedServer?.remark || selectedServer?.host || ''">
+        {{ selectedServer?.remark || selectedServer?.host || "未选择节点" }}
+      </span>
       <a-button v-if="selectedServer" type="link" size="small" danger class="remove-btn"
         @click="serverStore.selectedServer = null">
         移除
