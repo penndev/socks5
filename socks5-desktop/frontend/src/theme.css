@@ -1,0 +1,13 @@
+:root {
+  --socks-bg: #f7f9fc;
+  --socks-card-bg: #ffffff;
+  --socks-card-border: #e5e7eb;
+  --socks-text-primary: #111827;
+  --socks-text-secondary: #4b5563;
+  --socks-muted-bg: #f9fafb;
+  --socks-bottom-bg: #ffffff;
+}
+
+/* antd 组件与业务容器变量统一由算法 token 驱动 */
+
+

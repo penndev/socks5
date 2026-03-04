@@ -23,20 +23,28 @@ function normalizeLocale(lang) {
   return DEFAULT_LOCALE;
 }
 
+function hasLocale(locale) {
+  return Object.prototype.hasOwnProperty.call(messages, locale);
+}
+
+function getNavigatorLanguage() {
+  if (typeof navigator === "undefined") {
+    return "";
+  }
+
+  return (
+    navigator.language ||
+    (Array.isArray(navigator.languages) && navigator.languages[0]) ||
+    ""
+  );
+}
+
 /**
  * 获取系统语言
  */
 export function detectSystemLocale() {
-  if (typeof navigator === "undefined") {
-    return DEFAULT_LOCALE;
-  }
-
-  const lang =
-    navigator.language ||
-    (Array.isArray(navigator.languages) && navigator.languages[0]) ||
-    "";
-
-  return normalizeLocale(lang);
+  const navigatorLanguage = getNavigatorLanguage();
+  return normalizeLocale(navigatorLanguage);
 }
 
 // 当前语言
@@ -46,13 +54,9 @@ const currentLocale = ref(detectSystemLocale());
  * 设置语言
  */
 export function setLocale(locale) {
-  let finalLocale;
-
-  if (locale && messages.hasOwnProperty(locale)) {
-    finalLocale = locale;
-  } else {
-    finalLocale = normalizeLocale(locale || detectSystemLocale());
-  }
+  const finalLocale = hasLocale(locale)
+    ? locale
+    : normalizeLocale(locale || detectSystemLocale());
 
   currentLocale.value = finalLocale;
   return finalLocale;

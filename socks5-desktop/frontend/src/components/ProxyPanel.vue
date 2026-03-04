@@ -98,7 +98,7 @@ watch(
   .proxy-current-server {
     margin-bottom: 8px;
     padding: 4px 8px;
-    background: #f5f5f5;
+    background: var(--socks-muted-bg);
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -107,7 +107,7 @@ watch(
 
     .proxy-label {
       font-size: 12px;
-      color: #6b7280;
+      color: var(--socks-text-secondary);
       margin-right: 0;
     }
 
@@ -130,7 +130,7 @@ watch(
 
   .proxy-mode-tip {
     font-size: 13px;
-    color: #8c8c8c;
+    color: var(--socks-text-secondary);
     padding: 6px 0;
   }
 
@@ -147,7 +147,7 @@ watch(
 
   .proxy-mode-desc {
     font-size: 12px;
-    color: #6b7280;
+    color: var(--socks-text-secondary);
   }
 }
 </style>

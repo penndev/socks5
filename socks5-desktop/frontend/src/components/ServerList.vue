@@ -291,7 +291,7 @@ onMounted(async () => {
 
     .server-meta {
       font-size: 12px;
-      color: #6b7280;
+      color: var(--socks-text-secondary);
       display: block;
       min-width: 0;
       overflow: hidden;

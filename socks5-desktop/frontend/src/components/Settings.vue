@@ -47,6 +47,22 @@
           <a-select-option value="en">English</a-select-option>
         </a-select>
       </a-form-item>
+      <a-form-item :label="t('settings.theme')">
+        <a-select
+          v-model:value="settingsStore.system.themeMode"
+          style="width: 100%"
+        >
+          <a-select-option value="system">
+            {{ t("settings.theme.system") }}
+          </a-select-option>
+          <a-select-option value="light">
+            {{ t("settings.theme.light") }}
+          </a-select-option>
+          <a-select-option value="dark">
+            {{ t("settings.theme.dark") }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
       <a-form-item :label="t('settings.startupOnBoot')">
         <a-switch v-model:checked="settingsStore.system.startupOnBoot" />
         <span class="setting-desc">

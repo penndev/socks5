@@ -1,10 +1,14 @@
 import { defineStore } from "pinia";
 import { Get, Set } from "@bindings/socks5-desktop/storage";
-import { message } from "ant-design-vue";
+import { notification } from "ant-design-vue";
 import { debounce } from "@/utils";
 import { setLocale, useI18n, detectSystemLocale } from "@/i18n";
+import { applyTheme } from "@/theme";
 
 const KEY = "settings";
+const SAVE_DEBOUNCE_MS = 500;
+const DEFAULT_THEME_MODE = "system";
+const NOTIFICATION_PLACEMENT = "topRight";
 
 const defaultProxy = () => ({
   host: "127.0.0.1",
@@ -15,9 +19,30 @@ const defaultProxy = () => ({
 
 const defaultSystem = () => ({
   language: detectSystemLocale(),
+  themeMode: DEFAULT_THEME_MODE,
   startupOnBoot: false,
   enableLogRecording: true,
 });
+
+function normalizeThemeMode(mode) {
+  if (mode === "dark" || mode === "light" || mode === "system") {
+    return mode;
+  }
+  return DEFAULT_THEME_MODE;
+}
+
+function showSaveNotification(type, message) {
+  notification[type]({
+    message,
+    placement: NOTIFICATION_PLACEMENT,
+  });
+}
+
+function syncRuntimePreferences(systemSettings) {
+  systemSettings.language = setLocale(systemSettings.language);
+  systemSettings.themeMode = normalizeThemeMode(systemSettings.themeMode);
+  applyTheme(systemSettings.themeMode);
+}
 
 export const useSettingsStore = defineStore(KEY, {
   state: () => ({
@@ -29,37 +54,42 @@ export const useSettingsStore = defineStore(KEY, {
     /** 从存储加载并合并到 state */
     async load() {
       try {
-        const d = await Get(KEY);
-        if (d?.proxy) Object.assign(this.proxy, d.proxy);
-        if (d?.system) Object.assign(this.system, d.system);
-      } catch (_) {}
-      // 使用 i18n 内部逻辑规范语言并写回
-      this.system.language = setLocale(this.system.language);
+        const storedSettings = await Get(KEY);
+        if (storedSettings?.proxy) {
+          Object.assign(this.proxy, storedSettings.proxy);
+        }
+        if (storedSettings?.system) {
+          Object.assign(this.system, storedSettings.system);
+        }
+      } catch (_) {
+        // 存储加载失败时保持默认配置
+      }
+
+      syncRuntimePreferences(this.system);
     },
 
     /** 将 state 持久化到存储 */
     async save() {
+      const { t } = useI18n();
+
       try {
         await Set(KEY, {
           proxy: { ...this.proxy },
           system: { ...this.system },
         });
-        const { t } = useI18n();
-        message.success(t("settings.saveSuccess"));
+        showSaveNotification("success", t("settings.saveSuccess"));
       } catch (e) {
-        const { t } = useI18n();
-        message.error(t("settings.saveError"));
+        showSaveNotification("error", t("settings.saveError"));
       }
     },
 
     /** 初始化：加载后订阅 state 变化，自动防抖保存 */
     initSync() {
-      const store = this;
-      const debouncedSave = debounce(() => store.save(), 500);
-      store.$subscribe(debouncedSave);
-      // 订阅变更时同步语言
-      store.$subscribe(() => {
-        setLocale(store.system.language);
+      const debouncedSave = debounce(() => this.save(), SAVE_DEBOUNCE_MS);
+
+      this.$subscribe(() => {
+        syncRuntimePreferences(this.system);
+        debouncedSave();
       });
     },
   },
