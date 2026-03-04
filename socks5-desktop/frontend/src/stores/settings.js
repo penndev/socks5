@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { Get, Set } from "@bindings/socks5-desktop/storage";
+import { Get, Set as setStorageValue } from "@bindings/socks5-desktop/storage";
 import { notification } from "ant-design-vue";
 import { debounce } from "@/utils";
 import { setLocale, useI18n, detectSystemLocale } from "@/i18n";
@@ -9,6 +9,7 @@ const KEY = "settings";
 const SAVE_DEBOUNCE_MS = 500;
 const DEFAULT_THEME_MODE = "system";
 const NOTIFICATION_PLACEMENT = "topRight";
+const THEME_MODES = new globalThis.Set(["dark", "light", "system"]);
 
 const defaultProxy = () => ({
   host: "127.0.0.1",
@@ -25,7 +26,7 @@ const defaultSystem = () => ({
 });
 
 function normalizeThemeMode(mode) {
-  if (mode === "dark" || mode === "light" || mode === "system") {
+  if (THEME_MODES.has(mode)) {
     return mode;
   }
   return DEFAULT_THEME_MODE;
@@ -42,6 +43,13 @@ function syncRuntimePreferences(systemSettings) {
   systemSettings.language = setLocale(systemSettings.language);
   systemSettings.themeMode = normalizeThemeMode(systemSettings.themeMode);
   applyTheme(systemSettings.themeMode);
+}
+
+function getPersistedSnapshot(store) {
+  return {
+    proxy: { ...store.proxy },
+    system: { ...store.system },
+  };
 }
 
 export const useSettingsStore = defineStore(KEY, {
@@ -73,12 +81,9 @@ export const useSettingsStore = defineStore(KEY, {
       const { t } = useI18n();
 
       try {
-        await Set(KEY, {
-          proxy: { ...this.proxy },
-          system: { ...this.system },
-        });
+        await setStorageValue(KEY, getPersistedSnapshot(this));
         showSaveNotification("success", t("settings.saveSuccess"));
-      } catch (e) {
+      } catch (_) {
         showSaveNotification("error", t("settings.saveError"));
       }
     },

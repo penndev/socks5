@@ -58,8 +58,15 @@ const settingsStore = useSettingsStore();
 const selectedServer = computed(() => serverStore.selectedServer);
 const { t } = useI18n();
 
+// 仅用于 UI 切换展示，保留现有交互行为
 const proxyMode = ref("manual");
 const modeMessage = ref("");
+
+function toSafeString(value, fallback = "") {
+  if (typeof value === "string") return value;
+  if (value == null) return fallback;
+  return String(value);
+}
 
 // 选择节点时，启动或停止本地 socks5
 watch(
@@ -78,7 +85,12 @@ watch(
     // 不管是否第一次选择节点，都更新远程节点信息
     if (newServer) {
       const { host, username, password, protocol } = newServer;
-      await SetRemote(host, username ?? "", password ?? "", protocol ?? "Socks5");
+      await SetRemote(
+        toSafeString(host),
+        toSafeString(username),
+        toSafeString(password),
+        toSafeString(protocol, "Socks5"),
+      );
     } else if (oldServer) {
       // 取消选择节点时，停止本地服务
       await Stop();

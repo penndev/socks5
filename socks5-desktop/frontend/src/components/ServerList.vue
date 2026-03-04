@@ -125,6 +125,7 @@ const { t } = useI18n();
 const servers = ref([]);
 
 const editRef = ref();
+// 编辑态集中管理：弹窗状态、表单、校验与提交动作
 const edit = reactive({
   visible: false,
   loading: false,

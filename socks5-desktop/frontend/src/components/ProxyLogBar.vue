@@ -8,38 +8,18 @@
           :title="t('log.dragToResize')"
           @mousedown="startResize"
         />
-        <template v-if="activePanel === 'status'">
-          <div class="panel-header">
-            <span>{{ t("log.statusTitle") }}</span>
-            <div class="panel-actions">
-              <a-button type="text" size="small" @click="clearStatus">
-                {{ t("log.clear") }}
-              </a-button>
-              <a-button type="text" size="small" @click="activePanel = null">
-                <CloseOutlined />
-              </a-button>
-            </div>
+        <div class="panel-header">
+          <span>{{ panelTitle }}</span>
+          <div class="panel-actions">
+            <a-button type="text" size="small" @click="clearActivePanel">
+              {{ t("log.clear") }}
+            </a-button>
+            <a-button type="text" size="small" @click="closePanel">
+              <CloseOutlined />
+            </a-button>
           </div>
-          <pre class="panel-content">
-{{ statusText || t("log.statusEmpty") }}</pre
-          >
-        </template>
-        <template v-else-if="activePanel === 'log'">
-          <div class="panel-header">
-            <span>{{ t("log.connectionTitle") }}</span>
-            <div class="panel-actions">
-              <a-button type="text" size="small" @click="clearLogs">
-                {{ t("log.clear") }}
-              </a-button>
-              <a-button type="text" size="small" @click="activePanel = null">
-                <CloseOutlined />
-              </a-button>
-            </div>
-          </div>
-          <pre class="panel-content">
-{{ connectionText || t("log.connectionEmpty") }}</pre
-          >
-        </template>
+        </div>
+        <pre class="panel-content">{{ panelText }}</pre>
       </div>
     </Transition>
 
@@ -73,6 +53,10 @@ import { useSettingsStore } from "@/stores/settings";
 import { useI18n } from "@/i18n";
 
 const MAX_LOG_LINES = 1000;
+const STATUS_PANEL = "status";
+const CONNECTION_PANEL = "log";
+const EVENT_STATUS = "logServerStatus";
+const EVENT_CONNECTION = "logProxyList";
 
 const activePanel = ref(null);
 const lines = ref([]);
@@ -84,6 +68,12 @@ const PANEL_HEIGHT_MIN = 80;
 const PANEL_HEIGHT_MAX = 480;
 const panelHeight = ref(160);
 const panelHeightPx = computed(() => `${panelHeight.value}px`);
+
+function toEventMessage(eventPayload) {
+  return eventPayload?.data != null
+    ? String(eventPayload.data)
+    : String(eventPayload);
+}
 
 function startResize(e) {
   e.preventDefault();
@@ -113,6 +103,10 @@ function togglePanel(name) {
   activePanel.value = activePanel.value === name ? null : name;
 }
 
+function closePanel() {
+  activePanel.value = null;
+}
+
 function clearStatus() {
   statusText.value = "";
 }
@@ -121,16 +115,35 @@ function clearLogs() {
   lines.value = [];
 }
 
+function clearActivePanel() {
+  if (activePanel.value === STATUS_PANEL) {
+    clearStatus();
+    return;
+  }
+  clearLogs();
+}
+
+const panelTitle = computed(() =>
+  activePanel.value === STATUS_PANEL
+    ? t("log.statusTitle")
+    : t("log.connectionTitle")
+);
+
+const panelText = computed(() => {
+  if (activePanel.value === STATUS_PANEL) {
+    return statusText.value || t("log.statusEmpty");
+  }
+  return connectionText.value || t("log.connectionEmpty");
+});
+
 onMounted(() => {
-  offStatus = Events.On("logServerStatus", (ev) => {
-    const msg = ev?.data != null ? String(ev.data) : String(ev);
-    statusText.value += msg;
+  offStatus = Events.On(EVENT_STATUS, (eventPayload) => {
+    statusText.value += toEventMessage(eventPayload);
   });
 
-  off = Events.On("logProxyList", (ev) => {
+  off = Events.On(EVENT_CONNECTION, (eventPayload) => {
     if (!system.value.enableLogRecording) return;
-    const msg = ev?.data != null ? String(ev.data) : String(ev);
-    lines.value.push(msg);
+    lines.value.push(toEventMessage(eventPayload));
     if (lines.value.length > MAX_LOG_LINES) {
       lines.value.shift();
     }

@@ -1,5 +1,5 @@
 <template>
-  <a-config-provider :theme="antdThemeConfig">
+  <a-config-provider v-if="appReady" :theme="antdThemeConfig">
     <theme-scope>
       <div class="socks5-layout">
         <div class="socks5-main">
@@ -16,7 +16,7 @@
           </div>
 
           <div v-if="extensionVisible" class="socks5-extension">
-            <div class="socks5-divider" @mousedown="socks5Dragging = true"></div>
+            <div class="socks5-divider" @mousedown="isDividerDragging = true"></div>
             <div class="socks5-extension-body">
               <settings />
             </div>
@@ -45,6 +45,21 @@ import { resolvedTheme } from "@/theme";
 
 const settingsStore = useSettingsStore();
 const { t } = useI18n();
+const appReady = ref(false);
+
+// 应用启动初始化：加载设置并开启自动同步保存
+async function bootstrapApp() {
+  await settingsStore.load();
+  settingsStore.initSync();
+}
+
+bootstrapApp()
+  .catch(() => {
+    // 初始化失败时继续渲染，沿用默认配置
+  })
+  .finally(() => {
+    appReady.value = true;
+  });
 
 const antdThemeConfig = computed(() => {
   const isDark = resolvedTheme.value === "dark";
@@ -70,29 +85,35 @@ const antdThemeConfig = computed(() => {
   };
 });
 
-const appMinWidth = 400;
-const appMaxWidth = 600;
-const appWidth = ref(400);
+const APP_MIN_WIDTH = 400;
+const APP_MAX_WIDTH = 600;
+const EXTENSION_PANEL_WIDTH = 400;
+const appWidth = ref(APP_MIN_WIDTH);
 
 // 右侧设置面板显示状态
 const extensionVisible = ref(true);
 
+function clampAppWidth(width) {
+  return Math.min(APP_MAX_WIDTH, Math.max(APP_MIN_WIDTH, width));
+}
+
+function setGlobalDragState(isDragging) {
+  document.body.style.cursor = isDragging ? "e-resize" : "";
+  document.body.style.userSelect = isDragging ? "none" : "";
+}
+
 async function syncWindowSizeByExtensionVisible(isVisible) {
   const { height } = await Window.Size();
-  if (isVisible) {
-    await Window.SetSize(appMaxWidth + 400, height);
-    appWidth.value = appMinWidth;
-    return;
-  }
-  await Window.SetSize(appMinWidth, height);
-  appWidth.value = appMinWidth;
+  const targetWindowWidth = isVisible ? APP_MAX_WIDTH + EXTENSION_PANEL_WIDTH : APP_MIN_WIDTH;
+  await Window.SetSize(targetWindowWidth, height);
+  appWidth.value = APP_MIN_WIDTH;
 }
 
 watch(extensionVisible, syncWindowSizeByExtensionVisible, { immediate: true });
 
-const socks5Dragging = ref(false);
+const isDividerDragging = ref(false);
 const updateLayoutByWindowWidth = () => {
-  if (window.innerWidth < appMaxWidth) {
+  if (window.innerWidth < APP_MAX_WIDTH) {
     extensionVisible.value = false;
     appWidth.value = window.innerWidth;
     return;
@@ -101,27 +122,21 @@ const updateLayoutByWindowWidth = () => {
 };
 
 const handleDividerMouseMove = (e) => {
-  if (!socks5Dragging.value) return;
-
-  let w = e.clientX;
-  if (w < appMinWidth) w = appMinWidth;
-  if (w > appMaxWidth) w = appMaxWidth;
-  appWidth.value = w;
+  if (!isDividerDragging.value) return;
+  appWidth.value = clampAppWidth(e.clientX);
 };
 
 const stopDividerDragging = () => {
-  socks5Dragging.value = false;
+  isDividerDragging.value = false;
 };
 
-watch(socks5Dragging, (isDragging) => {
+watch(isDividerDragging, (isDragging) => {
   if (isDragging) {
-    document.body.style.cursor = "e-resize";
-    document.body.style.userSelect = "none";
+    setGlobalDragState(true);
     window.addEventListener("mousemove", handleDividerMouseMove);
     window.addEventListener("mouseup", stopDividerDragging);
   } else {
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
+    setGlobalDragState(false);
     window.removeEventListener("mousemove", handleDividerMouseMove);
     window.removeEventListener("mouseup", stopDividerDragging);
   }
@@ -132,6 +147,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  setGlobalDragState(false);
   window.removeEventListener("resize", updateLayoutByWindowWidth);
   window.removeEventListener("mousemove", handleDividerMouseMove);
   window.removeEventListener("mouseup", stopDividerDragging);

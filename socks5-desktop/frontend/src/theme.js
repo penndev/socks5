@@ -35,6 +35,7 @@ function bindSystemThemeListener() {
 
   const nextTheme = mq.matches ? THEME_DARK : THEME_LIGHT;
 
+  // 跟随系统主题变化，实时同步到根节点 class
   systemThemeListener = (event) => {
     const currentTheme = event.matches ? THEME_DARK : THEME_LIGHT;
     resolvedTheme.value = currentTheme;

@@ -68,6 +68,7 @@ export function setLocale(locale) {
 export function useI18n() {
   const locale = computed(() => currentLocale.value);
 
+  // 简单 key-value 翻译：缺失 key 时回退原 key
   const t = (key) => {
     const dict = messages[locale.value] || messages[DEFAULT_LOCALE];
     return dict[key] ?? key;
