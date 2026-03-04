@@ -21,8 +21,8 @@
       </div>
     </div>
 
-    <!-- 底部连接日志状态栏组件 -->
-    <div class="socks5-bottom">
+    <!-- 底部连接日志状态栏组件（设置开启时显示） -->
+    <div v-if="settingsStore.system.enableLogRecording" class="socks5-bottom">
       <proxy-log-bar />
     </div>
   </div>
@@ -33,6 +33,9 @@ import { ref, onMounted, watch } from "vue";
 import { Window } from "@wailsio/runtime";
 import Settings from "./components/Settings.vue";
 import ProxyLogBar from "./components/ProxyLogBar.vue";
+import { useSettingsStore } from "@/stores/settings";
+
+const settingsStore = useSettingsStore();
 
 const appMinWidth = 400;
 const appMaxWidth = 600;

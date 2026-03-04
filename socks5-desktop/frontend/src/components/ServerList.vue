@@ -21,7 +21,7 @@
                 </span>
               </template>
               <template #description>
-                <span class="server-meta">
+                <span class="server-meta" :title="`${item.protocol} | ${item.username || '无认证'}`">
                   {{ item.protocol }} | {{ item.username || "无认证" }}
                 </span>
               </template>
@@ -204,6 +204,10 @@ onMounted(async () => {
     text-overflow: ellipsis;
   }
 
+  :deep(.ant-list-item-meta-description) {
+    min-width: 0;
+  }
+
   .server-list-scroll {
     flex: 1;
     margin-bottom: 8px;
@@ -248,6 +252,11 @@ onMounted(async () => {
     .server-meta {
       font-size: 12px;
       color: #6b7280;
+      display: block;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 }

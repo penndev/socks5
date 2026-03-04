@@ -1,20 +1,49 @@
 <template>
   <div class="bottom-area">
-    <!-- 面板区域：点击状态栏项时显示，在状态栏上方 -->
+    <!-- 单一面板，根据 activePanel 切换内容，避免两个 Transition 切换时闪烁 -->
     <Transition name="fade">
-      <div v-show="activePanel === 'log'" class="panel">
-        <div class="panel-header">
-          <span>连接日志</span>
-          <a-button type="text" size="small" @click="activePanel = null">
-            <CloseOutlined />
-          </a-button>
-        </div>
-        <pre class="panel-content">{{ text || "暂无连接日志" }}</pre>
+      <div v-show="activePanel" class="panel" :style="{ height: panelHeightPx }">
+        <div
+          class="panel-resize-handle"
+          title="拖动调节高度"
+          @mousedown="startResize"
+        />
+        <template v-if="activePanel === 'status'">
+          <div class="panel-header">
+            <span>状态日志</span>
+            <div class="panel-actions">
+              <a-button type="text" size="small" @click="clearStatus">清空</a-button>
+              <a-button type="text" size="small" @click="activePanel = null">
+                <CloseOutlined />
+              </a-button>
+            </div>
+          </div>
+          <pre class="panel-content">{{ statusText || "暂无状态日志" }}</pre>
+        </template>
+        <template v-else-if="activePanel === 'log'">
+          <div class="panel-header">
+            <span>连接日志</span>
+            <div class="panel-actions">
+              <a-button type="text" size="small" @click="clearLogs">清空</a-button>
+              <a-button type="text" size="small" @click="activePanel = null">
+                <CloseOutlined />
+              </a-button>
+            </div>
+          </div>
+          <pre class="panel-content">{{ connectionText || "暂无连接日志" }}</pre>
+        </template>
       </div>
     </Transition>
 
-    <!-- 状态栏：固定在最底部 -->
+    <!-- 底部状态栏：状态日志 | 连接日志 -->
     <div class="status-bar">
+      <span
+        class="status-item"
+        :class="{ active: activePanel === 'status' }"
+        @click="togglePanel('status')"
+      >
+        状态日志
+      </span>
       <span
         class="status-item"
         :class="{ active: activePanel === 'log' }"
@@ -31,21 +60,68 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { CloseOutlined } from "@ant-design/icons-vue";
 import { Events } from "@wailsio/runtime";
+import { storeToRefs } from "pinia";
+import { useSettingsStore } from "@/stores/settings";
+
+const MAX_LOG_LINES = 1000;
 
 const activePanel = ref(null);
 const lines = ref([]);
+const statusText = ref("");
+const { system } = storeToRefs(useSettingsStore());
+
+const PANEL_HEIGHT_MIN = 80;
+const PANEL_HEIGHT_MAX = 480;
+const panelHeight = ref(160);
+const panelHeightPx = computed(() => `${panelHeight.value}px`);
+
+function startResize(e) {
+  e.preventDefault();
+  const startY = e.clientY;
+  const startH = panelHeight.value;
+  function onMove(ev) {
+    const delta = startY - ev.clientY;
+    const next = Math.round(startH + delta);
+    panelHeight.value = Math.min(PANEL_HEIGHT_MAX, Math.max(PANEL_HEIGHT_MIN, next));
+  }
+  function onUp() {
+    document.removeEventListener("mousemove", onMove);
+    document.removeEventListener("mouseup", onUp);
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  }
+  document.body.style.cursor = "ns-resize";
+  document.body.style.userSelect = "none";
+  document.addEventListener("mousemove", onMove);
+  document.addEventListener("mouseup", onUp);
+}
 
 let off = null;
+let offStatus = null;
 
 function togglePanel(name) {
   activePanel.value = activePanel.value === name ? null : name;
 }
 
+function clearStatus() {
+  statusText.value = "";
+}
+
+function clearLogs() {
+  lines.value = [];
+}
+
 onMounted(() => {
+  offStatus = Events.On("logServerStatus", (ev) => {
+    const msg = ev?.data != null ? String(ev.data) : String(ev);
+    statusText.value += msg;
+  });
+
   off = Events.On("logProxyList", (ev) => {
+    if (!system.value.enableLogRecording) return;
     const msg = ev?.data != null ? String(ev.data) : String(ev);
     lines.value.push(msg);
-    if (lines.value.length > 500) {
+    if (lines.value.length > MAX_LOG_LINES) {
       lines.value.shift();
     }
   });
@@ -55,9 +131,12 @@ onBeforeUnmount(() => {
   if (typeof off === "function") {
     off();
   }
+  if (typeof offStatus === "function") {
+    offStatus();
+  }
 });
 
-const text = computed(() => lines.value.join("\n"));
+const connectionText = computed(() => lines.value.join("\n"));
 const count = computed(() => lines.value.length);
 </script>
 
@@ -71,9 +150,27 @@ const count = computed(() => lines.value.length);
 .panel {
   display: flex;
   flex-direction: column;
-  height: 160px;
+  min-height: 0;
+  padding-top: 6px;
   border-top: 1px solid #e5e7eb;
   background: #f9fafb;
+  position: relative;
+  box-sizing: border-box;
+
+  .panel-resize-handle {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 4px;
+    cursor: ns-resize;
+    z-index: 1;
+    background: transparent;
+    transition: background 0.15s;
+    &:hover {
+      background: rgba(66, 133, 244, 0.2);
+    }
+  }
 
   .panel-header {
     flex-shrink: 0;
@@ -82,6 +179,12 @@ const count = computed(() => lines.value.length);
     display: flex;
     align-items: center;
     justify-content: space-between;
+
+    .panel-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
     font-size: 12px;
     font-weight: 500;
     color: #374151;

@@ -30,38 +30,23 @@
 <script setup>
 import { ref, watch, computed } from "vue";
 import { useServerStore } from "../stores/server";
+import { useSettingsStore } from "@/stores/settings";
 import { Start, Stop, SetRemote } from "@bindings/socks5-desktop/proxy";
-import { Get } from "@bindings/socks5-desktop/storage";
 import { Events } from "@wailsio/runtime";
 
 const serverStore = useServerStore();
+const settingsStore = useSettingsStore();
 const selectedServer = computed(() => serverStore.selectedServer);
 
 const proxyMode = ref("manual");
 const modeMessage = ref("");
 
-// 后端通过事件推送一些状态时，附加到文案中（如当前使用的本地地址等）
-Events.On("logServerStatus", (ev) => {
-  const msg = ev?.data != null ? ev.data : ev;
-  modeMessage.value +=  msg;
-});
-
-const SETTINGS_KEY = "settings";
-
-
-
-
 // 选择节点时，启动或停止本地 socks5
 watch(selectedServer, async (newServer, oldServer) => {
     // 第一次选择节点时，按设置中的本地代理配置启动本地 socks5
     if (!oldServer && newServer) {
-      const data = await Get(SETTINGS_KEY);
-      const proxy = data?.proxy || {};
-      const host = proxy.host || "127.0.0.1";
-      const port = proxy.port || 1080;
-      const username = proxy.username || "";
-      const password = proxy.password || "";
-      await Start(`${host}:${port}`, username, password);
+      const { host, port, username, password } = settingsStore.proxy;
+      await Start(`${host || "127.0.0.1"}:${port || 1080}`, username || "", password || "");
     }
 
     // 不管是否第一次选择节点，都更新远程节点信息
