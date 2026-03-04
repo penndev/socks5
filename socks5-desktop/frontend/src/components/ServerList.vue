@@ -1,5 +1,5 @@
 <template>
-  <a-card class="socks5-server-card" title="节点列表">
+  <a-card class="socks5-server-card" :title="t('serverList.title')">
     <div class="server-list-scroll" v-if="servers.length > 0">
       <a-list :data-source="servers" bordered>
         <template #renderItem="{ item }">
@@ -21,8 +21,13 @@
                 </span>
               </template>
               <template #description>
-                <span class="server-meta" :title="`${item.protocol} | ${item.username || '无认证'}`">
-                  {{ item.protocol }} | {{ item.username || "无认证" }}
+                <span
+                  class="server-meta"
+                  :title="`${item.protocol} | ${
+                    item.username || t('serverList.noAuth')
+                  }`"
+                >
+                  {{ item.protocol }} | {{ item.username || t("serverList.noAuth") }}
                 </span>
               </template>
             </a-list-item-meta>
@@ -32,12 +37,12 @@
     </div>
 
     <div class="server-list-empty" v-else>
-      <a-empty description="暂无节点，点击下方按钮添加" />
+      <a-empty :description="t('serverList.emptyDescription')" />
     </div>
 
     <a-button type="primary" block class="add-server-btn" @click="edit.open()">
       <PlusOutlined />
-      添加节点
+      {{ t("serverList.addButton") }}
     </a-button>
 
     <a-modal
@@ -47,28 +52,52 @@
       @ok="edit.submit"
       @cancel="edit.visible = false"
     >
-      <a-form ref="editRef" :model="edit.form" :rules="edit.rules" layout="vertical">
-        <a-form-item label="地址" name="host">
-          <a-input v-model:value="edit.form.host" placeholder="127.0.0.1:1080" allow-clear />
+      <a-form
+        ref="editRef"
+        :model="edit.form"
+        :rules="edit.rules"
+        layout="vertical"
+      >
+        <a-form-item :label="t('serverList.hostLabel')" name="host">
+          <a-input
+            v-model:value="edit.form.host"
+            :placeholder="t('serverList.hostPlaceholder')"
+            allow-clear
+          />
         </a-form-item>
 
-        <a-form-item label="备注" name="remark">
-          <a-input v-model:value="edit.form.remark" placeholder="可选" allow-clear />
+        <a-form-item :label="t('serverList.remarkLabel')" name="remark">
+          <a-input
+            v-model:value="edit.form.remark"
+            :placeholder="t('serverList.remarkPlaceholder')"
+            allow-clear
+          />
         </a-form-item>
 
-        <a-form-item label="协议" name="protocol">
-          <a-select v-model:value="edit.form.protocol" placeholder="选择协议">
+        <a-form-item :label="t('serverList.protocolLabel')" name="protocol">
+          <a-select
+            v-model:value="edit.form.protocol"
+            :placeholder="t('serverList.selectProtocol')"
+          >
             <a-select-option value="Socks5">Socks5</a-select-option>
             <a-select-option value="Socks5OverTLS">Socks5OverTLS</a-select-option>
           </a-select>
         </a-form-item>
 
-        <a-form-item label="用户名" name="username">
-          <a-input v-model:value="edit.form.username" placeholder="可选" allow-clear />
+        <a-form-item :label="t('serverList.usernameLabel')" name="username">
+          <a-input
+            v-model:value="edit.form.username"
+            :placeholder="t('serverList.usernamePlaceholder')"
+            allow-clear
+          />
         </a-form-item>
 
-        <a-form-item label="密码" name="password">
-          <a-input-password v-model:value="edit.form.password" placeholder="可选" allow-clear />
+        <a-form-item :label="t('serverList.passwordLabel')" name="password">
+          <a-input-password
+            v-model:value="edit.form.password"
+            :placeholder="t('serverList.passwordPlaceholder')"
+            allow-clear
+          />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -77,13 +106,20 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from "vue";
-import { CheckCircleFilled, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons-vue";
+import {
+  CheckCircleFilled,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+} from "@ant-design/icons-vue";
 import { Modal, message } from "ant-design-vue";
 import { Get, Set } from "@bindings/socks5-desktop/storage";
 import { useServerStore } from "../stores/server";
+import { useI18n } from "@/i18n";
 
 const serverStore = useServerStore();
 const selectedServer = computed(() => serverStore.selectedServer);
+const { t } = useI18n();
 
 // 所有节点
 const servers = ref([]);
@@ -103,15 +139,15 @@ const edit = reactive({
   },
   rules: {
     host: [
-      { required: true, message: "请输入地址" },
-      { pattern: /^[^:]+:\d{1,5}$/, message: "格式为 host:port" },
+      { required: true, message: t("serverList.validateHostRequired") },
+      { pattern: /^[^:]+:\d{1,5}$/, message: t("serverList.validateHostFormat") },
     ],
-    protocol: [{ required: true, message: "请选择协议" }],
+    protocol: [{ required: true, message: t("serverList.validateProtocolRequired") }],
   },
 
   open(server = null) {
     edit.id = server?.id ?? null;
-    edit.title = edit.id ? "编辑节点" : "添加节点";
+    edit.title = edit.id ? t("serverList.editTitle") : t("serverList.addTitle");
     edit.form.host = server?.host ?? "";
     edit.form.remark = server?.remark ?? "";
     edit.form.username = server?.username ?? "";
@@ -135,21 +171,23 @@ const edit = reactive({
 
       if (edit.id) {
         const idx = servers.value.findIndex((s) => s.id === edit.id);
-        if (idx >= 0) servers.value[idx] = { ...servers.value[idx], ...payload };
+        if (idx >= 0)
+          servers.value[idx] = { ...servers.value[idx], ...payload };
 
         if (selectedServer?.id === edit.id)
           serverStore.selectedServer = { ...selectedServer, ...payload };
 
-        message.success("修改成功");
+        message.success(t("serverList.updateSuccess"));
       } else {
         servers.value.push({ id: Date.now().toString(), ...payload });
-        message.success("添加成功");
+        message.success(t("serverList.addSuccess"));
       }
 
       await Set(STORAGE_KEY, servers.value);
       edit.visible = false;
     } catch (e) {
-      if (!e?.errorFields) message.error(e?.message || "操作失败");
+      if (!e?.errorFields)
+        message.error(e?.message || t("serverList.operationFailed"));
     } finally {
       edit.loading = false;
     }
@@ -160,16 +198,18 @@ const STORAGE_KEY = "servers";
 
 function deleteModal(item) {
   Modal.confirm({
-    title: "删除节点",
-    content: `确定删除节点 ${item.remark || item.host} 吗？`,
+    title: t("serverList.deleteTitle"),
+    content: `${t("serverList.deleteContentPrefix")}${
+      item.remark || item.host
+    }${t("serverList.deleteContentSuffix")}`,
     okType: "danger",
-    okText: "删除",
-    cancelText: "取消",
+    okText: t("serverList.deleteOkText"),
+    cancelText: t("serverList.deleteCancelText"),
     async onOk() {
       servers.value = servers.value.filter((s) => s.id !== item.id);
       if (selectedServer?.id === item.id) serverStore.selectedServer = null;
       await Set(STORAGE_KEY, servers.value);
-      message.success("已删除");
+      message.success(t("serverList.deleteSuccess"));
     },
   });
 }
@@ -178,7 +218,7 @@ onMounted(async () => {
   try {
     servers.value = await Get(STORAGE_KEY);
   } catch {
-    message.error("加载节点失败");
+    message.error(t("serverList.loadFailed"));
   }
 });
 </script>

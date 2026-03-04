@@ -1,24 +1,43 @@
 <template>
-  <a-card class="proxy-panel" title="代理面板">
+  <a-card class="proxy-panel" :title="t('proxy.title')">
     <div class="proxy-current-server">
-      <span class="proxy-label">当前节点</span>
-      <span class="proxy-value" :title="selectedServer?.remark || selectedServer?.host || ''">
-        {{ selectedServer?.remark || selectedServer?.host || "未选择节点" }}
+      <span class="proxy-label">{{ t("proxy.currentServerLabel") }}</span>
+      <span
+        class="proxy-value"
+        :title="selectedServer?.remark || selectedServer?.host || ''"
+      >
+        {{
+          selectedServer?.remark ||
+          selectedServer?.host ||
+          t("proxy.noSelectedServer")
+        }}
       </span>
-      <a-button v-if="selectedServer" type="link" size="small" danger class="remove-btn"
-        @click="serverStore.selectedServer = null">
-        移除
+      <a-button
+        v-if="selectedServer"
+        type="link"
+        size="small"
+        danger
+        class="remove-btn"
+        @click="serverStore.selectedServer = null"
+      >
+        {{ t("proxy.removeButton") }}
       </a-button>
     </div>
 
     <div class="proxy-mode-tip" v-if="!selectedServer">
-      请先在下方列表中选择节点
+      {{ t("proxy.selectTip") }}
     </div>
 
     <a-radio-group v-else v-model:value="proxyMode" class="proxy-mode-group">
-      <a-radio-button value="manual">手动模式</a-radio-button>
-      <a-radio-button value="tun">TUN 模式</a-radio-button>
-      <a-radio-button value="system">系统代理</a-radio-button>
+      <a-radio-button value="manual">
+        {{ t("proxy.mode.manual") }}
+      </a-radio-button>
+      <a-radio-button value="tun">
+        {{ t("proxy.mode.tun") }}
+      </a-radio-button>
+      <a-radio-button value="system">
+        {{ t("proxy.mode.system") }}
+      </a-radio-button>
     </a-radio-group>
 
     <div class="proxy-mode-desc">
@@ -32,21 +51,28 @@ import { ref, watch, computed } from "vue";
 import { useServerStore } from "../stores/server";
 import { useSettingsStore } from "@/stores/settings";
 import { Start, Stop, SetRemote } from "@bindings/socks5-desktop/proxy";
-import { Events } from "@wailsio/runtime";
+import { useI18n } from "@/i18n";
 
 const serverStore = useServerStore();
 const settingsStore = useSettingsStore();
 const selectedServer = computed(() => serverStore.selectedServer);
+const { t } = useI18n();
 
 const proxyMode = ref("manual");
 const modeMessage = ref("");
 
 // 选择节点时，启动或停止本地 socks5
-watch(selectedServer, async (newServer, oldServer) => {
+watch(
+  selectedServer,
+  async (newServer, oldServer) => {
     // 第一次选择节点时，按设置中的本地代理配置启动本地 socks5
     if (!oldServer && newServer) {
       const { host, port, username, password } = settingsStore.proxy;
-      await Start(`${host || "127.0.0.1"}:${port || 1080}`, username || "", password || "");
+      await Start(
+        `${host || "127.0.0.1"}:${port || 1080}`,
+        username || "",
+        password || ""
+      );
     }
 
     // 不管是否第一次选择节点，都更新远程节点信息
@@ -56,12 +82,11 @@ watch(selectedServer, async (newServer, oldServer) => {
     } else if (oldServer) {
       // 取消选择节点时，停止本地服务
       await Stop();
-      modeMessage.value = "已停止";
+      modeMessage.value = t("proxy.stopped");
     }
   },
   { immediate: true }
 );
-
 </script>
 
 <style lang="scss" scoped>

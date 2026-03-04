@@ -1,0 +1,76 @@
+import { ref, computed } from "vue";
+import zhCN from "./locales/zh-CN";
+import en from "./locales/en";
+
+const messages = {
+  "zh-CN": zhCN,
+  en,
+};
+
+const DEFAULT_LOCALE = "en";
+
+/**
+ * 语言归一化
+ */
+function normalizeLocale(lang) {
+  if (!lang) return DEFAULT_LOCALE;
+
+  const lower = lang.toLowerCase();
+
+  if (lower.startsWith("zh")) return "zh-CN";
+  if (lower.startsWith("en")) return "en";
+
+  return DEFAULT_LOCALE;
+}
+
+/**
+ * 获取系统语言
+ */
+export function detectSystemLocale() {
+  if (typeof navigator === "undefined") {
+    return DEFAULT_LOCALE;
+  }
+
+  const lang =
+    navigator.language ||
+    (Array.isArray(navigator.languages) && navigator.languages[0]) ||
+    "";
+
+  return normalizeLocale(lang);
+}
+
+// 当前语言
+const currentLocale = ref(detectSystemLocale());
+
+/**
+ * 设置语言
+ */
+export function setLocale(locale) {
+  let finalLocale;
+
+  if (locale && messages.hasOwnProperty(locale)) {
+    finalLocale = locale;
+  } else {
+    finalLocale = normalizeLocale(locale || detectSystemLocale());
+  }
+
+  currentLocale.value = finalLocale;
+  return finalLocale;
+}
+
+/**
+ * i18n hook
+ */
+export function useI18n() {
+  const locale = computed(() => currentLocale.value);
+
+  const t = (key) => {
+    const dict = messages[locale.value] || messages[DEFAULT_LOCALE];
+    return dict[key] ?? key;
+  };
+
+  return {
+    t,
+    locale,
+  };
+}

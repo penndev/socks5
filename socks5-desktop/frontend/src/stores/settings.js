@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { Get, Set } from "@bindings/socks5-desktop/storage";
 import { message } from "ant-design-vue";
 import { debounce } from "@/utils";
+import { setLocale, useI18n, detectSystemLocale } from "@/i18n";
 
 const KEY = "settings";
 
@@ -13,7 +14,7 @@ const defaultProxy = () => ({
 });
 
 const defaultSystem = () => ({
-  language: "zh-CN",
+  language: detectSystemLocale(),
   startupOnBoot: false,
   enableLogRecording: true,
 });
@@ -32,6 +33,8 @@ export const useSettingsStore = defineStore(KEY, {
         if (d?.proxy) Object.assign(this.proxy, d.proxy);
         if (d?.system) Object.assign(this.system, d.system);
       } catch (_) {}
+      // 使用 i18n 内部逻辑规范语言并写回
+      this.system.language = setLocale(this.system.language);
     },
 
     /** 将 state 持久化到存储 */
@@ -41,9 +44,11 @@ export const useSettingsStore = defineStore(KEY, {
           proxy: { ...this.proxy },
           system: { ...this.system },
         });
-        message.success("设置已保存");
+        const { t } = useI18n();
+        message.success(t("settings.saveSuccess"));
       } catch (e) {
-        message.error("保存失败");
+        const { t } = useI18n();
+        message.error(t("settings.saveError"));
       }
     },
 
@@ -52,6 +57,10 @@ export const useSettingsStore = defineStore(KEY, {
       const store = this;
       const debouncedSave = debounce(() => store.save(), 500);
       store.$subscribe(debouncedSave);
+      // 订阅变更时同步语言
+      store.$subscribe(() => {
+        setLocale(store.system.language);
+      });
     },
   },
 });

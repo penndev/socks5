@@ -3,7 +3,7 @@
     <div class="socks5-main">
       <div class="socks5-app" :style="{ width: appWidth + 'px' }">
         <div class="socks5-app-header">
-          <div class="socks5-app-title">Socks5 App</div>
+          <div class="socks5-app-title">{{ t("app.title") }}</div>
           <a-switch v-model:checked="extensionVisible" size="small" />
         </div>
 
@@ -34,8 +34,10 @@ import { Window } from "@wailsio/runtime";
 import Settings from "./components/Settings.vue";
 import ProxyLogBar from "./components/ProxyLogBar.vue";
 import { useSettingsStore } from "@/stores/settings";
+import { useI18n } from "@/i18n";
 
 const settingsStore = useSettingsStore();
+const { t } = useI18n();
 
 const appMinWidth = 400;
 const appMaxWidth = 600;

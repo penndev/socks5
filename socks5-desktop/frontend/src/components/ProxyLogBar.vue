@@ -5,32 +5,40 @@
       <div v-show="activePanel" class="panel" :style="{ height: panelHeightPx }">
         <div
           class="panel-resize-handle"
-          title="拖动调节高度"
+          :title="t('log.dragToResize')"
           @mousedown="startResize"
         />
         <template v-if="activePanel === 'status'">
           <div class="panel-header">
-            <span>状态日志</span>
+            <span>{{ t("log.statusTitle") }}</span>
             <div class="panel-actions">
-              <a-button type="text" size="small" @click="clearStatus">清空</a-button>
+              <a-button type="text" size="small" @click="clearStatus">
+                {{ t("log.clear") }}
+              </a-button>
               <a-button type="text" size="small" @click="activePanel = null">
                 <CloseOutlined />
               </a-button>
             </div>
           </div>
-          <pre class="panel-content">{{ statusText || "暂无状态日志" }}</pre>
+          <pre class="panel-content">
+{{ statusText || t("log.statusEmpty") }}</pre
+          >
         </template>
         <template v-else-if="activePanel === 'log'">
           <div class="panel-header">
-            <span>连接日志</span>
+            <span>{{ t("log.connectionTitle") }}</span>
             <div class="panel-actions">
-              <a-button type="text" size="small" @click="clearLogs">清空</a-button>
+              <a-button type="text" size="small" @click="clearLogs">
+                {{ t("log.clear") }}
+              </a-button>
               <a-button type="text" size="small" @click="activePanel = null">
                 <CloseOutlined />
               </a-button>
             </div>
           </div>
-          <pre class="panel-content">{{ connectionText || "暂无连接日志" }}</pre>
+          <pre class="panel-content">
+{{ connectionText || t("log.connectionEmpty") }}</pre
+          >
         </template>
       </div>
     </Transition>
@@ -42,14 +50,14 @@
         :class="{ active: activePanel === 'status' }"
         @click="togglePanel('status')"
       >
-        状态日志
+        {{ t("log.statusTitle") }}
       </span>
       <span
         class="status-item"
         :class="{ active: activePanel === 'log' }"
         @click="togglePanel('log')"
       >
-        连接日志
+        {{ t("log.connectionTitle") }}
         <span v-if="count > 0" class="badge">{{ count }}</span>
       </span>
     </div>
@@ -62,6 +70,7 @@ import { CloseOutlined } from "@ant-design/icons-vue";
 import { Events } from "@wailsio/runtime";
 import { storeToRefs } from "pinia";
 import { useSettingsStore } from "@/stores/settings";
+import { useI18n } from "@/i18n";
 
 const MAX_LOG_LINES = 1000;
 
@@ -69,6 +78,7 @@ const activePanel = ref(null);
 const lines = ref([]);
 const statusText = ref("");
 const { system } = storeToRefs(useSettingsStore());
+const { t } = useI18n();
 
 const PANEL_HEIGHT_MIN = 80;
 const PANEL_HEIGHT_MAX = 480;
