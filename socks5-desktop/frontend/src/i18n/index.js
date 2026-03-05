@@ -78,4 +78,4 @@ export function useI18n() {
     t,
     locale,
   };
-}
+};

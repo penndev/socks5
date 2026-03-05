@@ -46,6 +46,8 @@ func main() {
 		},
 	})
 
+	window.SetBackgroundColour(application.NewRGBA(30, 30, 30, 255))
+
 	var lastX, lastY int
 	showAtLastPosition := func() {
 		if lastX != 0 && lastY != 0 {
@@ -60,17 +62,17 @@ func main() {
 		e.Cancel()
 	})
 
+	// 设置任务托管栏功能
 	systray := app.SystemTray.New()
 	systray.SetIcon(appIcon)
-
-	menu := app.NewMenu()
-	menu.Add("显示主窗口").OnClick(func(ctx *application.Context) {
+	systrayMenu := app.NewMenu()
+	systrayMenu.Add("显示主窗口").OnClick(func(ctx *application.Context) {
 		showAtLastPosition()
 	})
-	menu.Add("退出").OnClick(func(ctx *application.Context) {
+	systrayMenu.Add("退出").OnClick(func(ctx *application.Context) {
 		app.Quit()
 	})
-	systray.SetMenu(menu)
+	systray.SetMenu(systrayMenu)
 	systray.OnClick(func() {
 		if window.IsVisible() {
 			lastX, lastY = window.Position()
@@ -79,7 +81,6 @@ func main() {
 			showAtLastPosition()
 		}
 	})
-
 	if err := app.Run(); err != nil {
 		panic(err)
 	}

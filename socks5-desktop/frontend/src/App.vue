@@ -50,14 +50,9 @@ const appReady = ref(false);
 // 应用启动初始化：加载设置并开启自动同步保存
 async function bootstrapApp() {
   await settingsStore.load();
-  settingsStore.initSync();
 }
 
-bootstrapApp()
-  .catch(() => {
-    // 初始化失败时继续渲染，沿用默认配置
-  })
-  .finally(() => {
+bootstrapApp().finally(() => {
     appReady.value = true;
   });
 

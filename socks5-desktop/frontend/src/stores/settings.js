@@ -1,101 +1,70 @@
 import { defineStore } from "pinia";
-import { Get, Set as setStorageValue } from "@bindings/socks5-desktop/storage";
+import { Get, Set } from "@bindings/socks5-desktop/storage";
 import { notification } from "ant-design-vue";
 import { debounce } from "@/utils";
 import { setLocale, useI18n, detectSystemLocale } from "@/i18n";
 import { applyTheme } from "@/theme";
 
+// 存储的键名
 const KEY = "settings";
-const SAVE_DEBOUNCE_MS = 500;
-const DEFAULT_THEME_MODE = "system";
-const NOTIFICATION_PLACEMENT = "topRight";
-const THEME_MODES = new globalThis.Set(["dark", "light", "system"]);
 
-const defaultProxy = () => ({
-  host: "127.0.0.1",
-  port: 1080,
-  username: "",
-  password: "",
-});
-
-const defaultSystem = () => ({
-  language: detectSystemLocale(),
-  themeMode: DEFAULT_THEME_MODE,
-  startupOnBoot: false,
-  enableLogRecording: true,
-});
-
-function normalizeThemeMode(mode) {
-  if (THEME_MODES.has(mode)) {
-    return mode;
-  }
-  return DEFAULT_THEME_MODE;
-}
-
-function showSaveNotification(type, message) {
-  notification[type]({
-    message,
-    placement: NOTIFICATION_PLACEMENT,
-  });
-}
-
-function syncRuntimePreferences(systemSettings) {
-  systemSettings.language = setLocale(systemSettings.language);
-  systemSettings.themeMode = normalizeThemeMode(systemSettings.themeMode);
-  applyTheme(systemSettings.themeMode);
-}
-
-function getPersistedSnapshot(store) {
-  return {
-    proxy: { ...store.proxy },
-    system: { ...store.system },
-  };
-}
+const { t } = useI18n();
 
 export const useSettingsStore = defineStore(KEY, {
   state: () => ({
-    proxy: defaultProxy(),
-    system: defaultSystem(),
+    proxy:{
+      host: "127.0.0.1",
+      port: 1080,
+      username: "",
+      password: "",
+    },
+    system:{
+      language: detectSystemLocale(),
+      themeMode: "system",
+      startupOnBoot: false,
+      enableLogRecording: false,
+    },
   }),
 
   actions: {
+    /** 将 state 持久化到存储 */
+    async save() {
+      this.initSystem()
+      try {
+        await Set(KEY, {
+          proxy: { ...this.proxy },
+          system: { ...this.system },
+        });
+        notification.success({
+          message: t("settings.saveSuccess"),
+          placement: "topRight",
+        });
+      } catch (_) {
+        notification.error({
+          message: t("settings.saveError"),
+          placement: "topRight",
+        });
+      }
+    },
+
+    initSystem() {
+      // 设置系统语言
+      setLocale(this.system.language);
+      // 设置皮肤模式
+      applyTheme(this.system.themeMode);
+    },
     /** 从存储加载并合并到 state */
     async load() {
       try {
         const storedSettings = await Get(KEY);
-        if (storedSettings?.proxy) {
-          Object.assign(this.proxy, storedSettings.proxy);
+        if (storedSettings) {
+          Object.assign(this, storedSettings);
         }
-        if (storedSettings?.system) {
-          Object.assign(this.system, storedSettings.system);
-        }
-      } catch (_) {
+        this.$subscribe(() => debounce(this.save(), 800));
+      } finally  {
         // 存储加载失败时保持默认配置
+        this.initSystem();
       }
-
-      syncRuntimePreferences(this.system);
-    },
-
-    /** 将 state 持久化到存储 */
-    async save() {
-      const { t } = useI18n();
-
-      try {
-        await setStorageValue(KEY, getPersistedSnapshot(this));
-        showSaveNotification("success", t("settings.saveSuccess"));
-      } catch (_) {
-        showSaveNotification("error", t("settings.saveError"));
-      }
-    },
-
-    /** 初始化：加载后订阅 state 变化，自动防抖保存 */
-    initSync() {
-      const debouncedSave = debounce(() => this.save(), SAVE_DEBOUNCE_MS);
-
-      this.$subscribe(() => {
-        syncRuntimePreferences(this.system);
-        debouncedSave();
-      });
     },
   },
 });
