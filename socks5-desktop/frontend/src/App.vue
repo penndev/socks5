@@ -1,5 +1,5 @@
 <template>
-  <a-config-provider v-if="appReady" :theme="antdThemeConfig">
+  <a-config-provider :theme="antdThemeConfig">
     <theme-scope>
       <div class="socks5-layout">
         <div class="socks5-main">
@@ -39,22 +39,14 @@ import { theme as antdTheme } from "ant-design-vue";
 import Settings from "./components/Settings.vue";
 import ProxyLogBar from "./components/ProxyLogBar.vue";
 import ThemeScope from "./components/ThemeScope.vue";
-import { useSettingsStore } from "@/stores/settings";
 import { useI18n } from "@/i18n";
 import { resolvedTheme } from "@/theme";
+import { useSettingsStore } from "@/stores/settings";
 
 const settingsStore = useSettingsStore();
+
+
 const { t } = useI18n();
-const appReady = ref(false);
-
-// 应用启动初始化：加载设置并开启自动同步保存
-async function bootstrapApp() {
-  await settingsStore.load();
-}
-
-bootstrapApp().finally(() => {
-    appReady.value = true;
-  });
 
 const antdThemeConfig = computed(() => {
   const isDark = resolvedTheme.value === "dark";
@@ -138,6 +130,7 @@ watch(isDividerDragging, (isDragging) => {
 });
 
 onMounted(() => {
+  settingsStore.init();
   window.addEventListener("resize", updateLayoutByWindowWidth);
 });
 
