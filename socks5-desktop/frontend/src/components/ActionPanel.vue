@@ -53,6 +53,9 @@ import { useSettingsStore } from "@/stores/settings";
 import { Start, Stop, SetRemote } from "@bindings/socks5-desktop/proxy";
 import { useI18n } from "@/i18n";
 
+import { theme } from "ant-design-vue";
+const { token } = theme.useToken();
+
 const serverStore = useServerStore();
 const settingsStore = useSettingsStore();
 const selectedServer = computed(() => serverStore.selectedServer);
@@ -110,7 +113,7 @@ watch(
   .proxy-current-server {
     margin-bottom: 8px;
     padding: 4px 8px;
-    background: var(--socks-muted-bg);
+    background: v-bind('token.colorFillAlter');
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -119,7 +122,7 @@ watch(
 
     .proxy-label {
       font-size: 12px;
-      color: var(--socks-text-secondary);
+      color: v-bind('token.colorTextSecondary');
       margin-right: 0;
     }
 
@@ -142,7 +145,7 @@ watch(
 
   .proxy-mode-tip {
     font-size: 13px;
-    color: var(--socks-text-secondary);
+    color: v-bind('token.colorTextSecondary');
     padding: 6px 0;
   }
 
@@ -159,7 +162,7 @@ watch(
 
   .proxy-mode-desc {
     font-size: 12px;
-    color: var(--socks-text-secondary);
+    color: v-bind('token.colorTextSecondary');
   }
 }
 </style>

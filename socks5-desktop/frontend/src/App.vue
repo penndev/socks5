@@ -1,76 +1,66 @@
 <template>
   <a-config-provider :theme="antdThemeConfig">
-    <theme-scope>
-      <div class="socks5-layout">
-        <div class="socks5-main">
-          <div class="socks5-app" :style="{ width: appWidth + 'px' }">
-            <div class="socks5-app-header">
-              <div class="socks5-app-title">{{ t("app.title") }}</div>
-              <a-switch v-model:checked="extensionVisible" size="small" />
-            </div>
-
-            <div class="socks5-app-body">
-              <proxy-panel />
-              <server-list />
-            </div>
+    <div class="socks5-layout">
+      <div class="socks5-main">
+        <div class="socks5-app" :style="{ width: appWidth + 'px' }">
+          <div class="socks5-app-header">
+            <div class="socks5-app-title">{{ t("app.title") }}</div>
+            <a-switch v-model:checked="extensionVisible" size="small" />
           </div>
-
-          <div v-if="extensionVisible" class="socks5-extension">
-            <div class="socks5-divider" @mousedown="isDividerDragging = true"></div>
-            <div class="socks5-extension-body">
-              <settings />
-            </div>
+          <div class="socks5-app-body">
+            <action-panel />
+            <serve-panel />
           </div>
         </div>
-
-        <!-- 底部连接日志状态栏组件（设置开启时显示） -->
-        <div v-if="settingsStore.system.enableLogRecording" class="socks5-bottom">
-          <proxy-log-bar />
-        </div>
+        <setting-panel v-if="extensionVisible" :handleDividerMove="handleDividerMove" />
       </div>
-    </theme-scope>
+      <!-- 底部连接日志状态栏组件（设置开启时显示） -->
+      <div v-if="settingsStore.system.enableLogRecording" class="socks5-bottom">
+        <bottom-bar />
+      </div>
+    </div>
   </a-config-provider>
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch, computed } from "vue";
+import { ref, onMounted, watch, computed, useCssVars } from "vue";
 import { Window } from "@wailsio/runtime";
-import { theme as antdTheme } from "ant-design-vue";
-import Settings from "./components/Settings.vue";
-import ProxyLogBar from "./components/ProxyLogBar.vue";
-import ThemeScope from "./components/ThemeScope.vue";
+import { theme } from "ant-design-vue";
+import { useSettingsStore } from "@/stores/settings";
 import { useI18n } from "@/i18n";
 import { resolvedTheme } from "@/theme";
-import { useSettingsStore } from "@/stores/settings";
+
+import ActionPanel from "./components/ActionPanel.vue";
+import ServePanel from "./components/ServePanel.vue";
+import SettingPanel from "./components/SettingPanel.vue";
+import BottomBar from "./components/BottomBar.vue";
+
 
 const settingsStore = useSettingsStore();
 
 
 const { t } = useI18n();
 
-const antdThemeConfig = computed(() => {
-  const isDark = resolvedTheme.value === "dark";
-  const baseAlgorithm =
-    isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm;
+// 将 antd token 映射为布局 CSS 变量
+const { token } = theme.useToken();
 
+// 设置系统皮肤模板
+const antdThemeConfig = computed(() => {
+  let baseAlgorithm = theme.defaultAlgorithm;
+  let token = {};
+  if (resolvedTheme.value === "dark") {
+    baseAlgorithm = theme.darkAlgorithm;
+    token = { colorPrimary: "#6f8fb8", colorLink: "#6f8fb8" };
+  }
   return {
     algorithm: [baseAlgorithm],
-    ...(isDark
-      ? {
-          token: {
-            // 仅暗色模式降低饱和度
-            colorPrimary: "#6f8fb8",
-            colorLink: "#6f8fb8",
-          },
-        }
-      : {}),
-    components: {
-      Button: {
-        primaryShadow: "none",
-      },
-    },
+    token,
+    components: { Button: { primaryShadow: "none" } }
   };
 });
+
+
+
 
 const APP_MIN_WIDTH = 400;
 const APP_MAX_WIDTH = 600;
@@ -80,66 +70,32 @@ const appWidth = ref(APP_MIN_WIDTH);
 // 右侧设置面板显示状态
 const extensionVisible = ref(true);
 
-function clampAppWidth(width) {
-  return Math.min(APP_MAX_WIDTH, Math.max(APP_MIN_WIDTH, width));
-}
+watch(extensionVisible,
+  async (isVisible) => {
+    const { height } = await Window.Size();
+    const targetWindowWidth = isVisible ? APP_MAX_WIDTH + EXTENSION_PANEL_WIDTH : APP_MIN_WIDTH;
+    await Window.SetSize(targetWindowWidth, height);
+    appWidth.value = APP_MIN_WIDTH;
+  },
+  { immediate: true }
+);
 
-function setGlobalDragState(isDragging) {
-  document.body.style.cursor = isDragging ? "e-resize" : "";
-  document.body.style.userSelect = isDragging ? "none" : "";
-}
-
-async function syncWindowSizeByExtensionVisible(isVisible) {
-  const { height } = await Window.Size();
-  const targetWindowWidth = isVisible ? APP_MAX_WIDTH + EXTENSION_PANEL_WIDTH : APP_MIN_WIDTH;
-  await Window.SetSize(targetWindowWidth, height);
-  appWidth.value = APP_MIN_WIDTH;
-}
-
-watch(extensionVisible, syncWindowSizeByExtensionVisible, { immediate: true });
-
-const isDividerDragging = ref(false);
-const updateLayoutByWindowWidth = () => {
-  if (window.innerWidth < APP_MAX_WIDTH) {
-    extensionVisible.value = false;
-    appWidth.value = window.innerWidth;
-    return;
-  }
-  extensionVisible.value = true;
+const handleDividerMove = (e) => {
+  appWidth.value = Math.min(APP_MAX_WIDTH, Math.max(APP_MIN_WIDTH, e.clientX));
 };
-
-const handleDividerMouseMove = (e) => {
-  if (!isDividerDragging.value) return;
-  appWidth.value = clampAppWidth(e.clientX);
-};
-
-const stopDividerDragging = () => {
-  isDividerDragging.value = false;
-};
-
-watch(isDividerDragging, (isDragging) => {
-  if (isDragging) {
-    setGlobalDragState(true);
-    window.addEventListener("mousemove", handleDividerMouseMove);
-    window.addEventListener("mouseup", stopDividerDragging);
-  } else {
-    setGlobalDragState(false);
-    window.removeEventListener("mousemove", handleDividerMouseMove);
-    window.removeEventListener("mouseup", stopDividerDragging);
-  }
-});
 
 onMounted(() => {
   settingsStore.init();
-  window.addEventListener("resize", updateLayoutByWindowWidth);
+  window.addEventListener("resize", () => {
+    if (window.innerWidth < APP_MAX_WIDTH) {
+      extensionVisible.value = false;
+      appWidth.value = window.innerWidth;
+      return;
+    }
+    extensionVisible.value = true;
+  });
 });
 
-onBeforeUnmount(() => {
-  setGlobalDragState(false);
-  window.removeEventListener("resize", updateLayoutByWindowWidth);
-  window.removeEventListener("mousemove", handleDividerMouseMove);
-  window.removeEventListener("mouseup", stopDividerDragging);
-});
 </script>
 
 <style lang="scss" scoped>
@@ -147,7 +103,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: var(--socks-bg);
+  background: v-bind('token.colorBgLayout');
 
   .socks5-main {
     flex: 1;
@@ -158,7 +114,7 @@ onBeforeUnmount(() => {
   .socks5-app {
     display: flex;
     flex-direction: column;
-    background: var(--socks-card-bg);
+    background: v-bind('token.colorBgContainer');
 
     .socks5-app-header {
       height: 48px;
@@ -166,13 +122,13 @@ onBeforeUnmount(() => {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--socks-header-bg);
-      border-bottom: 1px solid var(--socks-card-border);
+      background: v-bind('token.colorBgElevated');
+      border-bottom: 1px solid v-bind('token.colorBorderSecondary');
 
       .socks5-app-title {
         font-size: 16px;
         font-weight: 600;
-        color: var(--socks-text-primary);
+        color: v-bind('token.colorText');
       }
     }
 
@@ -180,7 +136,7 @@ onBeforeUnmount(() => {
       flex: 1;
       padding: 10px 12px;
       font-size: 14px;
-      color: var(--socks-text-primary);
+      color: v-bind('token.colorText');
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -188,37 +144,11 @@ onBeforeUnmount(() => {
     }
   }
 
-  .socks5-extension {
-    flex: 1;
-    display: flex;
-    background: var(--socks-muted-bg);
-    border-left: 1px solid var(--socks-card-border);
-    overflow-y: auto;
-
-    .socks5-divider {
-      width: 4px;
-      height: 100%;
-      cursor: e-resize;
-      background: transparent;
-      transition: background 0.15s;
-      &:hover {
-        background: rgba(66, 133, 244, 0.2);
-      }
-    }
-
-    .socks5-extension-body {
-      flex: 1;
-      padding: 10px 12px;
-      font-size: 14px;
-      color: var(--socks-text-primary);
-      background: var(--socks-card-bg);
-    }
-  }
 
   .socks5-bottom {
     flex-shrink: 0;
-    border-top: 1px solid var(--socks-card-border);
-    background: var(--socks-bottom-bg);
+    border-top: 1px solid v-bind('token.colorBorderSecondary');
+    background: v-bind('token.colorBgElevated');
   }
 }
 

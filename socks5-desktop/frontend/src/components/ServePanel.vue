@@ -117,6 +117,9 @@ import { Get, Set } from "@bindings/socks5-desktop/storage";
 import { useServerStore } from "../stores/server";
 import { useI18n } from "@/i18n";
 
+import { theme } from "ant-design-vue";
+const { token } = theme.useToken();
+
 const serverStore = useServerStore();
 const selectedServer = computed(() => serverStore.selectedServer);
 const { t } = useI18n();
@@ -292,7 +295,7 @@ onMounted(async () => {
 
     .server-meta {
       font-size: 12px;
-      color: var(--socks-text-secondary);
+      color: v-bind('token.colorTextSecondary');
       display: block;
       min-width: 0;
       overflow: hidden;

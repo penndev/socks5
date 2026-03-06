@@ -54,7 +54,7 @@ export const useSettingsStore = defineStore(KEY, {
       applyTheme(this.system.themeMode);
     },
     /** 从存储加载并合并到 state */
-    async load() {
+    async init() {
       try {
         const storedSettings = await Get(KEY);
         if (storedSettings) {
