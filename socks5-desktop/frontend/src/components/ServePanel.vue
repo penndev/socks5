@@ -3,12 +3,20 @@
     <div class="server-list-scroll" v-if="servers.length > 0">
       <a-list :data-source="servers" bordered>
         <template #renderItem="{ item }">
-          <a-list-item :class="{ active: selectedServer?.id === item.id }" @click="serverStore.selectedServer = item">
+          <a-list-item
+            :class="{ active: selectedServer?.id === item.id }"
+            @click="serverStore.selectedServer = item"
+          >
             <template #actions>
               <a-button type="text" size="small" @click.stop="edit.open(item)">
                 <EditOutlined />
               </a-button>
-              <a-button type="text" danger size="small" @click.stop="deleteModal(item)">
+              <a-button
+                type="text"
+                danger
+                size="small"
+                @click.stop="deleteModal(item)"
+              >
                 <DeleteOutlined />
               </a-button>
             </template>
@@ -16,7 +24,10 @@
             <a-list-item-meta>
               <template #title>
                 <span class="server-host" :title="item.remark || item.host">
-                  <CheckCircleFilled v-if="selectedServer?.id === item.id" class="selected-icon" />
+                  <CheckCircleFilled
+                    v-if="selectedServer?.id === item.id"
+                    class="selected-icon"
+                  />
                   {{ item.remark || item.host }}
                 </span>
               </template>
@@ -27,7 +38,8 @@
                     item.username || t('serverList.noAuth')
                   }`"
                 >
-                  {{ item.protocol }} | {{ item.username || t("serverList.noAuth") }}
+                  {{ item.protocol }} |
+                  {{ item.username || t("serverList.noAuth") }}
                 </span>
               </template>
             </a-list-item-meta>
@@ -80,7 +92,9 @@
             :placeholder="t('serverList.selectProtocol')"
           >
             <a-select-option value="Socks5">Socks5</a-select-option>
-            <a-select-option value="Socks5OverTLS">Socks5OverTLS</a-select-option>
+            <a-select-option value="Socks5OverTLS"
+              >Socks5OverTLS</a-select-option
+            >
           </a-select>
         </a-form-item>
 
@@ -115,14 +129,13 @@ import {
 import { Modal, message } from "ant-design-vue";
 import { Get, Set } from "@bindings/socks5-desktop/storage";
 import { useServerStore } from "../stores/server";
-import { useI18n } from "@/i18n";
+import { t } from "@/i18n";
 
 import { theme } from "ant-design-vue";
 const { token } = theme.useToken();
 
 const serverStore = useServerStore();
 const selectedServer = computed(() => serverStore.selectedServer);
-const { t } = useI18n();
 
 // 所有节点
 const servers = ref([]);
@@ -144,9 +157,14 @@ const edit = reactive({
   rules: {
     host: [
       { required: true, message: t("serverList.validateHostRequired") },
-      { pattern: /^[^:]+:\d{1,5}$/, message: t("serverList.validateHostFormat") },
+      {
+        pattern: /^[^:]+:\d{1,5}$/,
+        message: t("serverList.validateHostFormat"),
+      },
     ],
-    protocol: [{ required: true, message: t("serverList.validateProtocolRequired") }],
+    protocol: [
+      { required: true, message: t("serverList.validateProtocolRequired") },
+    ],
   },
 
   open(server = null) {
@@ -178,7 +196,7 @@ const edit = reactive({
         if (idx >= 0)
           servers.value[idx] = { ...servers.value[idx], ...payload };
 
-        if (selectedServer?.id === edit.id)
+        if (selectedServer.value?.id === edit.id)
           serverStore.selectedServer = { ...selectedServer, ...payload };
 
         message.success(t("serverList.updateSuccess"));
@@ -211,7 +229,8 @@ function deleteModal(item) {
     cancelText: t("serverList.deleteCancelText"),
     async onOk() {
       servers.value = servers.value.filter((s) => s.id !== item.id);
-      if (selectedServer?.id === item.id) serverStore.selectedServer = null;
+      if (selectedServer.value?.id === item.id)
+        serverStore.selectedServer = null;
       await Set(STORAGE_KEY, servers.value);
       message.success(t("serverList.deleteSuccess"));
     },
@@ -295,7 +314,7 @@ onMounted(async () => {
 
     .server-meta {
       font-size: 12px;
-      color: v-bind('token.colorTextSecondary');
+      color: v-bind("token.colorTextSecondary");
       display: block;
       min-width: 0;
       overflow: hidden;

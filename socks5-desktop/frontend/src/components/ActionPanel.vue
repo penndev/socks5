@@ -51,7 +51,7 @@ import { ref, watch, computed } from "vue";
 import { useServerStore } from "../stores/server";
 import { useSettingsStore } from "@/stores/settings";
 import { Start, Stop, SetRemote } from "@bindings/socks5-desktop/proxy";
-import { useI18n } from "@/i18n";
+import { t } from "@/i18n";
 
 import { theme } from "ant-design-vue";
 const { token } = theme.useToken();
@@ -59,7 +59,6 @@ const { token } = theme.useToken();
 const serverStore = useServerStore();
 const settingsStore = useSettingsStore();
 const selectedServer = computed(() => serverStore.selectedServer);
-const { t } = useI18n();
 
 // 仅用于 UI 切换展示，保留现有交互行为
 const proxyMode = ref("manual");
@@ -81,7 +80,7 @@ watch(
       await Start(
         `${host || "127.0.0.1"}:${port || 1080}`,
         username || "",
-        password || ""
+        password || "",
       );
     }
 
@@ -100,7 +99,7 @@ watch(
       modeMessage.value = t("proxy.stopped");
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>
 
@@ -113,7 +112,7 @@ watch(
   .proxy-current-server {
     margin-bottom: 8px;
     padding: 4px 8px;
-    background: v-bind('token.colorFillAlter');
+    background: v-bind("token.colorFillAlter");
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -122,7 +121,7 @@ watch(
 
     .proxy-label {
       font-size: 12px;
-      color: v-bind('token.colorTextSecondary');
+      color: v-bind("token.colorTextSecondary");
       margin-right: 0;
     }
 
@@ -145,7 +144,7 @@ watch(
 
   .proxy-mode-tip {
     font-size: 13px;
-    color: v-bind('token.colorTextSecondary');
+    color: v-bind("token.colorTextSecondary");
     padding: 6px 0;
   }
 
@@ -162,7 +161,7 @@ watch(
 
   .proxy-mode-desc {
     font-size: 12px;
-    color: v-bind('token.colorTextSecondary');
+    color: v-bind("token.colorTextSecondary");
   }
 }
 </style>

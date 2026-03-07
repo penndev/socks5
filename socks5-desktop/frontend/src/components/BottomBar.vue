@@ -45,7 +45,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Events } from "@wailsio/runtime";
 import { storeToRefs } from "pinia";
 import { useSettingsStore } from "@/stores/settings";
-import { useI18n } from "@/i18n";
+import { t } from "@/i18n";
 import { theme } from "ant-design-vue";
 import StatusPanel from "./bottombar/StatusPanel.vue";
 import LogPanel from "./bottombar/LogPanel.vue";
@@ -71,7 +71,7 @@ const statusText = ref("");
 
 // Composables
 const { system } = storeToRefs(useSettingsStore());
-const { t } = useI18n();
+
 const { token } = theme.useToken();
 
 // Computed properties
@@ -79,7 +79,7 @@ const panelHeightPx = computed(() => `${panelHeight.value}px`);
 const panelTitle = computed(() =>
   activePanel.value === PANEL_NAMES.STATUS
     ? t("log.statusTitle")
-    : t("log.connectionTitle")
+    : t("log.connectionTitle"),
 );
 const panelText = computed(() => {
   if (activePanel.value === PANEL_NAMES.STATUS) {
@@ -105,7 +105,10 @@ function startResize(e) {
   function onMove(ev) {
     const delta = startY - ev.clientY;
     const next = Math.round(startH + delta);
-    panelHeight.value = Math.min(PANEL_HEIGHT_MAX, Math.max(PANEL_HEIGHT_MIN, next));
+    panelHeight.value = Math.min(
+      PANEL_HEIGHT_MAX,
+      Math.max(PANEL_HEIGHT_MIN, next),
+    );
   }
 
   function onUp() {
@@ -179,9 +182,9 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 12px;
   font-size: 12px;
-  color: v-bind('token.colorTextSecondary');
-  background: v-bind('token.colorBgContainer');
-  border-top: 1px solid v-bind('token.colorBorderSecondary');
+  color: v-bind("token.colorTextSecondary");
+  background: v-bind("token.colorBgContainer");
+  border-top: 1px solid v-bind("token.colorBorderSecondary");
 
   .status-item {
     display: inline-flex;

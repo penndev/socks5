@@ -77,4 +77,3 @@ export default {
   "proxy.mode.system": "系统代理",
   "proxy.stopped": "已停止",
 };
-

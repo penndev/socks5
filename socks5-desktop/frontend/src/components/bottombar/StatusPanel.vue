@@ -1,6 +1,10 @@
 <template>
   <div class="panel" :style="{ height: panelHeightPx }">
-    <div class="panel-resize-handle" :title="t('log.dragToResize')" @mousedown="startResize" />
+    <div
+      class="panel-resize-handle"
+      :title="t('log.dragToResize')"
+      @mousedown="startResize"
+    >
     <div class="panel-header">
       <span>{{ panelTitle }}</span>
       <div class="panel-actions">
@@ -18,10 +22,9 @@
 
 <script setup>
 import { CloseOutlined } from "@ant-design/icons-vue";
-import { useI18n } from "@/i18n";
+import { t } from "@/i18n";
 import { theme } from "ant-design-vue";
 
-const { t } = useI18n();
 const { token } = theme.useToken();
 
 defineProps({
@@ -40,8 +43,8 @@ defineProps({
   flex-direction: column;
   min-height: 0;
   padding-top: 6px;
-  border-top: 1px solid v-bind('token.colorBorderSecondary');
-  background: v-bind('token.colorFillAlter');
+  border-top: 1px solid v-bind("token.colorBorderSecondary");
+  background: v-bind("token.colorFillAlter");
   position: relative;
   box-sizing: border-box;
 
@@ -75,9 +78,9 @@ defineProps({
     }
     font-size: 12px;
     font-weight: 500;
-    color: v-bind('token.colorText');
-    border-bottom: 1px solid v-bind('token.colorBorderSecondary');
-    background: v-bind('token.colorBgContainer');
+    color: v-bind("token.colorText");
+    border-bottom: 1px solid v-bind("token.colorBorderSecondary");
+    background: v-bind("token.colorBgContainer");
   }
 
   .panel-content {
@@ -85,14 +88,15 @@ defineProps({
     margin: 0;
     padding: 8px 10px;
     overflow: auto;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-      "Liberation Mono", "Courier New", monospace;
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
     font-size: 12px;
     line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-all;
-    color: v-bind('token.colorText');
-    background: v-bind('token.colorFillAlter');
+    color: v-bind("token.colorText");
+    background: v-bind("token.colorFillAlter");
   }
 }
 </style>

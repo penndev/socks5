@@ -30,8 +30,7 @@ export default {
   // Server list
   "serverList.title": "Node List",
   "serverList.noAuth": "No auth",
-  "serverList.emptyDescription":
-    "No nodes yet, click the button below to add",
+  "serverList.emptyDescription": "No nodes yet, click the button below to add",
   "serverList.addButton": "Add Node",
   "serverList.editTitle": "Edit Node",
   "serverList.addTitle": "Add Node",
@@ -78,4 +77,3 @@ export default {
   "proxy.mode.system": "System proxy",
   "proxy.stopped": "Stopped",
 };
-
