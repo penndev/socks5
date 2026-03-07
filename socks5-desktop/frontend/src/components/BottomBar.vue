@@ -1,22 +1,17 @@
 <template>
   <div class="bottom-area">
     <StatusPanel
-      v-if="activePanel === PANEL_NAMES.STATUS"
+      v-show="activePanel === PANEL_NAMES.STATUS"
       :panelHeightPx="panelHeightPx"
-      :panelTitle="panelTitle"
-      :panelText="panelText"
-      :onClear="clearStatus"
       :onClose="closePanel"
       :startResize="startResize"
     />
     <LogPanel
-      v-else-if="activePanel === PANEL_NAMES.LOG"
+      v-show="activePanel === PANEL_NAMES.LOG"
       :panelHeightPx="panelHeightPx"
-      :panelTitle="panelTitle"
-      :panelText="panelText"
-      :onClear="clearLogs"
       :onClose="closePanel"
       :startResize="startResize"
+      @update:count="logCount = $event"
     />
 
     <!-- 底部状态栏：状态日志 | 连接日志 -->
@@ -34,68 +29,33 @@
         @click="togglePanel(PANEL_NAMES.LOG)"
       >
         {{ t("log.connectionTitle") }}
-        <span v-if="count > 0" class="badge">{{ count }}</span>
+        <span v-if="logCount > 0" class="badge">{{ logCount }}</span>
       </span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from "vue";
-import { Events } from "@wailsio/runtime";
-import { storeToRefs } from "pinia";
-import { useSettingsStore } from "@/stores/settings";
-import { t } from "@/i18n";
+import { ref, computed } from "vue";
 import { theme } from "ant-design-vue";
+import { t } from "@/i18n";
 import StatusPanel from "./bottombar/StatusPanel.vue";
 import LogPanel from "./bottombar/LogPanel.vue";
 
-// Constants
-const MAX_LOG_LINES = 1000;
 const PANEL_HEIGHT_MIN = 80;
 const PANEL_HEIGHT_MAX = 480;
 const PANEL_NAMES = {
   STATUS: "status",
   LOG: "log",
 };
-const EVENTS = {
-  STATUS: "logServerStatus",
-  CONNECTION: "logProxyList",
-};
 
-// Reactive data
 const activePanel = ref(null);
 const panelHeight = ref(160);
-const lines = ref([]);
-const statusText = ref("");
-
-// Composables
-const { system } = storeToRefs(useSettingsStore());
+const logCount = ref(0);
 
 const { token } = theme.useToken();
 
-// Computed properties
 const panelHeightPx = computed(() => `${panelHeight.value}px`);
-const panelTitle = computed(() =>
-  activePanel.value === PANEL_NAMES.STATUS
-    ? t("log.statusTitle")
-    : t("log.connectionTitle"),
-);
-const panelText = computed(() => {
-  if (activePanel.value === PANEL_NAMES.STATUS) {
-    return statusText.value || t("log.statusEmpty");
-  }
-  return connectionText.value || t("log.connectionEmpty");
-});
-const connectionText = computed(() => lines.value.join("\n"));
-const count = computed(() => lines.value.length);
-
-// Functions
-function toEventMessage(eventPayload) {
-  return eventPayload?.data != null
-    ? String(eventPayload.data)
-    : String(eventPayload);
-}
 
 function startResize(e) {
   e.preventDefault();
@@ -131,41 +91,6 @@ function togglePanel(name) {
 function closePanel() {
   activePanel.value = null;
 }
-
-function clearStatus() {
-  statusText.value = "";
-}
-
-function clearLogs() {
-  lines.value = [];
-}
-
-// Event listeners
-let statusEventOff = null;
-let connectionEventOff = null;
-
-onMounted(() => {
-  statusEventOff = Events.On(EVENTS.STATUS, (eventPayload) => {
-    statusText.value += toEventMessage(eventPayload);
-  });
-
-  connectionEventOff = Events.On(EVENTS.CONNECTION, (eventPayload) => {
-    if (!system.value.enableLogRecording) return;
-    lines.value.push(toEventMessage(eventPayload));
-    if (lines.value.length > MAX_LOG_LINES) {
-      lines.value.shift();
-    }
-  });
-});
-
-onBeforeUnmount(() => {
-  if (typeof statusEventOff === "function") {
-    statusEventOff();
-  }
-  if (typeof connectionEventOff === "function") {
-    connectionEventOff();
-  }
-});
 </script>
 
 <style scoped lang="scss">

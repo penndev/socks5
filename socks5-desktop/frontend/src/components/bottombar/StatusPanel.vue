@@ -3,12 +3,12 @@
     <div
       class="panel-resize-handle"
       :title="t('log.dragToResize')"
-      @mousedown="startResize"
-    >
+      @mousedown="startResize($event)"
+    />
     <div class="panel-header">
-      <span>{{ panelTitle }}</span>
+      <span>{{ t('log.statusTitle') }}</span>
       <div class="panel-actions">
-        <a-button type="text" size="small" @click="onClear">
+        <a-button type="text" size="small" @click="clearStatus">
           {{ t("log.clear") }}
         </a-button>
         <a-button type="text" size="small" @click="onClose">
@@ -16,11 +16,13 @@
         </a-button>
       </div>
     </div>
-    <pre class="panel-content">{{ panelText }}</pre>
+    <pre class="panel-content">{{ displayText }}</pre>
   </div>
 </template>
 
 <script setup>
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { Events } from "@wailsio/runtime";
 import { CloseOutlined } from "@ant-design/icons-vue";
 import { t } from "@/i18n";
 import { theme } from "ant-design-vue";
@@ -29,11 +31,36 @@ const { token } = theme.useToken();
 
 defineProps({
   panelHeightPx: String,
-  panelTitle: String,
-  panelText: String,
-  onClear: Function,
   onClose: Function,
   startResize: Function,
+});
+
+const statusText = ref("");
+const displayText = computed(
+  () => statusText.value || t("log.statusEmpty"),
+);
+
+function toEventMessage(eventPayload) {
+  return eventPayload?.data != null
+    ? String(eventPayload.data)
+    : String(eventPayload);
+}
+
+function clearStatus() {
+  statusText.value = "";
+}
+
+let statusEventOff = null;
+onMounted(() => {
+  statusEventOff = Events.On("logServerStatus", (eventPayload) => {
+    statusText.value += toEventMessage(eventPayload);
+  });
+});
+
+onBeforeUnmount(() => {
+  if (typeof statusEventOff === "function") {
+    statusEventOff();
+  }
 });
 </script>
 
@@ -44,7 +71,7 @@ defineProps({
   min-height: 0;
   padding-top: 6px;
   border-top: 1px solid v-bind("token.colorBorderSecondary");
-  background: v-bind("token.colorFillAlter");
+  background: v-bind("token.colorBgContainer");
   position: relative;
   box-sizing: border-box;
 

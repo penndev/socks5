@@ -3,12 +3,12 @@
     <div
       class="panel-resize-handle"
       :title="t('log.dragToResize')"
-      @mousedown="startResize"
+      @mousedown="startResize($event)"
     />
     <div class="panel-header">
-      <span>{{ panelTitle }}</span>
+      <span>{{ t('log.connectionTitle') }}</span>
       <div class="panel-actions">
-        <a-button type="text" size="small" @click="onClear">
+        <a-button type="text" size="small" @click="clearLogs">
           {{ t("log.clear") }}
         </a-button>
         <a-button type="text" size="small" @click="onClose">
@@ -16,24 +16,69 @@
         </a-button>
       </div>
     </div>
-    <pre class="panel-content">{{ panelText }}</pre>
+    <pre class="panel-content">{{ displayText }}</pre>
   </div>
 </template>
 
 <script setup>
+import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
+import { Events } from "@wailsio/runtime";
+import { storeToRefs } from "pinia";
+import { useSettingsStore } from "@/stores/settings";
 import { CloseOutlined } from "@ant-design/icons-vue";
 import { t } from "@/i18n";
 import { theme } from "ant-design-vue";
 
 const { token } = theme.useToken();
 
+const MAX_LOG_LINES = 1000;
+
 defineProps({
   panelHeightPx: String,
-  panelTitle: String,
-  panelText: String,
-  onClear: Function,
   onClose: Function,
   startResize: Function,
+});
+
+const emit = defineEmits(["update:count"]);
+
+const { system } = storeToRefs(useSettingsStore());
+const lines = ref([]);
+
+const displayText = computed(
+  () => lines.value.join("\n") || t("log.connectionEmpty"),
+);
+
+function toEventMessage(eventPayload) {
+  return eventPayload?.data != null
+    ? String(eventPayload.data)
+    : String(eventPayload);
+}
+
+function clearLogs() {
+  lines.value = [];
+}
+
+watch(
+  () => lines.value.length,
+  (count) => emit("update:count", count),
+  { immediate: true },
+);
+
+let connectionEventOff = null;
+onMounted(() => {
+  connectionEventOff = Events.On("logProxyList", (eventPayload) => {
+    if (!system.value.enableLogRecording) return;
+    lines.value.push(toEventMessage(eventPayload));
+    if (lines.value.length > MAX_LOG_LINES) {
+      lines.value.shift();
+    }
+  });
+});
+
+onBeforeUnmount(() => {
+  if (typeof connectionEventOff === "function") {
+    connectionEventOff();
+  }
 });
 </script>
 
@@ -44,7 +89,7 @@ defineProps({
   min-height: 0;
   padding-top: 6px;
   border-top: 1px solid v-bind("token.colorBorderSecondary");
-  background: v-bind("token.colorFillAlter");
+  background: v-bind("token.colorBgContainer");
   position: relative;
   box-sizing: border-box;
 

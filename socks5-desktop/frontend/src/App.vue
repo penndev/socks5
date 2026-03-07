@@ -48,7 +48,7 @@ const antdThemeConfig = computed(() => {
   let token = {};
   if (settingsStore.system.themeMode === "dark") {
     baseAlgorithm = theme.darkAlgorithm;
-    token = { colorPrimary: "#6f8fb8", colorLink: "#6f8fb8" };
+    // token = { colorPrimary: "#6f8fb8", colorLink: "#6f8fb8" };
   }
   return {
     algorithm: [baseAlgorithm],

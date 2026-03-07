@@ -22,8 +22,7 @@ export default {
   "settings.startupOnBoot": "开机启动",
   "settings.startupOnBootDesc": "启动时自动运行本应用",
   "settings.enableLogRecording": "日志开关",
-  "settings.enableLogRecordingDesc":
-    "记录运行与连接日志，关闭后底部日志栏将隐藏",
+  "settings.enableLogRecordingDesc": "记录运行与连接日志，关闭后底部日志栏将隐藏",
   "settings.saveSuccess": "设置已保存",
   "settings.saveError": "保存失败",
 
