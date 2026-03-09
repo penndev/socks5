@@ -2,29 +2,15 @@
   <a-card class="proxy-panel" :title="t('proxy.title')">
     <div class="proxy-current-server">
       <span class="proxy-label">{{ t("proxy.currentServerLabel") }}</span>
-      <span
-        class="proxy-value"
-        :title="selectedServer?.remark || selectedServer?.host || ''"
-      >
-        {{
-          selectedServer?.remark ||
-          selectedServer?.host ||
-          t("proxy.noSelectedServer")
-        }}
+      <span class="proxy-value">
+        {{ serverStore.selectedServer?.remark || serverStore.selectedServer?.host || t("proxy.noSelectedServer") }}
       </span>
-      <a-button
-        v-if="selectedServer"
-        type="link"
-        size="small"
-        danger
-        class="remove-btn"
-        @click="serverStore.selectedServer = null"
-      >
+      <a-button v-if="serverStore.selectedServer" type="link" size="small" danger @click="serverStore.selectedServer = null">
         {{ t("proxy.removeButton") }}
       </a-button>
     </div>
 
-    <div class="proxy-mode-tip" v-if="!selectedServer">
+    <div class="proxy-mode-tip" v-if="!serverStore.selectedServer">
       {{ t("proxy.selectTip") }}
     </div>
 
@@ -32,75 +18,58 @@
       <a-radio-button value="manual">
         {{ t("proxy.mode.manual") }}
       </a-radio-button>
-      <a-radio-button value="tun">
-        {{ t("proxy.mode.tun") }}
-      </a-radio-button>
       <a-radio-button value="system">
         {{ t("proxy.mode.system") }}
       </a-radio-button>
+      <a-radio-button value="tun">
+        {{ t("proxy.mode.tun") }}
+      </a-radio-button>
     </a-radio-group>
 
-    <div class="proxy-mode-desc">
+    <!-- <div class="proxy-mode-desc">
       <pre>{{ modeMessage }}</pre>
-    </div>
+    </div> -->
   </a-card>
 </template>
 
 <script setup>
-import { ref, watch, computed } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useServerStore } from "../stores/server";
 import { useSettingsStore } from "@/stores/settings";
-import { Start, Stop, SetRemote } from "@bindings/socks5-desktop/proxy";
+import { Start, SetRemote, SetMode } from "@bindings/socks5-desktop/proxy";
 import { t } from "@/i18n";
-
 import { theme } from "ant-design-vue";
+
 const { token } = theme.useToken();
 
-const serverStore = useServerStore();
-const settingsStore = useSettingsStore();
-const selectedServer = computed(() => serverStore.selectedServer);
 
-// 仅用于 UI 切换展示，保留现有交互行为
+// 代理模式，默认为手动
 const proxyMode = ref("manual");
-const modeMessage = ref("");
+watch(proxyMode, async (newMode) => {
+  await SetMode(newMode);
+});
 
-function toSafeString(value, fallback = "") {
-  if (typeof value === "string") return value;
-  if (value == null) return fallback;
-  return String(value);
+// 修改远程节点
+const serverStore = useServerStore();
+watch(serverStore, async () => {
+  const { host, username, password, protocol } = serverStore.selectedServer || {};
+  await SetRemote(host, username, password, protocol);
+});
+
+// 启动代理，golang设置可以启动多次，会自动重启并应用新的设置
+const settingsStore = useSettingsStore();
+
+const proxyStart = async () => {
+  const {host, port, username, password} = settingsStore.proxy
+  await Start(`${host}:${port}`, username, password);
 }
 
-// 选择节点时，启动或停止本地 socks5
-watch(
-  selectedServer,
-  async (newServer, oldServer) => {
-    // 第一次选择节点时，按设置中的本地代理配置启动本地 socks5
-    if (!oldServer && newServer) {
-      const { host, port, username, password } = settingsStore.proxy;
-      await Start(
-        `${host || "127.0.0.1"}:${port || 1080}`,
-        username || "",
-        password || "",
-      );
-    }
+watch(settingsStore.proxy, proxyStart);
 
-    // 不管是否第一次选择节点，都更新远程节点信息
-    if (newServer) {
-      const { host, username, password, protocol } = newServer;
-      await SetRemote(
-        toSafeString(host),
-        toSafeString(username),
-        toSafeString(password),
-        toSafeString(protocol, "Socks5"),
-      );
-    } else if (oldServer) {
-      // 取消选择节点时，停止本地服务
-      await Stop();
-      modeMessage.value = t("proxy.stopped");
-    }
-  },
-  { immediate: true },
-);
+onMounted(async() => {
+  proxyStart();
+});
+
 </script>
 
 <style lang="scss" scoped>
@@ -136,10 +105,6 @@ watch(
       white-space: nowrap;
     }
 
-    .remove-btn {
-      padding: 0 4px;
-      font-size: 12px;
-    }
   }
 
   .proxy-mode-tip {

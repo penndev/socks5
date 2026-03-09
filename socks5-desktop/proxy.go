@@ -72,6 +72,21 @@ func (p *Proxy) HandleConnect(conn net.Conn, req socks5.Requests, replies func(s
 
 func (p *Proxy) Start(host, user, pass string) error {
 	app.Event.Emit("logServerStatus", "local: socks5://"+user+":"+pass+"@"+host+"\n")
+	// 已经启动过则检查配置是否有变化：
+	// - 配置未变化：什么也不做
+	// - 配置有变化：关闭旧服务后按新配置重启
+	if p.localServer != nil {
+		if p.localServer.Addr == host &&
+			p.localServer.Username == user &&
+			p.localServer.Password == pass {
+			// 配置未变化，保持当前服务
+			return nil
+		}
+		// 配置变化，先关闭旧的监听
+		p.localServer.Close()
+		p.localServer = nil
+	}
+
 	p.localServer = &socks5.Server{
 		Addr:          host,
 		Username:      user,
@@ -91,11 +106,6 @@ func (p *Proxy) Start(host, user, pass string) error {
 	return nil
 }
 
-func (p *Proxy) Stop() error {
-	p.localServer.Close()
-	return nil
-}
-
 func (p *Proxy) SetRemote(host, user, pass, rtype string) error {
 	p.rhost = host
 	p.ruser = user
@@ -103,5 +113,20 @@ func (p *Proxy) SetRemote(host, user, pass, rtype string) error {
 	p.rtype = rtype
 
 	app.Event.Emit("logServerStatus", "remote: "+rtype+"://"+user+":"+pass+"@"+host+"\n")
+	return nil
+}
+
+func (p *Proxy) SetMode(mode string) error {
+	app.Event.Emit("logServerStatus", "set mode: "+mode+"\n")
+	switch mode {
+	case "manual":
+		p.systemStop()
+	case "system":
+		p.systemStart()
+	case "tun":
+		// todo: tun mode
+	default:
+		return errors.New("invalid mode")
+	}
 	return nil
 }

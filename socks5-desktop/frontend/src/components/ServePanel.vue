@@ -293,7 +293,7 @@ onMounted(async () => {
     cursor: pointer;
 
     &.active {
-      background: #e6f4ff;
+      background: v-bind("token.colorPrimaryBgHover");
     }
 
     .server-host {

@@ -30,7 +30,7 @@ import { ref, onMounted, watch, computed } from "vue";
 import { Window } from "@wailsio/runtime";
 import { theme } from "ant-design-vue";
 import { useSettingsStore } from "@/stores/settings";
-import { t } from "@/i18n";
+import { setLocale, t } from "@/i18n";
 
 import ActionPanel from "./components/ActionPanel.vue";
 import ServePanel from "./components/ServePanel.vue";
@@ -38,6 +38,11 @@ import SettingPanel from "./components/SettingPanel.vue";
 import BottomBar from "./components/BottomBar.vue";
 
 const settingsStore = useSettingsStore();
+
+watch(
+  () => settingsStore.system.language,
+  () => setLocale(settingsStore.system.language)
+);
 
 // 将 antd token 映射为布局 CSS 变量
 const { token } = theme.useToken();
@@ -48,7 +53,6 @@ const antdThemeConfig = computed(() => {
   let token = {};
   if (settingsStore.system.themeMode === "dark") {
     baseAlgorithm = theme.darkAlgorithm;
-    // token = { colorPrimary: "#6f8fb8", colorLink: "#6f8fb8" };
   }
   return {
     algorithm: [baseAlgorithm],

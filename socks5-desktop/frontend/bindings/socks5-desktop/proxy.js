@@ -24,6 +24,14 @@ export function HandleConnect(conn, req, replies) {
 }
 
 /**
+ * @param {string} mode
+ * @returns {$CancellablePromise<void>}
+ */
+export function SetMode(mode) {
+    return $Call.ByID(2511165443, mode);
+}
+
+/**
  * @param {string} host
  * @param {string} user
  * @param {string} pass
@@ -42,11 +50,4 @@ export function SetRemote(host, user, pass, rtype) {
  */
 export function Start(host, user, pass) {
     return $Call.ByID(2984906812, host, user, pass);
-}
-
-/**
- * @returns {$CancellablePromise<void>}
- */
-export function Stop() {
-    return $Call.ByID(1134319448);
 }

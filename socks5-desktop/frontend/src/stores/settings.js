@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { Get, Set } from "@bindings/socks5-desktop/storage";
 import { notification } from "ant-design-vue";
 import { debounce } from "@/utils";
-import { setLocale, defaultLocale, t } from "@/i18n";
+import { defaultLocale, setLocale, t } from "@/i18n";
 
 // 存储的键名
 const KEY = "settings";
@@ -26,7 +26,6 @@ export const useSettingsStore = defineStore(KEY, {
   actions: {
     /** 将 state 持久化到存储 */
     async save() {
-      this.initSystem();
       try {
         await Set(KEY, {
           proxy: { ...this.proxy },
@@ -44,10 +43,7 @@ export const useSettingsStore = defineStore(KEY, {
       }
     },
 
-    initSystem() {
-      // 设置系统语言
-      setLocale(this.system.language);
-    },
+
     /** 从存储加载并合并到 state */
     async init() {
       try {
@@ -56,9 +52,11 @@ export const useSettingsStore = defineStore(KEY, {
           Object.assign(this, storedSettings);
         }
         this.$subscribe(() => debounce(this.save(), 800));
-      } finally {
-        // 存储加载失败时保持默认配置
-        this.initSystem();
+      } catch (error) {
+        notification.error({
+          message: t("settings.loadError"),
+          placement: "topRight",
+        });
       }
     },
   },
