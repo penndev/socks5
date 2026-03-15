@@ -2,6 +2,7 @@ package tun
 
 import (
 	"context"
+	"log"
 	"sync"
 
 	"golang.zx2c4.com/wireguard/tun"
@@ -13,25 +14,13 @@ import (
 
 type Tun struct {
 	*channel.Endpoint
-	mtu    uint32
-	offset int
-	dev    *tun.Device
-	once   sync.Once
-	wg     sync.WaitGroup
-}
+	sync.Once
+	sync.WaitGroup
 
-func (t *Tun) Read(packet []byte) (int, error) {
-	bufs := make([][]byte, 1)
-	bufs[0] = packet
-	sizes := make([]int, 1)
-	_, err := (*t.dev).Read(bufs, sizes, 0)
-	return sizes[0], err
-}
-
-func (t *Tun) Write(packet []byte) (int, error) {
-	bufs := make([][]byte, 1)
-	bufs[0] = packet
-	return (*t.dev).Write(bufs, 0)
+	mtu   uint32
+	dev   *tun.Device
+	devRM sync.Mutex
+	devWM sync.Mutex
 }
 
 func (t *Tun) Name() string {
@@ -39,51 +28,38 @@ func (t *Tun) Name() string {
 	return name
 }
 
-func (t *Tun) Close() error {
-	defer t.Endpoint.Close()
-	return (*t.dev).Close()
+func (t *Tun) Close() {
+	log.Println("i am close")
+	(*t.dev).Close()
+	t.Endpoint.Close()
 }
 
 func (t *Tun) Wait() {
-	t.wg.Wait()
+	t.WaitGroup.Wait()
 }
 
-func (t *Tun) Attach(dispatcher stack.NetworkDispatcher) {
-	t.Endpoint.Attach(dispatcher)
-	t.once.Do(func() {
-		ctx, cancel := context.WithCancel(context.Background())
-		t.wg.Add(2)
-		go t.readStack(ctx)
-		go t.readDev(cancel)
-	})
+func (t *Tun) read(packet []byte) (int, error) {
+	bufs := make([][]byte, 1)
+	bufs[0] = packet
+	sizes := make([]int, 1)
+	_, err := (*t.dev).Read(bufs, sizes, 0)
+	return sizes[0], err
 }
 
-func (t *Tun) readStack(ctx context.Context) {
-	defer t.wg.Done()
-	for {
-		pkt := t.ReadContext(ctx)
-		if pkt.IsNil() {
-			break
-		}
-
-		buf := pkt.ToBuffer()
-		if t.offset != 0 {
-			v := buffer.NewViewWithData(make([]byte, t.offset))
-			_ = buf.Prepend(v)
-		}
-		t.Write(buf.Flatten())
-		buf.Release()
-		pkt.DecRef()
-	}
+func (t *Tun) write(packet []byte) (int, error) {
+	bufs := make([][]byte, 1)
+	bufs[0] = packet
+	return (*t.dev).Write(bufs, 0)
 }
 
-func (t *Tun) readDev(cancel context.CancelFunc) {
-	defer t.wg.Done()
+// 从设备读取数据包，并注入到协议栈中
+func (t *Tun) inbound(cancel context.CancelFunc) {
+	defer t.Done()
 	defer cancel()
 
 	for {
-		data := make([]byte, t.offset+int(t.mtu))
-		n, err := t.Read(data)
+		data := make([]byte, int(t.mtu))
+		n, err := t.read(data)
 		if err != nil {
 			// debug
 			break
@@ -92,9 +68,9 @@ func (t *Tun) readDev(cancel context.CancelFunc) {
 			continue
 		}
 		pkt := stack.NewPacketBuffer(stack.PacketBufferOptions{
-			Payload: buffer.MakeWithData(data[t.offset : t.offset+n]),
+			Payload: buffer.MakeWithData(data),
 		})
-		switch header.IPVersion(data[t.offset:]) {
+		switch header.IPVersion(data) {
 		case header.IPv4Version:
 			t.InjectInbound(header.IPv4ProtocolNumber, pkt)
 		case header.IPv6Version:
@@ -104,10 +80,34 @@ func (t *Tun) readDev(cancel context.CancelFunc) {
 	}
 }
 
+// gvisor读取协议栈中数据包，并写入设备
+func (t *Tun) outbound(ctx context.Context) {
+	defer t.Done()
+	for {
+		pkt := t.ReadContext(ctx)
+		if pkt == nil {
+			break
+		}
+		buf := pkt.ToBuffer()
+		t.write(buf.Flatten())
+		buf.Release()
+		pkt.DecRef()
+	}
+}
+
+// 协议栈启动
+func (t *Tun) Attach(dispatcher stack.NetworkDispatcher) {
+	t.Endpoint.Attach(dispatcher)
+	t.Do(func() {
+		ctx, cancel := context.WithCancel(context.Background())
+		t.Add(2)
+		go t.outbound(ctx)
+		go t.inbound(cancel)
+	})
+}
+
 // return stack.LinkEndpoint interface
 func CreateTUN(ifname string, mtu int) (*Tun, error) {
-	offset := 0
-
 	dev, err := tun.CreateTUN(ifname, mtu)
 	if err != nil {
 		return nil, err
@@ -116,12 +116,10 @@ func CreateTUN(ifname string, mtu int) (*Tun, error) {
 	if err != nil {
 		return nil, err
 	}
-	mtu32 := uint32(mtu)
 	ep := &Tun{
-		mtu:      mtu32,
+		mtu:      uint32(mtu),
 		dev:      &dev,
-		offset:   offset,
-		Endpoint: channel.New(1024, mtu32, ""),
+		Endpoint: channel.New(1024, uint32(mtu), ""),
 	}
 	return ep, nil
 }

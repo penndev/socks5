@@ -46,6 +46,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer dev.Close()
 	stack.New(stack.Option{
 		EndPoint: dev,
 		HandleTCP: func(ftr *stack.ForwarderTCPRequest) {

@@ -86,7 +86,7 @@ func New(option Option) {
 		s.SetTransportProtocolHandler(udp.ProtocolNumber, udpForwarder.HandlePacket)
 	}
 
-	nicID := tcpip.NICID(s.UniqueID())
+	nicID := tcpip.NICID(s.NextNICID())
 	s.CreateNICWithOptions(nicID, option.EndPoint, stack.NICOptions{
 		Disabled: false,
 	})
