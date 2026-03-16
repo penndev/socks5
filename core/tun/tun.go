@@ -39,6 +39,8 @@ func (t *Tun) Wait() {
 }
 
 func (t *Tun) read(packet []byte) (int, error) {
+	t.devRM.Lock()
+	defer t.devRM.Unlock()
 	bufs := make([][]byte, 1)
 	bufs[0] = packet
 	sizes := make([]int, 1)
@@ -47,6 +49,8 @@ func (t *Tun) read(packet []byte) (int, error) {
 }
 
 func (t *Tun) write(packet []byte) (int, error) {
+	t.devWM.Lock()
+	defer t.devWM.Unlock()
 	bufs := make([][]byte, 1)
 	bufs[0] = packet
 	return (*t.dev).Write(bufs, 0)
@@ -61,16 +65,17 @@ func (t *Tun) inbound(cancel context.CancelFunc) {
 		data := make([]byte, int(t.mtu))
 		n, err := t.read(data)
 		if err != nil {
-			// debug
+			log.Println("read error:", err)
 			break
 		}
 		if n == 0 || n > int(t.mtu) || !t.IsAttached() {
 			continue
 		}
+		payload := data[:n]
 		pkt := stack.NewPacketBuffer(stack.PacketBufferOptions{
-			Payload: buffer.MakeWithData(data),
+			Payload: buffer.MakeWithData(payload),
 		})
-		switch header.IPVersion(data) {
+		switch header.IPVersion(payload) {
 		case header.IPv4Version:
 			t.InjectInbound(header.IPv4ProtocolNumber, pkt)
 		case header.IPv6Version:
@@ -89,7 +94,11 @@ func (t *Tun) outbound(ctx context.Context) {
 			break
 		}
 		buf := pkt.ToBuffer()
-		t.write(buf.Flatten())
+		_, err := t.write(buf.Flatten())
+		if err != nil {
+			log.Println("write error:", err)
+			// break
+		}
 		buf.Release()
 		pkt.DecRef()
 	}
