@@ -1,7 +1,6 @@
 package stack
 
 import (
-	"fmt"
 	"net"
 
 	"gvisor.dev/gvisor/pkg/tcpip"
@@ -18,14 +17,14 @@ import (
 
 type ForwarderUDPRequest struct {
 	Conn       net.Conn
-	RemoteAddr string
-	LocalAddr  string
+	RemoteAddr net.UDPAddr
+	// LocalAddr  net.UDPAddr
 }
 
 type ForwarderTCPRequest struct {
 	Conn       net.Conn
-	RemoteAddr string
-	LocalAddr  string
+	RemoteAddr net.TCPAddr
+	// LocalAddr  net.TCPAddr
 }
 
 type Option struct {
@@ -62,8 +61,17 @@ func New(option Option) {
 			}
 			defer r.Complete(false)
 			addrInfo := r.ID()
-			ftr.LocalAddr = fmt.Sprintf("%s:%d", addrInfo.RemoteAddress, addrInfo.RemotePort)
-			ftr.RemoteAddr = fmt.Sprintf("%s:%d", addrInfo.LocalAddress, addrInfo.LocalPort)
+			// ftr.LocalAddr = fmt.Sprintf("%s:%d", addrInfo.RemoteAddress, addrInfo.RemotePort)
+			// ftr.RemoteAddr = fmt.Sprintf("%s:%d", addrInfo.LocalAddress, addrInfo.LocalPort)
+			// ftr.LocalAddr = net.TCPAddr{
+			// 	IP:   addrInfo.RemoteAddress.AsSlice(),
+			// 	Port: int(addrInfo.RemotePort),
+			// }
+			ftr.RemoteAddr = net.TCPAddr{
+				IP:   addrInfo.LocalAddress.AsSlice(),
+				Port: int(addrInfo.LocalPort),
+			}
+
 			go option.HandleTCP(&ftr)
 		})
 		s.SetTransportProtocolHandler(tcp.ProtocolNumber, tcpForwarder.HandlePacket)
@@ -79,8 +87,16 @@ func New(option Option) {
 				return
 			}
 			addrInfo := r.ID()
-			fur.LocalAddr = fmt.Sprintf("%s:%d", addrInfo.RemoteAddress, addrInfo.RemotePort)
-			fur.RemoteAddr = fmt.Sprintf("%s:%d", addrInfo.LocalAddress, addrInfo.LocalPort)
+			// fur.LocalAddr = fmt.Sprintf("%s:%d", addrInfo.RemoteAddress, addrInfo.RemotePort)
+			// fur.RemoteAddr = fmt.Sprintf("%s:%d", addrInfo.LocalAddress, addrInfo.LocalPort)
+			// fur.LocalAddr = net.UDPAddr{
+			// 	IP:   addrInfo.RemoteAddress.AsSlice(),
+			// 	Port: int(addrInfo.RemotePort),
+			// }
+			fur.RemoteAddr = net.UDPAddr{
+				IP:   addrInfo.LocalAddress.AsSlice(),
+				Port: int(addrInfo.LocalPort),
+			}
 			go option.HandlerUDP(&fur)
 		})
 		s.SetTransportProtocolHandler(udp.ProtocolNumber, udpForwarder.HandlePacket)
