@@ -1,15 +1,10 @@
 package tun
 
 import (
-	"context"
-	"log"
 	"sync"
 
 	"golang.zx2c4.com/wireguard/tun"
-	"gvisor.dev/gvisor/pkg/buffer"
-	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"gvisor.dev/gvisor/pkg/tcpip/link/channel"
-	"gvisor.dev/gvisor/pkg/tcpip/stack"
 )
 
 type Tun struct {
@@ -29,7 +24,6 @@ func (t *Tun) Name() string {
 }
 
 func (t *Tun) Close() {
-	log.Println("i am close")
 	(*t.dev).Close()
 	t.Endpoint.Close()
 }
@@ -38,97 +32,22 @@ func (t *Tun) Wait() {
 	t.WaitGroup.Wait()
 }
 
-func (t *Tun) read(packet []byte) (int, error) {
-	t.devRM.Lock()
-	defer t.devRM.Unlock()
-	bufs := make([][]byte, 1)
-	bufs[0] = packet
-	sizes := make([]int, 1)
-	_, err := (*t.dev).Read(bufs, sizes, 0)
-	return sizes[0], err
-}
-
-func (t *Tun) write(packet []byte) (int, error) {
-	t.devWM.Lock()
-	defer t.devWM.Unlock()
-	bufs := make([][]byte, 1)
-	bufs[0] = packet
-	return (*t.dev).Write(bufs, 0)
-}
-
-// 从设备读取数据包，并注入到协议栈中
-func (t *Tun) inbound(cancel context.CancelFunc) {
-	defer t.Done()
-	defer cancel()
-
-	for {
-		data := make([]byte, int(t.mtu))
-		n, err := t.read(data)
-		if err != nil {
-			log.Println("read error:", err)
-			break
-		}
-		if n == 0 || n > int(t.mtu) || !t.IsAttached() {
-			continue
-		}
-		payload := data[:n]
-		pkt := stack.NewPacketBuffer(stack.PacketBufferOptions{
-			Payload: buffer.MakeWithData(payload),
-		})
-		switch header.IPVersion(payload) {
-		case header.IPv4Version:
-			t.InjectInbound(header.IPv4ProtocolNumber, pkt)
-		case header.IPv6Version:
-			t.InjectInbound(header.IPv6ProtocolNumber, pkt)
-		}
-		pkt.DecRef()
-	}
-}
-
-// gvisor读取协议栈中数据包，并写入设备
-func (t *Tun) outbound(ctx context.Context) {
-	defer t.Done()
-	for {
-		pkt := t.ReadContext(ctx)
-		if pkt == nil {
-			break
-		}
-		buf := pkt.ToBuffer()
-		_, err := t.write(buf.Flatten())
-		if err != nil {
-			log.Println("write error:", err)
-			// break
-		}
-		buf.Release()
-		pkt.DecRef()
-	}
-}
-
-// 协议栈启动
-func (t *Tun) Attach(dispatcher stack.NetworkDispatcher) {
-	t.Endpoint.Attach(dispatcher)
-	t.Do(func() {
-		ctx, cancel := context.WithCancel(context.Background())
-		t.Add(2)
-		go t.outbound(ctx)
-		go t.inbound(cancel)
-	})
-}
-
 // return stack.LinkEndpoint interface
-func CreateTUN(ifname string, mtu int) (*Tun, error) {
-	dev, err := tun.CreateTUN(ifname, mtu)
+func New(options Options) (*Tun, error) {
+	dev, err := tun.CreateTUN(options.Name, options.MTU)
 	if err != nil {
 		return nil, err
 	}
-	mtu, err = dev.MTU()
+	mtu, err := dev.MTU()
 	if err != nil {
 		return nil, err
 	}
+
 	ep := &Tun{
 		mtu:      uint32(mtu),
 		dev:      &dev,
 		Endpoint: channel.New(1024, uint32(mtu), ""),
 	}
+
 	return ep, nil
 }

@@ -3,53 +3,59 @@ package main
 import (
 	"flag"
 	"log"
-	"net/url"
+	"net/netip"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/penndev/socks5/core/netlink"
+	"github.com/penndev/socks5/core/internal"
+	"github.com/penndev/socks5/core/internal/route"
 	"github.com/penndev/socks5/core/stack"
 	"github.com/penndev/socks5/core/tun"
 )
 
-type Config struct {
-	Proxy string
-}
-
-var (
-	config = Config{}
-)
+var proxy string
 
 func init() {
-	flag.StringVar(&config.Proxy, "proxy", "", "Set remote socks5 service example socks5://user:pass@192.168.0.1:1080")
+	flag.StringVar(&proxy, "proxy", "", "Set remote socks5 service example socks5://user:pass@192.168.0.1:1080")
 	flag.Parse()
 }
 
 func main() {
+	var handleConnect internal.HandleConnect
+	handleConnect = internal.Local()
 
-	u, err := url.Parse(config.Proxy)
-	if err != nil {
-		panic(err)
-	}
-	if u.Scheme != "socks5" {
-		panic("scheme error")
-	}
-	dev, err := tun.CreateTUN(TUN_NAME, 0)
-	if err != nil {
-		panic(err)
-	}
-	err = netlink.SetAddress(TUN_NAME, "172.19.0.1", "255.255.255.255")
+	dev, err := tun.New(tun.Options{
+		Name: TUN_NAME,
+		// MTU:  1500, 使用默认的mtu
+	})
 	if err != nil {
 		panic(err)
 	}
 	defer dev.Close()
 	stack.New(stack.Option{
 		EndPoint: dev,
-		HandleTCP: func(ftr *stack.ForwarderTCPRequest) {
-			defer ftr.Conn.Close()
-			log.Printf("tcp %s <-> %s", ftr.LocalAddr, ftr.RemoteAddr)
+		HandleTCP: func(f *stack.ForwarderTCPRequest) {
+			log.Printf(
+				"Type %s -> %s",
+				f.RemoteAddr.Network(),
+				f.RemoteAddr.String(),
+			)
+			handleConnect(f.Conn, &f.RemoteAddr)
 		},
+		HandlerUDP: func(f *stack.ForwarderUDPRequest) {
+			log.Printf(
+				"Type %s -> %s",
+				f.RemoteAddr.Network(),
+				f.RemoteAddr.String(),
+			)
+			handleConnect(f.Conn, &f.RemoteAddr)
+		},
+	})
+	route.Start(route.Options{
+		DevName:      dev.Name(),
+		DevIP:        netip.MustParsePrefix("172.19.0.1/32"),
+		RouteAddress: []netip.Prefix{netip.MustParsePrefix("0.0.0.0/0")},
 	})
 
 	sigCh := make(chan os.Signal, 1)
