@@ -5,8 +5,25 @@ package main
 import (
 	"errors"
 
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 )
+
+var (
+	wininet               = windows.NewLazySystemDLL("wininet.dll")
+	procInternetSetOption = wininet.NewProc("InternetSetOptionW")
+)
+
+const (
+	internetOptionRefresh         = 37
+	internetOptionSettingsChanged = 39
+)
+
+func notifyProxyChanged() {
+	// Best-effort: 通知系统代理设置已更改，忽略错误以避免影响主流程
+	_, _, _ = procInternetSetOption.Call(0, uintptr(internetOptionSettingsChanged), 0, 0)
+	_, _, _ = procInternetSetOption.Call(0, uintptr(internetOptionRefresh), 0, 0)
+}
 
 // StartSystem 设置 Windows 系统代理为本地 socks5 服务地址（p.localServer.Addr）。
 func (p *Proxy) systemStart() error {
@@ -35,6 +52,8 @@ func (p *Proxy) systemStart() error {
 		return err
 	}
 
+	notifyProxyChanged()
+
 	return nil
 }
 
@@ -53,6 +72,8 @@ func (p *Proxy) systemStop() error {
 	if err := key.SetDWordValue("ProxyEnable", 0); err != nil {
 		return err
 	}
+
+	notifyProxyChanged()
 
 	return nil
 }

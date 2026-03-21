@@ -6,6 +6,8 @@ import (
 	"net"
 
 	"github.com/penndev/gopkg/socks5"
+	"github.com/penndev/socks5/core/stack"
+	"github.com/penndev/socks5/core/tun"
 )
 
 type Proxy struct {
@@ -15,6 +17,7 @@ type Proxy struct {
 	rpass       string
 	rtype       string         //判断是 Socks5 还是 Socks5OverTLS
 	localServer *socks5.Server //本地socks5服务
+
 }
 
 func (p *Proxy) HandleConnect(conn net.Conn, req socks5.Requests, replies func(status socks5.REP) error) error {
@@ -40,8 +43,7 @@ func (p *Proxy) HandleConnect(conn net.Conn, req socks5.Requests, replies func(s
 	}
 	if err != nil {
 		app.Event.Emit("logProxyList", "connect upstream failed: "+err.Error())
-	}
-	if err != nil {
+
 		replies(socks5.REP_CONNECTION_REFUSED)
 		return err
 	}
@@ -122,11 +124,59 @@ func (p *Proxy) SetMode(mode string) error {
 	case "manual":
 		p.systemStop()
 	case "system":
-		p.systemStart()
+		err := p.systemStart()
+		if err != nil {
+			app.Event.Emit("logServerStatus", "system start: "+err.Error()+"\n")
+		}
+		return nil
 	case "tun":
 		// todo: tun mode
 	default:
 		return errors.New("invalid mode")
 	}
 	return nil
+}
+
+func (p *Proxy) setModeTun() error {
+	dev, err := tun.CreateTUN("dev_socks5", 0)
+	if err != nil {
+		return err
+	}
+
+	stack.New(stack.Option{
+		EndPoint: dev,
+		HandleTCP: func(ftr *stack.ForwarderTCPRequest) {
+			ftr.Conn
+
+			// log.Printf("tcp %s <-> %s", ftr.LocalAddr, ftr.RemoteAddr)
+			// tunnel.Tunnel(tunnel.Option{
+			// 	Src:    ftr.Conn,
+			// 	Dst:    remoteConn,
+			// 	BufLen: 32 * 1024,
+			// })
+		},
+		// HandlerUDP: func(fur *stack.ForwarderUDPRequest) {
+		// 	defer fur.Conn.Close()
+		// 	s5, err := socks5.NewClient(host, user, pass)
+		// 	if err != nil {
+		// 		log.Println("socks5 connection err:", err)
+		// 		return
+		// 	}
+		// 	defer s5.Close()
+
+		// 	remoteConn, err := s5.Dial("udp", fur.RemoteAddr)
+		// 	if err != nil {
+		// 		log.Println("socks5 udp remote err:", err)
+		// 		return
+		// 	}
+		// 	log.Printf("udp %s <-> %s", fur.LocalAddr, fur.RemoteAddr)
+		// 	tunnel.Tunnel(tunnel.Option{
+		// 		Src:     fur.Conn,
+		// 		Dst:     remoteConn,
+		// 		BufLen:  1024,
+		// 		Timeout: 30 * time.Second,
+		// 	})
+		// },
+	})
+
 }

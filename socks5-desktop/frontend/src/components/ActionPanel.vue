@@ -5,7 +5,8 @@
       <span class="proxy-value">
         {{ serverStore.selectedServer?.remark || serverStore.selectedServer?.host || t("proxy.noSelectedServer") }}
       </span>
-      <a-button v-if="serverStore.selectedServer" type="link" size="small" danger @click="serverStore.selectedServer = null">
+      <a-button v-if="serverStore.selectedServer" type="link" size="small" danger
+        @click="serverStore.selectedServer = null">
         {{ t("proxy.removeButton") }}
       </a-button>
     </div>
@@ -33,7 +34,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, nextTick } from "vue";
 import { useServerStore } from "../stores/server";
 import { useSettingsStore } from "@/stores/settings";
 import { Start, SetRemote, SetMode } from "@bindings/socks5-desktop/proxy";
@@ -59,15 +60,15 @@ watch(serverStore, async () => {
 // 启动代理，golang设置可以启动多次，会自动重启并应用新的设置
 const settingsStore = useSettingsStore();
 
-const proxyStart = async () => {
-  const {host, port, username, password} = settingsStore.proxy
+
+watch(settingsStore.proxy, async () => {
+  const { host, port, username, password } = settingsStore.proxy
+  console.log(`${host}:${port}`, username, password)
   await Start(`${host}:${port}`, username, password);
-}
+});
 
-watch(settingsStore.proxy, proxyStart);
+onMounted(() => {
 
-onMounted(async() => {
-  proxyStart();
 });
 
 </script>

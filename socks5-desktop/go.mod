@@ -10,6 +10,12 @@ require (
 )
 
 require (
+	github.com/google/btree v1.1.2 // indirect
+	golang.org/x/time v0.5.0 // indirect
+	gvisor.dev/gvisor v0.0.0-20240215211334-a66ecfdd829a // indirect
+)
+
+require (
 	dario.cat/mergo v1.0.2 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
@@ -36,6 +42,7 @@ require (
 	github.com/lmittmann/tint v1.1.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/penndev/socks5/core v0.0.0-20260314055846-fc5d14f18698
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect

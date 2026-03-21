@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from "vue";
+import { ref, onMounted, watch, computed, nextTick } from "vue";
 import { Window } from "@wailsio/runtime";
 import { theme } from "ant-design-vue";
 import { useSettingsStore } from "@/stores/settings";
@@ -36,8 +36,13 @@ import ActionPanel from "./components/ActionPanel.vue";
 import ServePanel from "./components/ServePanel.vue";
 import SettingPanel from "./components/SettingPanel.vue";
 import BottomBar from "./components/BottomBar.vue";
+import { Start } from "@bindings/socks5-desktop/proxy";
 
 const settingsStore = useSettingsStore();
+
+// (async () => {
+//   console.log("我准备初始化设置")
+// })();
 
 watch(
   () => settingsStore.system.language,
@@ -69,25 +74,21 @@ const appWidth = ref(APP_MIN_WIDTH);
 // 右侧设置面板显示状态
 const extensionVisible = ref(true);
 
-watch(
-  extensionVisible,
-  async (isVisible) => {
+watch(extensionVisible, async (isVisible) => {
     const { height } = await Window.Size();
     const targetWindowWidth = isVisible
       ? APP_MAX_WIDTH + EXTENSION_PANEL_WIDTH
       : APP_MIN_WIDTH;
     await Window.SetSize(targetWindowWidth, height);
     appWidth.value = APP_MIN_WIDTH;
-  },
-  { immediate: true },
+  }
 );
 
 const handleDividerMove = (e) => {
   appWidth.value = Math.min(APP_MAX_WIDTH, Math.max(APP_MIN_WIDTH, e.clientX));
 };
 
-onMounted(() => {
-  settingsStore.init();
+onMounted(async() => {
   window.addEventListener("resize", () => {
     if (window.innerWidth < APP_MAX_WIDTH) {
       extensionVisible.value = false;
@@ -96,6 +97,12 @@ onMounted(() => {
     }
     extensionVisible.value = true;
   });
+  
+  await settingsStore.init();
+  await nextTick()
+  const { host, port, username, password } = settingsStore.proxy
+  console.log(`我准备启动${host}:${port}`, username, password)
+  Start(`${host}:${port}`, username, password)
 });
 </script>
 
