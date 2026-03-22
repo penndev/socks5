@@ -6,6 +6,8 @@ import (
 )
 
 const TUN_NAME = "prise-tun"
+const TUN_MTU = 0
+const TUN_OFFSET = 0
 
 // 自定义网卡GUID 方便wintun复用
 func init() {

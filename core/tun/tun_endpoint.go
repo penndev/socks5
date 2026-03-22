@@ -15,7 +15,7 @@ func (t *Tun) read(packet []byte) (int, error) {
 	bufs := make([][]byte, 1)
 	bufs[0] = packet
 	sizes := make([]int, 1)
-	_, err := (*t.dev).Read(bufs, sizes, 0)
+	_, err := (*t.dev).Read(bufs, sizes, t.offset)
 	return sizes[0], err
 }
 
@@ -24,16 +24,16 @@ func (t *Tun) write(packet []byte) (int, error) {
 	defer t.devWM.Unlock()
 	bufs := make([][]byte, 1)
 	bufs[0] = packet
-	return (*t.dev).Write(bufs, 0)
+	return (*t.dev).Write(bufs, t.offset)
 }
 
-// 从设备读取数据包，并注入到协议栈中
+// 从tun读取数据包，并注入到gvisor中
 func (t *Tun) inbound(cancel context.CancelFunc) {
 	defer t.Done()
 	defer cancel()
 
 	for {
-		data := make([]byte, int(t.mtu))
+		data := make([]byte, int(t.mtu)+t.offset)
 		n, err := t.read(data)
 		if err != nil {
 			log.Println("read error:", err)
@@ -42,7 +42,7 @@ func (t *Tun) inbound(cancel context.CancelFunc) {
 		if n == 0 || n > int(t.mtu) || !t.IsAttached() {
 			continue
 		}
-		payload := data[:n]
+		payload := data[t.offset:n]
 		pkt := stack.NewPacketBuffer(stack.PacketBufferOptions{
 			Payload: buffer.MakeWithData(payload),
 		})
@@ -56,7 +56,7 @@ func (t *Tun) inbound(cancel context.CancelFunc) {
 	}
 }
 
-// gvisor读取协议栈中数据包，并写入设备
+// 读取gvisor中数据包，并写入tun设备
 func (t *Tun) outbound(ctx context.Context) {
 	defer t.Done()
 	for {
@@ -65,6 +65,12 @@ func (t *Tun) outbound(ctx context.Context) {
 			break
 		}
 		buf := pkt.ToBuffer()
+
+		if t.offset != 0 {
+			v := buffer.NewViewWithData(make([]byte, t.offset))
+			_ = buf.Prepend(v)
+		}
+
 		_, err := t.write(buf.Flatten())
 		if err != nil {
 			log.Println("write error:", err)

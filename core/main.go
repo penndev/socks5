@@ -26,8 +26,9 @@ func main() {
 	handleConnect = internal.Local()
 
 	dev, err := tun.New(tun.Options{
-		Name: TUN_NAME,
-		// MTU:  1500, 使用默认的mtu
+		Name:   TUN_NAME,
+		MTU:    TUN_MTU,
+		Offset: TUN_OFFSET,
 	})
 	if err != nil {
 		panic(err)

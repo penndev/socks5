@@ -12,10 +12,11 @@ type Tun struct {
 	sync.Once
 	sync.WaitGroup
 
-	mtu   uint32
-	dev   *tun.Device
-	devRM sync.Mutex
-	devWM sync.Mutex
+	mtu    uint32
+	offset int // unxi设备会有这个 Packet Information (PI)
+	dev    *tun.Device
+	devRM  sync.Mutex
+	devWM  sync.Mutex
 }
 
 func (t *Tun) Name() string {
@@ -45,6 +46,7 @@ func New(options Options) (*Tun, error) {
 
 	ep := &Tun{
 		mtu:      uint32(mtu),
+		offset:   options.Offset,
 		dev:      &dev,
 		Endpoint: channel.New(1024, uint32(mtu), ""),
 	}
