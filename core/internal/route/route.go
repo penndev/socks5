@@ -1,6 +1,7 @@
 package route
 
 import (
+	"log"
 	"net/netip"
 )
 
@@ -17,7 +18,10 @@ func Start(options Options) error {
 		return err
 	}
 	for _, item := range options.RouteAddress {
-		SetRouteAddr(item, options.DevIP.Addr().AsSlice())
+		if err := SetRouteAddr(item, options.DevIP.Addr().AsSlice()); err != nil {
+			// route add 失败不应静默，否则在 mac 上排查会非常困难
+			log.Println("SetRouteAddr failed:", err)
+		}
 	}
 	return err
 }
