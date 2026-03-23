@@ -42,7 +42,8 @@ func (t *Tun) inbound(cancel context.CancelFunc) {
 		if n == 0 || n > int(t.mtu) || !t.IsAttached() {
 			continue
 		}
-		payload := data[t.offset:n]
+		// sizes[0] 是 IP 载荷长度，不是缓冲区结束下标；须从 offset 起取 n 字节。
+		payload := data[t.offset : t.offset+n]
 		pkt := stack.NewPacketBuffer(stack.PacketBufferOptions{
 			Payload: buffer.MakeWithData(payload),
 		})
