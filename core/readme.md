@@ -25,6 +25,26 @@ route add {SOCKS5_IP} mask 255.255.255.255 0.0.0.0 metric 1
 ```
 
 
+
+
+
+## darwin
+
+> ifconfig utun6 198.18.0.1 198.18.0.1 up
+> ifconfig utun6 inet 172.19.0.1 172.19.0.1 netmask 255.255.255.255 up
+netstat -rn -f inet
+
+sudo route add -net 1.0.0.0/8 172.19.0.1
+sudo route add -net 2.0.0.0/7 172.19.0.1
+sudo route add -net 4.0.0.0/6 172.19.0.1
+sudo route add -net 8.0.0.0/5 172.19.0.1
+sudo route add -net 16.0.0.0/4 172.19.0.1
+sudo route add -net 32.0.0.0/3 172.19.0.1
+sudo route add -net 64.0.0.0/2 172.19.0.1
+sudo route add -net 128.0.0.0/1 172.19.0.1
+sudo route add -net 198.18.0.0/15 172.19.0.1
+
+
 ## Android
 
 > 编译为Android aar库使用
