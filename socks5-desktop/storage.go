@@ -15,35 +15,6 @@ type Storage struct {
 	db *bolt.DB
 }
 
-func NewStorage() (*Storage, error) {
-	upath, err := os.UserConfigDir()
-	if err != nil {
-		return nil, err
-	}
-
-	dbDir := filepath.Join(upath, "Socks5Desktop")
-	if err := os.MkdirAll(dbDir, 0700); err != nil {
-		return nil, err
-	}
-
-	dbPath := filepath.Join(dbDir, "data.db")
-	db, err := bolt.Open(dbPath, 0600, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
-		return err
-	})
-	if err != nil {
-		db.Close()
-		return nil, err
-	}
-
-	return &Storage{db: db}, nil
-}
-
 func (s *Storage) Set(key string, value any) error {
 	if key == "" {
 		return errors.New("key不能为空")
@@ -92,4 +63,33 @@ func (s *Storage) Delete(key string) error {
 
 func (s *Storage) Close() error {
 	return s.db.Close()
+}
+
+func NewStorage() (*Storage, error) {
+	upath, err := os.UserConfigDir()
+	if err != nil {
+		return nil, err
+	}
+
+	dbDir := filepath.Join(upath, "Socks5Desktop")
+	if err := os.MkdirAll(dbDir, 0700); err != nil {
+		return nil, err
+	}
+
+	dbPath := filepath.Join(dbDir, "data.db")
+	db, err := bolt.Open(dbPath, 0600, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
+		return err
+	})
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	return &Storage{db: db}, nil
 }

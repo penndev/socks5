@@ -68,7 +68,7 @@ let connectionEventOff = null;
 onMounted(() => {
   connectionEventOff = Events.On("logProxyList", (eventPayload) => {
     if (!system.value.enableLogRecording) return;
-    lines.value.push(toEventMessage(eventPayload));
+    lines.value.push(String(eventPayload.data) + "\n");
     if (lines.value.length > MAX_LOG_LINES) {
       lines.value.shift();
     }

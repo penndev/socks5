@@ -36,7 +36,7 @@ import ActionPanel from "./components/ActionPanel.vue";
 import ServePanel from "./components/ServePanel.vue";
 import SettingPanel from "./components/SettingPanel.vue";
 import BottomBar from "./components/BottomBar.vue";
-import { Start } from "@bindings/socks5-desktop/proxy";
+// import { SetLocal } from "@bindings/socks5-desktop/proxy";
 
 const settingsStore = useSettingsStore();
 
@@ -100,9 +100,9 @@ onMounted(async() => {
   
   await settingsStore.init();
   await nextTick()
-  const { host, port, username, password } = settingsStore.proxy
-  console.log(`我准备启动${host}:${port}`, username, password)
-  Start(`${host}:${port}`, username, password)
+  // const { host, port, username, password } = settingsStore.proxy
+  // console.log(`我准备启动${host}:${port}`, username, password)
+  // SetLocal(`${host}:${port}`, username, password)
 });
 </script>
 

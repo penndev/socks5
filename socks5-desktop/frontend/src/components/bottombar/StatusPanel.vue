@@ -40,12 +40,6 @@ const displayText = computed(
   () => statusText.value || t("log.statusEmpty"),
 );
 
-function toEventMessage(eventPayload) {
-  return eventPayload?.data != null
-    ? String(eventPayload.data)
-    : String(eventPayload);
-}
-
 function clearStatus() {
   statusText.value = "";
 }
@@ -53,7 +47,7 @@ function clearStatus() {
 let statusEventOff = null;
 onMounted(() => {
   statusEventOff = Events.On("logServerStatus", (eventPayload) => {
-    statusText.value += toEventMessage(eventPayload);
+    statusText.value += String(eventPayload.data) + "\n";
   });
 });
 

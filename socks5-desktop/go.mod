@@ -6,14 +6,9 @@ require (
 	github.com/penndev/gopkg v0.4.1
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.72
 	go.etcd.io/bbolt v1.4.3
-	golang.org/x/sys v0.40.0
 )
 
-require (
-	github.com/google/btree v1.1.2 // indirect
-	golang.org/x/time v0.5.0 // indirect
-	gvisor.dev/gvisor v0.0.0-20240215211334-a66ecfdd829a // indirect
-)
+replace github.com/penndev/gopkg => ../../gopkg
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
@@ -42,7 +37,6 @@ require (
 	github.com/lmittmann/tint v1.1.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/penndev/socks5/core v0.0.0-20260314055846-fc5d14f18698
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
@@ -53,6 +47,7 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )

@@ -8,7 +8,7 @@ import (
 	"github.com/penndev/gopkg/socks5"
 )
 
-func HandleConnect(conn net.Conn, req socks5.Requests, replies func(status socks5.REP) error) error {
+func HandleConnect(conn net.Conn, req socks5.Requests, replies socks5.HandleReply) error {
 
 	addr := req.Addr()
 	log.Println("socks5 收到连接 ->", addr)
