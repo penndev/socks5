@@ -18,13 +18,13 @@ import (
 type ForwarderUDPRequest struct {
 	Conn       net.Conn
 	RemoteAddr net.UDPAddr
-	// LocalAddr  net.UDPAddr
+	LocalAddr  net.UDPAddr
 }
 
 type ForwarderTCPRequest struct {
 	Conn       net.Conn
 	RemoteAddr net.TCPAddr
-	// LocalAddr  net.TCPAddr
+	LocalAddr  net.TCPAddr
 }
 
 type Option struct {
@@ -55,18 +55,15 @@ func New(option Option) {
 			if endPoint, err := r.CreateEndpoint(&waiterQueue); err == nil {
 				ftr.Conn = gonet.NewTCPConn(&waiterQueue, endPoint)
 			} else {
-				// fmt.Println(err)
 				r.Complete(true)
 				return
 			}
 			defer r.Complete(false)
 			addrInfo := r.ID()
-			// ftr.LocalAddr = fmt.Sprintf("%s:%d", addrInfo.RemoteAddress, addrInfo.RemotePort)
-			// ftr.RemoteAddr = fmt.Sprintf("%s:%d", addrInfo.LocalAddress, addrInfo.LocalPort)
-			// ftr.LocalAddr = net.TCPAddr{
-			// 	IP:   addrInfo.RemoteAddress.AsSlice(),
-			// 	Port: int(addrInfo.RemotePort),
-			// }
+			ftr.LocalAddr = net.TCPAddr{
+				IP:   addrInfo.RemoteAddress.AsSlice(),
+				Port: int(addrInfo.RemotePort),
+			}
 			ftr.RemoteAddr = net.TCPAddr{
 				IP:   addrInfo.LocalAddress.AsSlice(),
 				Port: int(addrInfo.LocalPort),
@@ -87,12 +84,10 @@ func New(option Option) {
 				return
 			}
 			addrInfo := r.ID()
-			// fur.LocalAddr = fmt.Sprintf("%s:%d", addrInfo.RemoteAddress, addrInfo.RemotePort)
-			// fur.RemoteAddr = fmt.Sprintf("%s:%d", addrInfo.LocalAddress, addrInfo.LocalPort)
-			// fur.LocalAddr = net.UDPAddr{
-			// 	IP:   addrInfo.RemoteAddress.AsSlice(),
-			// 	Port: int(addrInfo.RemotePort),
-			// }
+			fur.LocalAddr = net.UDPAddr{
+				IP:   addrInfo.RemoteAddress.AsSlice(),
+				Port: int(addrInfo.RemotePort),
+			}
 			fur.RemoteAddr = net.UDPAddr{
 				IP:   addrInfo.LocalAddress.AsSlice(),
 				Port: int(addrInfo.LocalPort),

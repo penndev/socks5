@@ -1,9 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"log"
 	"net/netip"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -24,6 +26,27 @@ func init() {
 func main() {
 	var handleConnect internal.HandleConnect
 	handleConnect = internal.Local()
+	proxyURL, err := url.Parse(proxy)
+	if err != nil {
+		panic(err)
+	}
+	username := proxyURL.User.Username()
+	password, _ := proxyURL.User.Password()
+	switch proxyURL.Scheme {
+	case "socks5":
+		handleConnect = internal.Socks5(
+			proxyURL.Host,
+			username,
+			password,
+		)
+	case "socks5tls":
+		handleConnect = internal.Socks5OverTLS(
+			proxyURL.Host,
+			username,
+			password,
+			&tls.Config{},
+		)
+	}
 
 	dev, err := tun.New(tun.Options{
 		Name:   TUN_NAME,
@@ -38,7 +61,7 @@ func main() {
 		EndPoint: dev,
 		HandleTCP: func(f *stack.ForwarderTCPRequest) {
 			log.Printf(
-				"Type %s -> %s",
+				"%s -> %s",
 				f.RemoteAddr.Network(),
 				f.RemoteAddr.String(),
 			)
@@ -46,7 +69,7 @@ func main() {
 		},
 		HandlerUDP: func(f *stack.ForwarderUDPRequest) {
 			log.Printf(
-				"Type %s -> %s",
+				"%s -> %s",
 				f.RemoteAddr.Network(),
 				f.RemoteAddr.String(),
 			)

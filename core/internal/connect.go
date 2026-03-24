@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"github.com/penndev/gopkg/socks5"
+	"github.com/penndev/gopkg/util"
 	"github.com/penndev/socks5/core/internal/dialer"
 )
 
@@ -25,7 +26,7 @@ func Local() HandleConnect {
 		if err != nil {
 			return err
 		}
-		dialer.Pipe(conn, remote)
+		util.Pipe(conn, remote)
 		return nil
 	}
 }
@@ -52,7 +53,7 @@ func Socks5(host, user, pass string) HandleConnect {
 		if err != nil {
 			return err
 		}
-		dialer.Pipe(conn, remote)
+		util.Pipe(conn, remote)
 		return nil
 	}
 }
@@ -79,7 +80,7 @@ func Socks5OverTLS(host, user, pass string, conf *tls.Config) HandleConnect {
 		if err != nil {
 			return err
 		}
-		dialer.Pipe(conn, remote)
+		util.Pipe(conn, remote)
 		return nil
 	}
 }

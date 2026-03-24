@@ -1,3 +1,14 @@
+## 协议包含
+
+- socks4 `socks4://127.0.0.1:1080`
+- socks5(tls)
+    - `socks5://127.0.0.1:1080`
+    - `socks5tls://Domain:1080`
+- http(tls)
+    - `http://127.0.0.1:1080`
+    - `https://Domain:1080`
+
+
 ## Windows
 
 `tun`设备驱动 **https://github.com/WireGuard/wintun**

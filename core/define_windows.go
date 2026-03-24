@@ -1,6 +1,8 @@
 package main
 
 import (
+	"net/netip"
+
 	"golang.org/x/sys/windows"
 	"golang.zx2c4.com/wireguard/tun"
 )
@@ -9,9 +11,15 @@ const TUN_NAME = "prise-tun"
 const TUN_MTU = 0
 const TUN_OFFSET = 0
 
+var TUN_IP netip.Prefix
+var Routes []netip.Prefix
+
 // 自定义网卡GUID 方便wintun复用
 func init() {
-	tun.WintunTunnelType = "PriseTun"
+	TUN_IP = netip.MustParsePrefix("172.19.0.1/32")
+	Routes = []netip.Prefix{netip.MustParsePrefix("0.0.0.0/0")}
+	// 设置tun设备名称标识和guid
+	tun.WintunTunnelType = TUN_NAME
 	tun.WintunStaticRequestedGUID = &windows.GUID{
 		Data1: 0x8ceeab57,
 		Data2: 0x7cb2,

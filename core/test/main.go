@@ -5,9 +5,10 @@ import (
 	"log"
 	"net"
 	"net/netip"
+	"net/url"
 )
 
-func main() {
+func main1() {
 	p := netip.MustParsePrefix("192.168.1.123/24")
 
 	ip := p.Addr()
@@ -29,4 +30,9 @@ func main() {
 	conn.Close()
 	log.Println(lip)
 
+}
+
+func main() {
+	proxyURL, _ := url.Parse("socks5://127.0.0.1:1080")
+	log.Println(proxyURL.Scheme)
 }
