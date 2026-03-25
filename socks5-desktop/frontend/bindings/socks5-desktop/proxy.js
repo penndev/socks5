@@ -7,16 +7,6 @@
 import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Create } from "@wailsio/runtime";
 
 /**
- * @param {string} host
- * @param {string} user
- * @param {string} pass
- * @returns {$CancellablePromise<void>}
- */
-export function SetLocal(host, user, pass) {
-    return $Call.ByID(3668094731, host, user, pass);
-}
-
-/**
  * @param {string} mode
  * @returns {$CancellablePromise<void>}
  */
@@ -30,4 +20,21 @@ export function SetMode(mode) {
  */
 export function SetRemote(remote) {
     return $Call.ByID(1742491558, remote);
+}
+
+/**
+ * @param {string} host
+ * @param {string} user
+ * @param {string} pass
+ * @returns {$CancellablePromise<void>}
+ */
+export function SetStart(host, user, pass) {
+    return $Call.ByID(373722444, host, user, pass);
+}
+
+/**
+ * @returns {$CancellablePromise<void>}
+ */
+export function SetStop() {
+    return $Call.ByID(513036456);
 }

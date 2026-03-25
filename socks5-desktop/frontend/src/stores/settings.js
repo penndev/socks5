@@ -51,7 +51,8 @@ export const useSettingsStore = defineStore(KEY, {
         if (storedSettings) {
           Object.assign(this, storedSettings);
         }
-        this.$subscribe(() => debounce(this.save(), 800));
+        const save = debounce(this.save, 800)
+        this.$subscribe(save);
       } catch (error) {
         notification.error({
           message: t("settings.loadError"),

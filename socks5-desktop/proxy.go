@@ -20,7 +20,7 @@ func (p *Proxy) setLocalConnect(c net.Conn, req socks5.Requests, rep socks5.Hand
 	return nil
 }
 
-func (p *Proxy) SetLocal(host, user, pass string) error {
+func (p *Proxy) SetStart(host, user, pass string) error {
 	app.Event.Emit(
 		appConst.LogTypeName_STATUS,
 		"localServer://"+user+":"+pass+"@"+host,
@@ -70,4 +70,8 @@ func (p *Proxy) SetRemote(remote string) error {
 
 func (p *Proxy) SetMode(mode string) error {
 	return nil
+}
+
+func (p *Proxy) SetStop() {
+
 }

@@ -37,7 +37,7 @@
 import { onMounted, ref, watch, nextTick } from "vue";
 import { useServerStore } from "../stores/server";
 import { useSettingsStore } from "@/stores/settings";
-import { SetLocal, SetRemote, SetMode } from "@bindings/socks5-desktop/proxy";
+import { SetStart, SetStop, SetRemote, SetMode } from "@bindings/socks5-desktop/proxy";
 import { t } from "@/i18n";
 import { theme } from "ant-design-vue";
 
@@ -53,12 +53,17 @@ watch(proxyMode, async (newMode) => {
 // 修改远程节点
 const serverStore = useServerStore();
 watch(serverStore, async () => {
+
   const { host, username, password, protocol } = serverStore.selectedServer || {};
-  await SetRemote(`${protocol}://${username}:${password}@${host}`);
-  (async() => {
-    const { host, port, username, password } = settingsStore.proxy
-    await SetLocal(`${host}:${port}`, username, password);
-  })()
+  if (host && protocol) {
+    await SetRemote(`${protocol}://${username}:${password}@${host}`);
+    (()=>{
+      const { host, port, username, password } = settingsStore.proxy
+      SetStart(`${host}:${port}`, username, password);
+    })()
+  }else{
+    await SetStop()
+  }
 });
 
 // 启动代理，golang设置可以启动多次，会自动重启并应用新的设置
@@ -67,7 +72,7 @@ const settingsStore = useSettingsStore();
 
 watch(settingsStore.proxy, async () => {
   const { host, port, username, password } = settingsStore.proxy
-  await SetLocal(`${host}:${port}`, username, password);
+  await SetStart(`${host}:${port}`, username, password);
 });
 
 onMounted(() => {
