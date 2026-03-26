@@ -1,28 +1,27 @@
-package internal
+package transport
 
 import (
 	"crypto/tls"
-	"errors"
 	"net"
 
 	"github.com/penndev/gopkg/socks5"
 	"github.com/penndev/gopkg/util"
-	"github.com/penndev/socks5/core/internal/dialer"
+	"github.com/penndev/socks5/core/transport/dialer"
 )
 
-type HandleConnect func(net.Conn, net.Addr) error
+type HandleConnect func(net.Conn, string, string) error
 
 // 本地请求，不用远程
 func Local() HandleConnect {
-	return func(conn net.Conn, addr net.Addr) error {
+	return func(conn net.Conn, network, address string) error {
 		var dial *net.Dialer
-		switch addr.Network() {
+		switch network {
 		case "tcp":
 			dial = dialer.TCPDialer
 		case "udp":
 			dial = dialer.UDPDialer
 		}
-		remote, err := dial.Dial(addr.Network(), addr.String())
+		remote, err := dial.Dial(network, address)
 		if err != nil {
 			return err
 		}
@@ -33,7 +32,8 @@ func Local() HandleConnect {
 
 // socks5标准请求
 func Socks5(host, user, pass string) HandleConnect {
-	return func(conn net.Conn, addr net.Addr) error {
+	return func(conn net.Conn, network, address string) error {
+		// 控制直接走物理网卡防止环路。如果是本地可能失败，如果需要处理则判断host是否走 ip.IsLoopback
 		dialTcp, err := dialer.TCPDialer.Dial("tcp", host)
 		if err != nil {
 			return err
@@ -49,7 +49,7 @@ func Socks5(host, user, pass string) HandleConnect {
 			return err
 		}
 		// 发起真实的请求
-		remote, err := socks.Dial(addr.Network(), addr.String())
+		remote, err := socks.Dial(network, address)
 		if err != nil {
 			return err
 		}
@@ -60,23 +60,30 @@ func Socks5(host, user, pass string) HandleConnect {
 
 // socks5 tls
 func Socks5OverTLS(host, user, pass string, conf *tls.Config) HandleConnect {
-	return func(conn net.Conn, addr net.Addr) error {
-		s5tls, err := tls.Dial("tcp", host, conf)
+	return func(conn net.Conn, network, address string) error {
+		// s5tls, err := tls.Dial("tcp", host, conf)
+		// if err != nil {
+		// 	return err
+		// }
+		tcpDial, err := dialer.TCPDialer.Dial("tcp", host)
 		if err != nil {
-			return errors.New("invalid rtype")
+			return err
+		}
+		conf.InsecureSkipVerify = true
+		tlsConn := tls.Client(tcpDial, conf)
+		if err = tlsConn.Handshake(); err != nil {
+			return err
 		}
 		socks := &socks5.Client{
 			Username: user,
 			Password: pass,
-			Conn:     s5tls,
+			Conn:     tlsConn,
 		}
 		err = socks.Negotiation()
 		if err != nil {
 			return err
 		}
-		// 发起真实的请求
-		// 发起真实的请求
-		remote, err := socks.Dial(addr.Network(), addr.String())
+		remote, err := socks.Dial(network, address)
 		if err != nil {
 			return err
 		}

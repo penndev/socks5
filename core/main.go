@@ -10,9 +10,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/penndev/socks5/core/internal"
-	"github.com/penndev/socks5/core/internal/route"
 	"github.com/penndev/socks5/core/stack"
+	"github.com/penndev/socks5/core/transport"
+	"github.com/penndev/socks5/core/transport/route"
 	"github.com/penndev/socks5/core/tun"
 )
 
@@ -24,8 +24,8 @@ func init() {
 }
 
 func main() {
-	var handleConnect internal.HandleConnect
-	handleConnect = internal.Local()
+	var handleConnect transport.HandleConnect
+	handleConnect = transport.Local()
 	proxyURL, err := url.Parse(proxy)
 	if err != nil {
 		panic(err)
@@ -34,13 +34,13 @@ func main() {
 	password, _ := proxyURL.User.Password()
 	switch proxyURL.Scheme {
 	case "socks5":
-		handleConnect = internal.Socks5(
+		handleConnect = transport.Socks5(
 			proxyURL.Host,
 			username,
 			password,
 		)
 	case "socks5tls":
-		handleConnect = internal.Socks5OverTLS(
+		handleConnect = transport.Socks5OverTLS(
 			proxyURL.Host,
 			username,
 			password,
@@ -65,7 +65,7 @@ func main() {
 				f.RemoteAddr.Network(),
 				f.RemoteAddr.String(),
 			)
-			handleConnect(f.Conn, &f.RemoteAddr)
+			handleConnect(f.Conn, f.RemoteAddr.Network(), f.RemoteAddr.String())
 		},
 		HandlerUDP: func(f *stack.ForwarderUDPRequest) {
 			log.Printf(
@@ -73,7 +73,7 @@ func main() {
 				f.RemoteAddr.Network(),
 				f.RemoteAddr.String(),
 			)
-			handleConnect(f.Conn, &f.RemoteAddr)
+			handleConnect(f.Conn, f.RemoteAddr.Network(), f.RemoteAddr.String())
 		},
 	})
 	route.Start(route.Options{
