@@ -5,7 +5,7 @@
         <template #renderItem="{ item }">
           <a-list-item
             :class="{ active: selectedServer?.id === item.id }"
-            @click="serverStore.selectedServer = item"
+            @click="selectedServer = item"
           >
             <template #actions>
               <a-button type="text" size="small" @click.stop="edit.open(item)">
@@ -119,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import {
   CheckCircleFilled,
   DeleteOutlined,
@@ -130,12 +130,13 @@ import { Modal, message } from "ant-design-vue";
 import { Get, Set } from "@bindings/socks5-desktop/storage";
 import { useServerStore } from "../stores/server";
 import { t } from "@/i18n";
+import { storeToRefs } from "pinia";
 
 import { theme } from "ant-design-vue";
 const { token } = theme.useToken();
 
 const serverStore = useServerStore();
-const selectedServer = computed(() => serverStore.selectedServer);
+const { selectedServer } = storeToRefs(serverStore);
 
 // 所有节点
 const servers = ref([]);
@@ -197,7 +198,7 @@ const edit = reactive({
           servers.value[idx] = { ...servers.value[idx], ...payload };
 
         if (selectedServer.value?.id === edit.id)
-          serverStore.selectedServer = { ...selectedServer, ...payload };
+          selectedServer.value = { ...selectedServer.value, ...payload };
 
         message.success(t("serverList.updateSuccess"));
       } else {
@@ -230,7 +231,7 @@ function deleteModal(item) {
     async onOk() {
       servers.value = servers.value.filter((s) => s.id !== item.id);
       if (selectedServer.value?.id === item.id)
-        serverStore.selectedServer = null;
+        selectedServer.value = null;
       await Set(STORAGE_KEY, servers.value);
       message.success(t("serverList.deleteSuccess"));
     },

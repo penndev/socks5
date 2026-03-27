@@ -1,10 +1,13 @@
 package main
 
 import (
+	"crypto/tls"
+	"errors"
 	"net"
 	"net/url"
 
 	"github.com/penndev/gopkg/socks5"
+	"github.com/penndev/socks5/core/transport"
 )
 
 type Proxy struct {
@@ -13,11 +16,41 @@ type Proxy struct {
 }
 
 func (p *Proxy) setLocalConnect(c net.Conn, req socks5.Requests, rep socks5.HandleReply) error {
-	addr := req.Addr()
-	app.Event.Emit(appConst.LogTypeName_LOG, "incoming: "+addr)
-	defer app.Event.Emit(appConst.LogTypeName_LOG, "proxy finished: "+addr)
+	host := req.Addr()
+	app.Event.Emit(appConst.LogTypeName_LOG, "incoming: "+host)
 
-	return nil
+	network := ""
+	switch req.CMD {
+	case socks5.CMD_CONNECT:
+		network = "tcp"
+	case socks5.CMD_UDP_ASSOCIATE:
+		network = "udp"
+	default:
+		rep(socks5.REP_COMMAND_NOT_SUPPORTED)
+	}
+	// handle := transport.Local()
+	// rep(socks5.REP_SUCCEEDED)
+	// handle(c, network, host)
+	var err error
+	user := p.remote.User.Username()
+	pass, _ := p.remote.User.Password()
+	switch p.remote.Scheme {
+	case "socks5":
+		handle := transport.Socks5(p.remote.Host, user, pass)
+		rep(socks5.REP_SUCCEEDED)
+		err = handle(c, network, host)
+	case "socks5overtls":
+		handle := transport.Socks5OverTLS(p.remote.Host, user, pass, &tls.Config{})
+		rep(socks5.REP_SUCCEEDED)
+		err = handle(c, network, host)
+	default:
+		rep(socks5.REP_CONNECTION_NOT_ALLOWED)
+		err = errors.New("cant find Scheme" + p.remote.Scheme)
+	}
+	if err != nil {
+		app.Event.Emit(appConst.LogTypeName_LOG, host+":"+err.Error())
+	}
+	return err
 }
 
 func (p *Proxy) SetStart(host, user, pass string) error {

@@ -26,6 +26,7 @@ import { Events } from "@wailsio/runtime";
 import { CloseOutlined } from "@ant-design/icons-vue";
 import { t } from "@/i18n";
 import { theme } from "ant-design-vue";
+import { AppConfig } from "@bindings/socks5-desktop/app";
 
 const { token } = theme.useToken();
 
@@ -45,10 +46,18 @@ function clearStatus() {
 }
 
 let statusEventOff = null;
-onMounted(() => {
-  statusEventOff = Events.On("logServerStatus", (eventPayload) => {
-    statusText.value += String(eventPayload.data) + "\n";
-  });
+onMounted(async () => {
+  try {
+    const appConst = await AppConfig();
+    statusEventOff = Events.On(
+      appConst.LogTypeName_STATUS,
+      (eventPayload) => {
+        statusText.value += String(eventPayload.data) + "\n";
+      },
+    );
+  } catch (e) {
+    console.error("[StatusPanel] AppConfig() failed:", e);
+  }
 });
 
 onBeforeUnmount(() => {

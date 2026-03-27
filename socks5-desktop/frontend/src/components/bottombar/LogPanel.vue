@@ -28,6 +28,7 @@ import { useSettingsStore } from "@/stores/settings";
 import { CloseOutlined } from "@ant-design/icons-vue";
 import { t } from "@/i18n";
 import { theme } from "ant-design-vue";
+import { AppConfig } from "@bindings/socks5-desktop/app";
 
 const { token } = theme.useToken();
 
@@ -48,12 +49,6 @@ const displayText = computed(
   () => lines.value.join("\n") || t("log.connectionEmpty"),
 );
 
-function toEventMessage(eventPayload) {
-  return eventPayload?.data != null
-    ? String(eventPayload.data)
-    : String(eventPayload);
-}
-
 function clearLogs() {
   lines.value = [];
 }
@@ -65,14 +60,22 @@ watch(
 );
 
 let connectionEventOff = null;
-onMounted(() => {
-  connectionEventOff = Events.On("logProxyList", (eventPayload) => {
-    if (!system.value.enableLogRecording) return;
-    lines.value.push(String(eventPayload.data) + "\n");
-    if (lines.value.length > MAX_LOG_LINES) {
-      lines.value.shift();
-    }
-  });
+onMounted(async () => {
+  try {
+    const appConst = await AppConfig();
+    connectionEventOff = Events.On( 
+      appConst.LogTypeName_LOG,
+      (eventPayload) => {
+        if (!system.value.enableLogRecording) return;
+        lines.value.push(String(eventPayload.data));
+        if (lines.value.length > MAX_LOG_LINES) {
+          lines.value.shift();
+        }
+      },
+    );
+  } catch (e) {
+    console.error("[LogPanel] AppConfig() failed:", e);
+  }
 });
 
 onBeforeUnmount(() => {
