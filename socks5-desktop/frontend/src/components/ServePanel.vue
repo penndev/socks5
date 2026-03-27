@@ -8,6 +8,15 @@
             @click="selectedServer = item"
           >
             <template #actions>
+              <a-button
+                type="text"
+                size="small"
+                :loading="item.pinging"
+                @click.stop="pingServer(item)"
+                :title="t('serverList.pingTooltip')"
+              >
+                <ThunderboltOutlined v-if="!item.pinging" />
+              </a-button>
               <a-button type="text" size="small" @click.stop="edit.open(item)">
                 <EditOutlined />
               </a-button>
@@ -40,6 +49,12 @@
                 >
                   {{ item.protocol }} |
                   {{ item.username || t("serverList.noAuth") }}
+                  <span v-if="item.latency !== undefined" class="latency-badge">
+                    <span v-if="item.latency >= 0" :class="getLatencyClass(item.latency)">
+                      {{ item.latency }}ms
+                    </span>
+                    <span v-else class="latency-error">{{ t('serverList.pingFailed') }}</span>
+                  </span>
                 </span>
               </template>
             </a-list-item-meta>
@@ -125,9 +140,11 @@ import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons-vue";
 import { Modal, message } from "ant-design-vue";
 import { Get, Set } from "@bindings/socks5-desktop/storage";
+import { TestServer } from "@bindings/socks5-desktop/ping";
 import { useServerStore } from "../stores/server";
 import { t } from "@/i18n";
 import { storeToRefs } from "pinia";
@@ -238,6 +255,45 @@ function deleteModal(item) {
   });
 }
 
+// 测速功能
+async function pingServer(server) {
+  server.pinging = true;
+  try {
+    const result = await TestServer({
+      host: server.host,
+      protocol: server.protocol.toLowerCase(),
+      username: server.username || "",
+      password: server.password || "",
+    });
+
+    if (result.success) {
+      server.latency = result.latency;
+      message.success(
+        `${server.remark || server.host}: ${result.latency}ms`
+      );
+    } else {
+      server.latency = -1;
+      message.error(
+        `${server.remark || server.host}: ${result.error || t("serverList.pingFailed")}`
+      );
+    }
+  } catch (e) {
+    server.latency = -1;
+    message.error(
+      `${server.remark || server.host}: ${e.message || t("serverList.pingFailed")}`
+    );
+  } finally {
+    server.pinging = false;
+  }
+}
+
+// 获取延迟样式类
+function getLatencyClass(latency) {
+  if (latency < 100) return "latency-good";
+  if (latency < 300) return "latency-medium";
+  return "latency-bad";
+}
+
 onMounted(async () => {
   try {
     servers.value = await Get(STORAGE_KEY);
@@ -321,6 +377,28 @@ onMounted(async () => {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      .latency-badge {
+        margin-left: 8px;
+        font-weight: 500;
+      }
+
+      .latency-good {
+        color: #52c41a;
+      }
+
+      .latency-medium {
+        color: #faad14;
+      }
+
+      .latency-bad {
+        color: #ff4d4f;
+      }
+
+      .latency-error {
+        color: #ff4d4f;
+        font-size: 11px;
+      }
     }
   }
 }

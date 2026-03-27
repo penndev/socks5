@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wails3 generate:*)",
+      "Bash(wails3 dev:*)"
+    ]
+  }
+}

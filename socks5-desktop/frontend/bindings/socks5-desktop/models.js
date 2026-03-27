@@ -42,3 +42,95 @@ export class AppConst {
         return new AppConst(/** @type {Partial<AppConst>} */($$parsedSource));
     }
 }
+
+export class PingRequest {
+    /**
+     * Creates a new PingRequest instance.
+     * @param {Partial<PingRequest>} [$$source = {}] - The source object to create the PingRequest.
+     */
+    constructor($$source = {}) {
+        if (!("host" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["host"] = "";
+        }
+        if (!("protocol" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["protocol"] = "";
+        }
+        if (!("username" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["username"] = "";
+        }
+        if (!("password" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["password"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new PingRequest instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {PingRequest}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new PingRequest(/** @type {Partial<PingRequest>} */($$parsedSource));
+    }
+}
+
+export class PingResult {
+    /**
+     * Creates a new PingResult instance.
+     * @param {Partial<PingResult>} [$$source = {}] - The source object to create the PingResult.
+     */
+    constructor($$source = {}) {
+        if (!("latency" in $$source)) {
+            /**
+             * 延迟（毫秒）
+             * @member
+             * @type {number}
+             */
+            this["latency"] = 0;
+        }
+        if (!("success" in $$source)) {
+            /**
+             * @member
+             * @type {boolean}
+             */
+            this["success"] = false;
+        }
+        if (/** @type {any} */(false)) {
+            /**
+             * @member
+             * @type {string | undefined}
+             */
+            this["error"] = undefined;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new PingResult instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {PingResult}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new PingResult(/** @type {Partial<PingResult>} */($$parsedSource));
+    }
+}

@@ -57,6 +57,8 @@ export default {
   "serverList.updateSuccess": "Updated successfully",
   "serverList.addSuccess": "Added successfully",
   "serverList.operationFailed": "Operation failed",
+  "serverList.pingTooltip": "Test latency",
+  "serverList.pingFailed": "Ping failed",
 
   // Proxy log bar
   "log.dragToResize": "Drag to resize height",

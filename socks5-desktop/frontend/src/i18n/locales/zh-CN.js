@@ -56,6 +56,8 @@ export default {
   "serverList.updateSuccess": "修改成功",
   "serverList.addSuccess": "添加成功",
   "serverList.operationFailed": "操作失败",
+  "serverList.pingTooltip": "测速",
+  "serverList.pingFailed": "测速失败",
 
   // Proxy log bar
   "log.dragToResize": "拖动调节高度",
