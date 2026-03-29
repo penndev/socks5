@@ -1,5 +1,16 @@
 <template>
   <a-card class="socks5-server-card" :title="t('serverList.title')">
+    <template #extra>
+      <a-button
+        type="link"
+        size="small"
+        :loading="pingingAll"
+        :disabled="servers.length === 0"
+        @click="pingAllServers"
+      >
+        {{ t("serverList.pingAll") }}
+      </a-button>
+    </template>
     <div class="server-list-scroll" v-if="servers.length > 0">
       <a-list :data-source="servers" bordered>
         <template #renderItem="{ item }">
@@ -8,15 +19,6 @@
             @click="selectedServer = item"
           >
             <template #actions>
-              <a-button
-                type="text"
-                size="small"
-                :loading="item.pinging"
-                @click.stop="pingServer(item)"
-                :title="t('serverList.pingTooltip')"
-              >
-                <ThunderboltOutlined v-if="!item.pinging" />
-              </a-button>
               <a-button type="text" size="small" @click.stop="edit.open(item)">
                 <EditOutlined />
               </a-button>
@@ -38,6 +40,20 @@
                     class="selected-icon"
                   />
                   {{ item.remark || item.host }}
+                  <span
+                    v-if="item.latency !== undefined"
+                    class="latency-inline"
+                  >
+                    <span
+                      v-if="item.latency >= 0"
+                      :class="getLatencyClass(item.latency)"
+                    >
+                      {{ item.latency }}ms
+                    </span>
+                    <span v-else class="latency-error">{{
+                      t("serverList.pingFailed")
+                    }}</span>
+                  </span>
                 </span>
               </template>
               <template #description>
@@ -49,12 +65,6 @@
                 >
                   {{ item.protocol }} |
                   {{ item.username || t("serverList.noAuth") }}
-                  <span v-if="item.latency !== undefined" class="latency-badge">
-                    <span v-if="item.latency >= 0" :class="getLatencyClass(item.latency)">
-                      {{ item.latency }}ms
-                    </span>
-                    <span v-else class="latency-error">{{ t('serverList.pingFailed') }}</span>
-                  </span>
                 </span>
               </template>
             </a-list-item-meta>
@@ -140,11 +150,10 @@ import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
-  ThunderboltOutlined,
 } from "@ant-design/icons-vue";
 import { Modal, message } from "ant-design-vue";
 import { Get, Set } from "@bindings/socks5-desktop/storage";
-import { TestServer } from "@bindings/socks5-desktop/ping";
+import { TestServer } from "@bindings/socks5-desktop/proxyping";
 import { useServerStore } from "../stores/server";
 import { t } from "@/i18n";
 import { storeToRefs } from "pinia";
@@ -157,6 +166,7 @@ const { selectedServer } = storeToRefs(serverStore);
 
 // 所有节点
 const servers = ref([]);
+const pingingAll = ref(false);
 
 const editRef = ref();
 // 编辑态集中管理：弹窗状态、表单、校验与提交动作
@@ -255,35 +265,35 @@ function deleteModal(item) {
   });
 }
 
-// 测速功能
-async function pingServer(server) {
-  server.pinging = true;
-  try {
-    const result = await TestServer({
-      host: server.host,
-      protocol: server.protocol.toLowerCase(),
-      username: server.username || "",
-      password: server.password || "",
-    });
+/** 与代理 SetRemote 一致：protocol://user:pass@host */
+function serverProxyURL(server) {
+  const protocol = server.protocol.toLowerCase();
+  const username = server.username || "";
+  const password = server.password || "";
+  return `${protocol}://${username}:${password}@${server.host}`;
+}
 
+async function pingOneServer(server) {
+  try {
+    const result = await TestServer(serverProxyURL(server));
     if (result.success) {
       server.latency = result.latency;
-      message.success(
-        `${server.remark || server.host}: ${result.latency}ms`
-      );
     } else {
       server.latency = -1;
-      message.error(
-        `${server.remark || server.host}: ${result.error || t("serverList.pingFailed")}`
-      );
     }
-  } catch (e) {
+  } catch {
     server.latency = -1;
-    message.error(
-      `${server.remark || server.host}: ${e.message || t("serverList.pingFailed")}`
-    );
+  }
+}
+
+async function pingAllServers() {
+  if (servers.value.length === 0) return;
+  pingingAll.value = true;
+  try {
+    await Promise.all(servers.value.map((s) => pingOneServer(s)));
+    message.success(t("serverList.pingAllDone"));
   } finally {
-    server.pinging = false;
+    pingingAll.value = false;
   }
 }
 
@@ -362,6 +372,30 @@ onMounted(async () => {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+
+      .latency-inline {
+        flex-shrink: 0;
+        margin-left: 6px;
+        font-weight: 500;
+        font-size: 12px;
+
+        .latency-good {
+          color: #52c41a;
+        }
+
+        .latency-medium {
+          color: #faad14;
+        }
+
+        .latency-bad {
+          color: #ff4d4f;
+        }
+
+        .latency-error {
+          color: #ff4d4f;
+          font-size: 11px;
+        }
+      }
     }
 
     .selected-icon {
@@ -377,28 +411,6 @@ onMounted(async () => {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-
-      .latency-badge {
-        margin-left: 8px;
-        font-weight: 500;
-      }
-
-      .latency-good {
-        color: #52c41a;
-      }
-
-      .latency-medium {
-        color: #faad14;
-      }
-
-      .latency-bad {
-        color: #ff4d4f;
-      }
-
-      .latency-error {
-        color: #ff4d4f;
-        font-size: 11px;
-      }
     }
   }
 }

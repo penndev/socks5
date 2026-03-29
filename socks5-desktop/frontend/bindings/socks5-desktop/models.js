@@ -43,59 +43,10 @@ export class AppConst {
     }
 }
 
-export class PingRequest {
+export class ProxyPingResult {
     /**
-     * Creates a new PingRequest instance.
-     * @param {Partial<PingRequest>} [$$source = {}] - The source object to create the PingRequest.
-     */
-    constructor($$source = {}) {
-        if (!("host" in $$source)) {
-            /**
-             * @member
-             * @type {string}
-             */
-            this["host"] = "";
-        }
-        if (!("protocol" in $$source)) {
-            /**
-             * @member
-             * @type {string}
-             */
-            this["protocol"] = "";
-        }
-        if (!("username" in $$source)) {
-            /**
-             * @member
-             * @type {string}
-             */
-            this["username"] = "";
-        }
-        if (!("password" in $$source)) {
-            /**
-             * @member
-             * @type {string}
-             */
-            this["password"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new PingRequest instance from a string or object.
-     * @param {any} [$$source = {}]
-     * @returns {PingRequest}
-     */
-    static createFrom($$source = {}) {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new PingRequest(/** @type {Partial<PingRequest>} */($$parsedSource));
-    }
-}
-
-export class PingResult {
-    /**
-     * Creates a new PingResult instance.
-     * @param {Partial<PingResult>} [$$source = {}] - The source object to create the PingResult.
+     * Creates a new ProxyPingResult instance.
+     * @param {Partial<ProxyPingResult>} [$$source = {}] - The source object to create the ProxyPingResult.
      */
     constructor($$source = {}) {
         if (!("latency" in $$source)) {
@@ -125,12 +76,12 @@ export class PingResult {
     }
 
     /**
-     * Creates a new PingResult instance from a string or object.
+     * Creates a new ProxyPingResult instance from a string or object.
      * @param {any} [$$source = {}]
-     * @returns {PingResult}
+     * @returns {ProxyPingResult}
      */
     static createFrom($$source = {}) {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new PingResult(/** @type {Partial<PingResult>} */($$parsedSource));
+        return new ProxyPingResult(/** @type {Partial<ProxyPingResult>} */($$parsedSource));
     }
 }

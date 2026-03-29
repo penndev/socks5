@@ -29,7 +29,7 @@ func main() {
 			application.NewService(storage),
 			application.NewService(&App{}),
 			application.NewService(&Proxy{}),
-			application.NewService(&Ping{}),
+			application.NewService(&ProxyPing{}),
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: false,
