@@ -1,19 +1,19 @@
-package main
+package internal
 
-type AppConst struct {
+type appConst struct {
 	// 应用运行状态日志名称
 	LogTypeName_STATUS string
 	// 连接日志列表的消息名称
 	LogTypeName_LOG string
 }
 
-var appConst = AppConst{
+var AppConfig = appConst{
 	LogTypeName_STATUS: "logServerStatus",
 	LogTypeName_LOG:    "logProxyList",
 }
 
-type App struct{}
+type AppConst struct{}
 
-func (a App) AppConfig() AppConst {
-	return appConst
+func (a AppConst) AppConfig() appConst {
+	return AppConfig
 }

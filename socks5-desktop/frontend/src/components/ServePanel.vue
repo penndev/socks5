@@ -153,7 +153,7 @@ import {
 } from "@ant-design/icons-vue";
 import { Modal, message } from "ant-design-vue";
 import { Get, Set } from "@bindings/socks5-desktop/storage";
-import { TestServer } from "@bindings/socks5-desktop/proxyping";
+import { TestServer } from "@bindings/socks5-desktop/proxy/proxyping";
 import { useServerStore } from "../stores/server";
 import { t } from "@/i18n";
 import { storeToRefs } from "pinia";

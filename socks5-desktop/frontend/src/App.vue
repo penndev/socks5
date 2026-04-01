@@ -36,13 +36,8 @@ import ActionPanel from "./components/ActionPanel.vue";
 import ServePanel from "./components/ServePanel.vue";
 import SettingPanel from "./components/SettingPanel.vue";
 import BottomBar from "./components/BottomBar.vue";
-// import { SetLocal } from "@bindings/socks5-desktop/proxy";
 
 const settingsStore = useSettingsStore();
-
-// (async () => {
-//   console.log("我准备初始化设置")
-// })();
 
 watch(
   () => settingsStore.system.language,

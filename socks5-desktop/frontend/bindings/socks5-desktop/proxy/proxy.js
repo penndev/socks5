@@ -11,7 +11,7 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
  * @returns {$CancellablePromise<void>}
  */
 export function SetMode(mode) {
-    return $Call.ByID(2511165443, mode);
+    return $Call.ByID(1601215220, mode);
 }
 
 /**
@@ -19,7 +19,7 @@ export function SetMode(mode) {
  * @returns {$CancellablePromise<void>}
  */
 export function SetRemote(remote) {
-    return $Call.ByID(1742491558, remote);
+    return $Call.ByID(2009944977, remote);
 }
 
 /**
@@ -29,12 +29,12 @@ export function SetRemote(remote) {
  * @returns {$CancellablePromise<void>}
  */
 export function SetStart(host, user, pass) {
-    return $Call.ByID(373722444, host, user, pass);
+    return $Call.ByID(457817641, host, user, pass);
 }
 
 /**
  * @returns {$CancellablePromise<void>}
  */
 export function SetStop() {
-    return $Call.ByID(513036456);
+    return $Call.ByID(1614014531);
 }

@@ -3,15 +3,15 @@ module socks5-desktop
 go 1.25.5
 
 require (
-	github.com/penndev/gopkg v0.4.1
+	github.com/penndev/gopkg v0.4.2
+	github.com/penndev/socks5/core v0.0.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.72
 	go.etcd.io/bbolt v1.4.3
+	golang.org/x/sys v0.40.0
+	golang.zx2c4.com/wireguard v0.0.0-20250521234502-f333402bd9cb
 )
 
-replace (
-	github.com/penndev/gopkg => ../../gopkg
-	github.com/penndev/socks5/core => ../core
-)
+replace github.com/penndev/socks5/core => ../core
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
@@ -30,6 +30,7 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
+	github.com/google/btree v1.1.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jchv/go-winloader v0.0.0-20250406163304-c1995be93bd1 // indirect
@@ -40,7 +41,6 @@ require (
 	github.com/lmittmann/tint v1.1.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/penndev/socks5/core v0.0.0-20260325150922-a9006f0586c3
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
@@ -51,7 +51,9 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
+	golang.org/x/time v0.12.0 // indirect
+	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
+	gvisor.dev/gvisor v0.0.0-20250503011706-39ed1f5ac29c // indirect
 )

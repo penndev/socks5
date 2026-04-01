@@ -6,43 +6,6 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
-export class AppConst {
-    /**
-     * Creates a new AppConst instance.
-     * @param {Partial<AppConst>} [$$source = {}] - The source object to create the AppConst.
-     */
-    constructor($$source = {}) {
-        if (!("LogTypeName_STATUS" in $$source)) {
-            /**
-             * 应用运行状态日志名称
-             * @member
-             * @type {string}
-             */
-            this["LogTypeName_STATUS"] = "";
-        }
-        if (!("LogTypeName_LOG" in $$source)) {
-            /**
-             * 连接日志列表的消息名称
-             * @member
-             * @type {string}
-             */
-            this["LogTypeName_LOG"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new AppConst instance from a string or object.
-     * @param {any} [$$source = {}]
-     * @returns {AppConst}
-     */
-    static createFrom($$source = {}) {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new AppConst(/** @type {Partial<AppConst>} */($$parsedSource));
-    }
-}
-
 export class ProxyPingResult {
     /**
      * Creates a new ProxyPingResult instance.

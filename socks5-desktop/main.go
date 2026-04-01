@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"socks5-desktop/internal"
+	"socks5-desktop/proxy"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -10,15 +12,13 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-var app *application.App
-
 func main() {
 	storage, err := NewStorage()
 	if err != nil {
 		panic(err)
 	}
 
-	app = application.New(application.Options{
+	internal.App = application.New(application.Options{
 		Name:        "socks5-desktop",
 		Description: "Socks5 代理桌面应用",
 		Icon:        appIcon,
@@ -27,15 +27,15 @@ func main() {
 		},
 		Services: []application.Service{
 			application.NewService(storage),
-			application.NewService(&App{}),
-			application.NewService(&Proxy{}),
-			application.NewService(&ProxyPing{}),
+			application.NewService(&internal.AppConst{}),
+			application.NewService(&proxy.Proxy{}),
+			application.NewService(&proxy.ProxyPing{}),
 		},
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: false,
 		},
 	})
-
+	app := internal.App
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:            "socks5-desktop",
 		Width:            1000,

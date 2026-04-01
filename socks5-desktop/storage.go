@@ -1,3 +1,4 @@
+// 封装类似sqlite的bolt数据库给前端持久化数据使用。
 package main
 
 import (

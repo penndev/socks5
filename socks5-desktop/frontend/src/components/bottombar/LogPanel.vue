@@ -28,7 +28,7 @@ import { useSettingsStore } from "@/stores/settings";
 import { CloseOutlined } from "@ant-design/icons-vue";
 import { t } from "@/i18n";
 import { theme } from "ant-design-vue";
-import { AppConfig } from "@bindings/socks5-desktop/app";
+import { AppConfig } from "@bindings/socks5-desktop/internal/appconst";
 
 const { token } = theme.useToken();
 

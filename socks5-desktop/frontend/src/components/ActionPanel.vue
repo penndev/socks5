@@ -37,7 +37,7 @@
 import { onMounted, ref, watch, nextTick } from "vue";
 import { useServerStore } from "../stores/server";
 import { useSettingsStore } from "@/stores/settings";
-import { SetStart, SetStop, SetRemote, SetMode } from "@bindings/socks5-desktop/proxy";
+import { SetStart, SetStop, SetRemote, SetMode } from "@bindings/socks5-desktop/proxy/proxy";
 import { t } from "@/i18n";
 import { theme } from "ant-design-vue";
 

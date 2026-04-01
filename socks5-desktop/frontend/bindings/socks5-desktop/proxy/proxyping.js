@@ -11,13 +11,15 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 import * as $models from "./models.js";
 
 /**
- * @returns {$CancellablePromise<$models.AppConst>}
+ * TestServer 通过 HandleConnect 经代理访问 Google（HTTP）并测量首字节响应延迟。
+ * @param {string} serverURL
+ * @returns {$CancellablePromise<$models.ProxyPingResult>}
  */
-export function AppConfig() {
-    return $Call.ByID(3653843778).then(/** @type {($result: any) => any} */(($result) => {
+export function TestServer(serverURL) {
+    return $Call.ByID(1389458014, serverURL).then(/** @type {($result: any) => any} */(($result) => {
         return $$createType0($result);
     }));
 }
 
 // Private type creation functions
-const $$createType0 = $models.AppConst.createFrom;
+const $$createType0 = $models.ProxyPingResult.createFrom;

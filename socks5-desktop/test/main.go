@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"github.com/penndev/gopkg/socks5"
+	"github.com/penndev/gopkg/util"
 )
 
 func HandleConnect(conn net.Conn, req socks5.Requests, replies socks5.HandleReply) error {
@@ -59,7 +60,7 @@ func HandleConnect(conn net.Conn, req socks5.Requests, replies socks5.HandleRepl
 
 	replies(socks5.REP_SUCCEEDED)
 	defer remote.Close()
-	socks5.Pipe(conn, remote)
+	util.Pipe(conn, remote)
 	// log.Println("logProxyList", "proxy finished: "+addr)
 	return nil
 }
