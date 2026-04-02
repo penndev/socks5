@@ -19,9 +19,9 @@
       <a-radio-button value="manual">
         {{ t("proxy.mode.manual") }}
       </a-radio-button>
-      <a-radio-button value="system">
+      <!-- <a-radio-button value="system">
         {{ t("proxy.mode.system") }}
-      </a-radio-button>
+      </a-radio-button> -->
       <a-radio-button value="tun">
         {{ t("proxy.mode.tun") }}
       </a-radio-button>

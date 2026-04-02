@@ -41,14 +41,14 @@
                   />
                   {{ item.remark || item.host }}
                   <span
-                    v-if="item.latency !== undefined"
+                    v-if="latencyById[item.id] !== undefined"
                     class="latency-inline"
                   >
                     <span
-                      v-if="item.latency >= 0"
-                      :class="getLatencyClass(item.latency)"
+                      v-if="latencyById[item.id] >= 0"
+                      :class="getLatencyClass(latencyById[item.id])"
                     >
-                      {{ item.latency }}ms
+                      {{ latencyById[item.id] }}ms
                     </span>
                     <span v-else class="latency-error">{{
                       t("serverList.pingFailed")
@@ -166,7 +166,14 @@ const { selectedServer } = storeToRefs(serverStore);
 
 // 所有节点
 const servers = ref([]);
+/** 仅内存：测速结果按节点 id 存，不写入 storage */
+const latencyById = ref({});
 const pingingAll = ref(false);
+
+function omitLatency(server) {
+  const { latency: _l, ...rest } = server;
+  return rest;
+}
 
 const editRef = ref();
 // 编辑态集中管理：弹窗状态、表单、校验与提交动作
@@ -227,13 +234,14 @@ const edit = reactive({
         if (selectedServer.value?.id === edit.id)
           selectedServer.value = { ...selectedServer.value, ...payload };
 
+        delete latencyById.value[edit.id];
         message.success(t("serverList.updateSuccess"));
       } else {
         servers.value.push({ id: Date.now().toString(), ...payload });
         message.success(t("serverList.addSuccess"));
       }
 
-      await Set(STORAGE_KEY, servers.value);
+      await Set(STORAGE_KEY, servers.value.map(omitLatency));
       edit.visible = false;
     } catch (e) {
       if (!e?.errorFields)
@@ -257,9 +265,10 @@ function deleteModal(item) {
     cancelText: t("serverList.deleteCancelText"),
     async onOk() {
       servers.value = servers.value.filter((s) => s.id !== item.id);
+      delete latencyById.value[item.id];
       if (selectedServer.value?.id === item.id)
         selectedServer.value = null;
-      await Set(STORAGE_KEY, servers.value);
+      await Set(STORAGE_KEY, servers.value.map(omitLatency));
       message.success(t("serverList.deleteSuccess"));
     },
   });
@@ -277,12 +286,12 @@ async function pingOneServer(server) {
   try {
     const result = await TestServer(serverProxyURL(server));
     if (result.success) {
-      server.latency = result.latency;
+      latencyById.value[server.id] = result.latency;
     } else {
-      server.latency = -1;
+      latencyById.value[server.id] = -1;
     }
   } catch {
-    server.latency = -1;
+    latencyById.value[server.id] = -1;
   }
 }
 
@@ -306,7 +315,8 @@ function getLatencyClass(latency) {
 
 onMounted(async () => {
   try {
-    servers.value = await Get(STORAGE_KEY);
+    const raw = await Get(STORAGE_KEY);
+    servers.value = Array.isArray(raw) ? raw.map(omitLatency) : [];
   } catch {
     message.error(t("serverList.loadFailed"));
   }

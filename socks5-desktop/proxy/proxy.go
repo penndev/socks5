@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"log"
 	"net"
 	"net/netip"
 	"net/url"
@@ -10,12 +9,13 @@ import (
 	"github.com/penndev/gopkg/socks5"
 	"github.com/penndev/socks5/core/route"
 	"github.com/penndev/socks5/core/stack"
+	"github.com/penndev/socks5/core/transport"
 	"github.com/penndev/socks5/core/tun"
 )
 
 type Proxy struct {
-	remote      *url.URL       // 远程连接信息
-	localServer *socks5.Server //本地socks5服务
+	handle      transport.HandleConnect // 处理连接
+	localServer *socks5.Server          //本地socks5服务
 
 	// tun用
 	dev *tun.Tun
@@ -23,7 +23,6 @@ type Proxy struct {
 
 func (p *Proxy) setLocalConnect(c net.Conn, req socks5.Requests, rep socks5.HandleReply) error {
 	host := req.Addr()
-
 	network := ""
 	switch req.CMD {
 	case socks5.CMD_CONNECT:
@@ -33,17 +32,10 @@ func (p *Proxy) setLocalConnect(c net.Conn, req socks5.Requests, rep socks5.Hand
 	default:
 		rep(socks5.REP_COMMAND_NOT_SUPPORTED)
 	}
-
 	var err error
-	// handle := transport.Local()
-	handle, err := HandleConnect(p.remote)
-	if err != nil {
-		internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, host+":"+err.Error())
-		return err
-	}
-	// internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, "incoming: "+network+" "+host)
+	internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, "local -> "+network+" "+host)
 	rep(socks5.REP_SUCCEEDED)
-	err = handle(c, network, host)
+	err = p.handle(c, network, host)
 	if err != nil {
 		internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, host+":"+err.Error())
 	}
@@ -60,29 +52,15 @@ func (p *Proxy) setModeTun() error {
 	if err != nil {
 		return err
 	}
-	// defer dev.Close()
-	handle, err := HandleConnect(p.remote)
-	if err != nil {
-		return err
-	}
-
 	stack.New(stack.Option{
 		EndPoint: p.dev,
 		HandleTCP: func(f *stack.ForwarderTCPRequest) {
-			log.Printf(
-				"%s -> %s",
-				f.RemoteAddr.Network(),
-				f.RemoteAddr.String(),
-			)
-			handle(f.Conn, f.RemoteAddr.Network(), f.RemoteAddr.String())
+			internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, "tun -> "+f.RemoteAddr.Network()+" "+f.RemoteAddr.String())
+			p.handle(f.Conn, f.RemoteAddr.Network(), f.RemoteAddr.String())
 		},
 		HandlerUDP: func(f *stack.ForwarderUDPRequest) {
-			log.Printf(
-				"%s -> %s",
-				f.RemoteAddr.Network(),
-				f.RemoteAddr.String(),
-			)
-			handle(f.Conn, f.RemoteAddr.Network(), f.RemoteAddr.String())
+			internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, "tun -> "+f.RemoteAddr.Network()+" "+f.RemoteAddr.String())
+			p.handle(f.Conn, f.RemoteAddr.Network(), f.RemoteAddr.String())
 		},
 	})
 	route.Start(route.Options{
@@ -109,7 +87,6 @@ func (p *Proxy) SetStart(host, user, pass string) error {
 		p.localServer.Close()
 		p.localServer = nil
 	}
-
 	p.localServer = &socks5.Server{
 		Addr:     host,
 		Username: user,
@@ -133,31 +110,51 @@ func (p *Proxy) SetRemote(remote string) error {
 	if err != nil {
 		internal.App.Event.Emit(internal.AppConfig.LogTypeName_STATUS, err.Error())
 	}
-
 	internal.App.Event.Emit(
 		internal.AppConfig.LogTypeName_STATUS,
 		"SetRemote-> "+ru.Scheme+"://"+ru.User.String()+"@"+ru.Host,
 	)
-	p.remote = ru
-	return nil
-}
-
-func (p *Proxy) SetMode(mode string) error {
-	internal.App.Event.Emit(
-		internal.AppConfig.LogTypeName_STATUS,
-		"SetMode-> "+mode,
-	)
-	switch mode {
-	case "tun":
-		return p.setModeTun()
-	default:
-		if p.dev != nil {
-			p.dev.Close()
-		}
+	p.handle, err = HandleConnect(ru)
+	if err != nil {
+		internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, "SetRemote error: "+err.Error())
+		return err
 	}
 	return nil
 }
 
-func (p *Proxy) SetStop() {
+func (p *Proxy) SetMode(mode string) {
+	internal.App.Event.Emit(
+		internal.AppConfig.LogTypeName_STATUS,
+		"SetMode-> "+mode,
+	)
+	var err error
+	switch mode {
+	case "tun":
+		err = p.setModeTun()
+	default:
+		if p.dev != nil {
+			p.dev.Close()
+			internal.App.Event.Emit(internal.AppConfig.LogTypeName_STATUS, "tun dev close success")
+		}
+	}
+	if err != nil {
+		internal.App.Event.Emit(internal.AppConfig.LogTypeName_STATUS, err.Error())
+	}
+}
 
+func (p *Proxy) SetStop() {
+	if p.dev != nil {
+		p.dev.Close()
+		internal.App.Event.Emit(
+			internal.AppConfig.LogTypeName_STATUS,
+			"tun dev close success",
+		)
+	}
+	if p.localServer != nil {
+		p.localServer.Close()
+		internal.App.Event.Emit(
+			internal.AppConfig.LogTypeName_STATUS,
+			"local server close success",
+		)
+	}
 }
