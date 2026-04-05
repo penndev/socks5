@@ -1,4 +1,4 @@
-module socks5-mux-server
+module server
 
 go 1.25
 
