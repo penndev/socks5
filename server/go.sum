@@ -1,0 +1,4 @@
+github.com/penndev/gopkg v0.4.2 h1:F1LFuEcHULzAGpvTg9hhu2oKKIBd6iZC8FJ/uifmDYE=
+github.com/penndev/gopkg v0.4.2/go.mod h1:O+SQnqNAMx9HOskt39NO0xHJciKUEsQ8fKoB1QJmHJ0=
+github.com/penndev/socks5/core v0.0.0-20260405141513-07f0b6b82649 h1:ERRxxS3+nusy1L1wgAQSKUOhqfPPDXMgu8QPI2W1fuQ=
+github.com/penndev/socks5/core v0.0.0-20260405141513-07f0b6b82649/go.mod h1:O+BdtQr83srkH17/6XIOLCdbUFNw1fPOiVzbv+V0dzU=
