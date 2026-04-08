@@ -7,10 +7,10 @@ import (
 	"socks5-desktop/internal"
 
 	"github.com/penndev/gopkg/socks5"
-	"github.com/penndev/socks5/core/route"
-	"github.com/penndev/socks5/core/stack"
-	"github.com/penndev/socks5/core/transport"
-	"github.com/penndev/socks5/core/tun"
+	"github.com/penndev/prism/route"
+	"github.com/penndev/prism/stack"
+	"github.com/penndev/prism/transport"
+	"github.com/penndev/prism/tun"
 )
 
 type Proxy struct {

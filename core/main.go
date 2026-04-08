@@ -10,10 +10,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/penndev/socks5/core/stack"
-	"github.com/penndev/socks5/core/transport"
-	"github.com/penndev/socks5/core/transport/route"
-	"github.com/penndev/socks5/core/tun"
+	"github.com/penndev/prism/route"
+	"github.com/penndev/prism/stack"
+	"github.com/penndev/prism/transport"
+	"github.com/penndev/prism/tun"
 )
 
 var proxy string

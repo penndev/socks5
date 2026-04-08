@@ -6,7 +6,7 @@ import (
 
 	"github.com/penndev/gopkg/socks5"
 	"github.com/penndev/gopkg/util"
-	"github.com/penndev/socks5/core/transport/dialer"
+	"github.com/penndev/prism/transport/dialer"
 )
 
 func isLoopback(hostport string) bool {

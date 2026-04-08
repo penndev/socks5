@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/url"
 
-	"github.com/penndev/socks5/core/transport"
+	"github.com/penndev/prism/transport"
 )
 
 func HandleConnect(r *url.URL) (transport.HandleConnect, error) {

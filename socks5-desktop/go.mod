@@ -4,14 +4,14 @@ go 1.25.5
 
 require (
 	github.com/penndev/gopkg v0.4.2
-	github.com/penndev/socks5/core v0.0.0
+	github.com/penndev/prism v0.0.0
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.72
 	go.etcd.io/bbolt v1.4.3
 	golang.org/x/sys v0.40.0
 	golang.zx2c4.com/wireguard v0.0.0-20250521234502-f333402bd9cb
 )
 
-replace github.com/penndev/socks5/core => ../core
+replace github.com/penndev/prism => ../core
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
