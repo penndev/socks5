@@ -14,6 +14,7 @@ type Server struct {
 	Username      string
 	Password      string
 	socks5Server  *socks5.Server
+	ln            net.Listener
 }
 
 func (s *Server) handleConn(conn *Conn) {
@@ -30,23 +31,16 @@ func (s *Server) handleConn(conn *Conn) {
 	s.ProxyHTTP(conn)
 }
 
-func (s *Server) ListenAndServe() error {
-	ln, err := net.Listen("tcp", s.Addr)
-	if err != nil {
-		return err
+func (s *Server) Close() {
+	if s.socks5Server != nil {
+		s.socks5Server.Close()
 	}
-	defer ln.Close()
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			log.Println("accept failed: ", err)
-			continue
-		}
-		go s.handleConn(NewConn(conn))
+	if s.ln != nil {
+		s.ln.Close()
 	}
 }
 
-func (s *Server) initSocks5() {
+func (s *Server) ListenAndServe() error {
 	s.socks5Server = &socks5.Server{
 		Addr:     s.Addr,
 		Username: s.Username,
@@ -69,9 +63,22 @@ func (s *Server) initSocks5() {
 			return err
 		},
 	}
-	go func() {
-		s.socks5Server.UDPListen()
-	}()
+	go s.socks5Server.UDPListen()
+
+	var err error
+	s.ln, err = net.Listen("tcp", s.Addr)
+	if err != nil {
+		return err
+	}
+	defer s.ln.Close()
+	for {
+		conn, err := s.ln.Accept()
+		if err != nil {
+			log.Println("accept failed: ", err)
+			continue
+		}
+		go s.handleConn(NewConn(conn))
+	}
 }
 
 func New(addr, username, password string) *Server {
@@ -81,6 +88,5 @@ func New(addr, username, password string) *Server {
 		Username:      username,
 		Password:      password,
 	}
-	s.initSocks5()
 	return s
 }

@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@bindings/*": ["bindings/*"]
+    },
+    "target": "ESNext",
+    "module": "ESNext",
+    "checkJs": true,
+    "moduleResolution": "node",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "ignoreDeprecations": "6.0"
+  },
+  "include": ["src", "bindings"],
+  "exclude": ["node_modules", "dist"]
+}

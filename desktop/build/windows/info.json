@@ -1,0 +1,15 @@
+{
+	"fixed": {
+		"file_version": "0.0.1"
+	},
+	"info": {
+		"0000": {
+			"ProductVersion": "0.0.1",
+			"CompanyName": "Socks5",
+			"FileDescription": "Socks5 代理桌面应用",
+			"LegalCopyright": "(c) 2025",
+			"ProductName": "prism-desktop",
+			"Comments": "This is a comment"
+		}
+	}
+}

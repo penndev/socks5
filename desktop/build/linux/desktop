@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=prism-desktop
+Comment=Socks5 代理桌面应用
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/prism-desktop %u
+Terminal=false
+Type=Application
+Icon=prism-desktop
+Categories=Utility;
+StartupWMClass=prism-desktop
+
+ 
