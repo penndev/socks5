@@ -68,15 +68,12 @@ func (s *Server) handleHTTPProxyForward(client net.Conn, req *http.Request) erro
 	if cc.URL.Path == "" {
 		cc.URL.Path = "/"
 	}
-
-	log.Println(cc)
 	for _, key := range hideHeader {
 		cc.Header.Del(key)
 	}
 	if err := cc.Write(local); err != nil {
 		return err
 	}
-	log.Println(cc)
 	util.Pipe(client, local)
 	return nil
 }

@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"net"
 	"net/netip"
 	"net/url"
 
@@ -55,7 +56,11 @@ func (p *Proxy) SetRemote(remote string) error {
 		internal.AppConfig.LogTypeName_STATUS,
 		"SetRemote-> "+ru.Scheme+"://"+ru.User.String()+"@"+ru.Host,
 	)
-	p.HandleConnect, err = HandleConnect(ru)
+	handle, err := HandleConnect(ru)
+	p.HandleConnect = func(conn net.Conn, network, address string) error {
+		internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, "local -> "+network+" "+address)
+		return handle(conn, network, address)
+	}
 	if err != nil {
 		internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, "SetRemote error: "+err.Error())
 		return err
