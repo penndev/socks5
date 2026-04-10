@@ -8,6 +8,8 @@ require (
 	gvisor.dev/gvisor v0.0.0-20250503011706-39ed1f5ac29c
 )
 
+replace github.com/penndev/gopkg => ../gopkg
+
 require (
 	github.com/google/btree v1.1.2 // indirect
 	golang.org/x/net v0.44.0 // indirect

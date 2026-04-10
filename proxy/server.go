@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"errors"
 	"log"
 	"net"
 
@@ -74,11 +75,15 @@ func (s *Server) ListenAndServe() error {
 	for {
 		conn, err := s.ln.Accept()
 		if err != nil {
+			if errors.Is(err, net.ErrClosed) {
+				break
+			}
 			log.Println("accept failed: ", err)
 			continue
 		}
 		go s.handleConn(NewConn(conn))
 	}
+	return err
 }
 
 func New(addr, username, password string) *Server {
