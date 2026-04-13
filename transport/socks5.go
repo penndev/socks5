@@ -9,36 +9,6 @@ import (
 	"github.com/penndev/prism/transport/dialer"
 )
 
-func isLoopback(hostport string) bool {
-	host, _, err := net.SplitHostPort(hostport)
-	if err != nil {
-		return false
-	}
-	ip := net.ParseIP(host)
-	return ip != nil && ip.IsLoopback()
-}
-
-type HandleConnect func(net.Conn, string, string) error
-
-// 本地请求，不用远程
-func Local() HandleConnect {
-	return func(conn net.Conn, network, address string) error {
-		var dial *net.Dialer
-		switch network {
-		case "tcp":
-			dial = dialer.TCPDialer
-		case "udp":
-			dial = dialer.UDPDialer
-		}
-		remote, err := dial.Dial(network, address)
-		if err != nil {
-			return err
-		}
-		util.Pipe(conn, remote)
-		return nil
-	}
-}
-
 // socks5标准请求
 func Socks5(host, user, pass string) HandleConnect {
 	return func(conn net.Conn, network, address string) error {
