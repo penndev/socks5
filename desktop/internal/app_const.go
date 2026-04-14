@@ -17,3 +17,12 @@ type AppConst struct{}
 func (a AppConst) AppConfig() appConst {
 	return AppConfig
 }
+
+func (a AppConst) ProxyScheme() []string {
+	return []string{
+		"Socks5",
+		"Socks5OverTLS",
+		"Http",
+		"HttpOverTLS",
+	}
+}

@@ -19,5 +19,15 @@ export function AppConfig() {
     }));
 }
 
+/**
+ * @returns {$CancellablePromise<string[]>}
+ */
+export function ProxyScheme() {
+    return $Call.ByID(140277774).then(/** @type {($result: any) => any} */(($result) => {
+        return $$createType1($result);
+    }));
+}
+
 // Private type creation functions
 const $$createType0 = $models.appConst.createFrom;
+const $$createType1 = $Create.Array($Create.Any);

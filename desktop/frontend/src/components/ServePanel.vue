@@ -116,9 +116,11 @@
             v-model:value="edit.form.protocol"
             :placeholder="t('serverList.selectProtocol')"
           >
-            <a-select-option value="Socks5">Socks5</a-select-option>
-            <a-select-option value="Socks5OverTLS"
-              >Socks5OverTLS</a-select-option
+            <a-select-option
+              v-for="scheme in proxySchemes"
+              :key="scheme"
+              :value="scheme"
+              >{{ scheme }}</a-select-option
             >
           </a-select>
         </a-form-item>
@@ -154,12 +156,14 @@ import {
 import { Modal, message } from "ant-design-vue";
 import { Get, Set } from "@bindings/desktop/storage";
 import { TestServer } from "@bindings/desktop/proxy/proxyping";
+import { AppConfig, ProxyScheme } from "@bindings/desktop/internal/appconst";
 import { useServerStore } from "../stores/server";
 import { t } from "@/i18n";
 import { storeToRefs } from "pinia";
 
 import { theme } from "ant-design-vue";
 const { token } = theme.useToken();
+
 
 const serverStore = useServerStore();
 const { selectedServer } = storeToRefs(serverStore);
@@ -313,7 +317,11 @@ function getLatencyClass(latency) {
   return "latency-bad";
 }
 
+const proxySchemes = ref([]);
+
 onMounted(async () => {
+  const schemes = await ProxyScheme();
+  proxySchemes.value = schemes;
   try {
     const raw = await Get(STORAGE_KEY);
     servers.value = Array.isArray(raw) ? raw.map(omitLatency) : [];
