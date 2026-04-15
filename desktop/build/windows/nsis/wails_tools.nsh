@@ -8,7 +8,7 @@
     !define INFO_PROJECTNAME "prism-desktop"
 !endif
 !ifndef INFO_COMPANYNAME
-    !define INFO_COMPANYNAME "Socks5"
+    !define INFO_COMPANYNAME "Prism"
 !endif
 !ifndef INFO_PRODUCTNAME
     !define INFO_PRODUCTNAME "prism-desktop"

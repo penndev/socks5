@@ -34,12 +34,14 @@
 
             <a-list-item-meta>
               <template #title>
-                <span class="server-host" :title="item.remark || item.host">
+                <span class="server-title-row">
                   <CheckCircleFilled
                     v-if="selectedServer?.id === item.id"
                     class="selected-icon"
                   />
-                  {{ item.remark || item.host }}
+                  <span class="server-host" :title="item.remark || item.host">
+                    {{ item.remark || item.host }}
+                  </span>
                   <span
                     v-if="latencyById[item.id] !== undefined"
                     class="latency-inline"
@@ -63,8 +65,11 @@
                     item.username || t('serverList.noAuth')
                   }`"
                 >
-                  {{ item.protocol }} |
-                  {{ item.username || t("serverList.noAuth") }}
+                  <span class="server-protocol">{{ item.protocol }}</span>
+                  <span class="server-separator">|</span>
+                  <span class="server-username">{{
+                    item.username || t("serverList.noAuth")
+                  }}</span>
                 </span>
               </template>
             </a-list-item-meta>
@@ -381,38 +386,43 @@ onMounted(async () => {
       background: v-bind("token.colorPrimaryBgHover");
     }
 
-    .server-host {
-      font-weight: 500;
+    .server-title-row {
       display: flex;
       align-items: center;
       gap: 6px;
       min-width: 0;
+    }
+
+    .server-host {
+      font-weight: 500;
+      flex: 1;
+      min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
 
-      .latency-inline {
-        flex-shrink: 0;
-        margin-left: 6px;
-        font-weight: 500;
-        font-size: 12px;
+    .latency-inline {
+      flex-shrink: 0;
+      margin-left: 6px;
+      font-weight: 500;
+      font-size: 12px;
 
-        .latency-good {
-          color: #52c41a;
-        }
+      .latency-good {
+        color: #52c41a;
+      }
 
-        .latency-medium {
-          color: #faad14;
-        }
+      .latency-medium {
+        color: #faad14;
+      }
 
-        .latency-bad {
-          color: #ff4d4f;
-        }
+      .latency-bad {
+        color: #ff4d4f;
+      }
 
-        .latency-error {
-          color: #ff4d4f;
-          font-size: 11px;
-        }
+      .latency-error {
+        color: #ff4d4f;
+        font-size: 11px;
       }
     }
 
@@ -424,11 +434,28 @@ onMounted(async () => {
     .server-meta {
       font-size: 12px;
       color: v-bind("token.colorTextSecondary");
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .server-protocol,
+    .server-separator {
+      flex-shrink: 0;
+    }
+
+    .server-username {
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      display: inline-block;
+      max-width: 100%;
+    }
+
+    .server-meta {
+      overflow: hidden;
     }
   }
 }
