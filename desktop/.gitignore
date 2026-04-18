@@ -1,5 +1,6 @@
 .DS_Store
 .task
+*.exe
 bin
 frontend/dist
 frontend/node_modules

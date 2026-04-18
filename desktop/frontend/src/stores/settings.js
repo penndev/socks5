@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { Get, Set } from "@bindings/desktop/storage";
+import { Storage } from "@bindings/desktop/storage";
 import { notification } from "ant-design-vue";
 import { debounce } from "@/utils";
 import { defaultLocale, setLocale, t } from "@/i18n";
@@ -27,7 +27,7 @@ export const useSettingsStore = defineStore(KEY, {
     /** 将 state 持久化到存储 */
     async save() {
       try {
-        await Set(KEY, {
+        await Storage.SetSettings({
           proxy: { ...this.proxy },
           system: { ...this.system },
         });
@@ -47,7 +47,7 @@ export const useSettingsStore = defineStore(KEY, {
     /** 从存储加载并合并到 state */
     async init() {
       try {
-        const storedSettings = await Get(KEY);
+        const storedSettings = await Storage.GetSettings();
         if (storedSettings) {
           Object.assign(this, storedSettings);
         }

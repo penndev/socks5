@@ -159,7 +159,7 @@ import {
   PlusOutlined,
 } from "@ant-design/icons-vue";
 import { Modal, message } from "ant-design-vue";
-import { Get, Set } from "@bindings/desktop/storage";
+import { Storage } from "@bindings/desktop/storage";
 import { TestServer } from "@bindings/desktop/proxy/proxyping";
 import { AppConfig, ProxyScheme } from "@bindings/desktop/internal/appconst";
 import { useServerStore } from "../stores/server";
@@ -250,7 +250,7 @@ const edit = reactive({
         message.success(t("serverList.addSuccess"));
       }
 
-      await Set(STORAGE_KEY, servers.value.map(omitLatency));
+      await Storage.SetServers(servers.value.map(omitLatency));
       edit.visible = false;
     } catch (e) {
       if (!e?.errorFields)
@@ -260,8 +260,6 @@ const edit = reactive({
     }
   },
 });
-
-const STORAGE_KEY = "servers";
 
 function deleteModal(item) {
   Modal.confirm({
@@ -277,7 +275,7 @@ function deleteModal(item) {
       delete latencyById.value[item.id];
       if (selectedServer.value?.id === item.id)
         selectedServer.value = null;
-      await Set(STORAGE_KEY, servers.value.map(omitLatency));
+      await Storage.SetServers(servers.value.map(omitLatency));
       message.success(t("serverList.deleteSuccess"));
     },
   });
@@ -328,7 +326,7 @@ onMounted(async () => {
   const schemes = await ProxyScheme();
   proxySchemes.value = schemes;
   try {
-    const raw = await Get(STORAGE_KEY);
+    const raw = await Storage.GetServers();
     servers.value = Array.isArray(raw) ? raw.map(omitLatency) : [];
   } catch {
     message.error(t("serverList.loadFailed"));

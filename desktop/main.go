@@ -5,6 +5,7 @@ import (
 
 	"desktop/internal"
 	"desktop/proxy"
+	"desktop/storage"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -14,7 +15,7 @@ import (
 var assets embed.FS
 
 func main() {
-	storage, err := NewStorage()
+	store, err := storage.New()
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +28,7 @@ func main() {
 			Handler: application.AssetFileServerFS(assets),
 		},
 		Services: []application.Service{
-			application.NewService(storage),
+			application.NewService(store),
 			application.NewService(&internal.AppConst{}),
 			application.NewService(&proxy.Proxy{}),
 			application.NewService(&proxy.ProxyPing{}),
@@ -56,6 +57,7 @@ func main() {
 			window.SetPosition(lastX, lastY)
 		}
 		window.Show()
+		window.Focus()
 	}
 
 	window.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) {

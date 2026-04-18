@@ -6,3 +6,10 @@ import * as Storage from "./storage.js";
 export {
     Storage
 };
+
+export {
+    ProxySettings,
+    ServerEntry,
+    Settings,
+    SystemSettings
+} from "./models.js";
