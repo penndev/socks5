@@ -7,6 +7,12 @@ import (
 	"github.com/penndev/prism/transport/dialer"
 )
 
+var localHandle HandleConnect
+
+func init() {
+	localHandle = Local()
+}
+
 // 本地请求，不用远程
 func Local() HandleConnect {
 	return func(conn net.Conn, network, address string) error {

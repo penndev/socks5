@@ -1,8 +1,13 @@
 package proxy
 
 import (
+	"bytes"
+	"context"
 	"net"
+	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -14,8 +19,48 @@ type ProxyPingResult struct {
 	Error   string `json:"error,omitempty"`
 }
 
-// TestServer 通过 HandleConnect 经代理访问 Google（HTTP）并测量首字节响应延迟。
-func (p *ProxyPing) TestServer(serverURL string) ProxyPingResult {
+// TestServer 通过 HandleConnect 经代理向 latencyTestHost 发起 HTTP GET，测量首字节响应延迟。
+func (p *ProxyPing) TestServer(serverURL string, latencyTestHost string) ProxyPingResult {
+	s := strings.TrimSpace(latencyTestHost)
+	if s == "" {
+		return ProxyPingResult{Success: false, Error: "empty latency test host"}
+	}
+
+	host, portStr, splitErr := net.SplitHostPort(s)
+	if splitErr != nil {
+		host = s
+		portStr = "80"
+	}
+	if host == "" {
+		return ProxyPingResult{Success: false, Error: "invalid latency test host"}
+	}
+
+	port, err := strconv.Atoi(portStr)
+	if err != nil || port < 1 || port > 65535 {
+		return ProxyPingResult{Success: false, Error: "invalid port"}
+	}
+
+	dialAddr := net.JoinHostPort(host, strconv.Itoa(port))
+	hostHdr := host
+	if port != 80 {
+		hostHdr = net.JoinHostPort(host, strconv.Itoa(port))
+	}
+
+	httpReq, err := http.NewRequestWithContext(context.Background(), http.MethodGet,
+		(&url.URL{Scheme: "http", Host: dialAddr, Path: "/"}).String(), nil)
+	if err != nil {
+		return ProxyPingResult{Success: false, Error: err.Error()}
+	}
+	httpReq.Host = hostHdr
+	httpReq.Header.Set("Connection", "close")
+	httpReq.Header.Set("User-Agent", "Prism-Desktop/1.0")
+
+	var buf bytes.Buffer
+	if err := httpReq.Write(&buf); err != nil {
+		return ProxyPingResult{Success: false, Error: err.Error()}
+	}
+	req := buf.Bytes()
+
 	remote, err := url.Parse(serverURL)
 	if err != nil {
 		return ProxyPingResult{Success: false, Error: err.Error()}
@@ -29,16 +74,15 @@ func (p *ProxyPing) TestServer(serverURL string) ProxyPingResult {
 	defer c1.Close()
 	defer c2.Close()
 
-	// 建立proxy连接
 	overCH := make(chan error, 1)
 	go func() {
-		overCH <- handle(c1, "tcp", "www.google.com:80")
+		overCH <- handle(c1, "tcp", dialAddr)
 	}()
 
 	start := time.Now()
 	deadline := 5 * time.Second
 	_ = c2.SetDeadline(start.Add(deadline))
-	if _, err := c2.Write([]byte("GET / HTTP/1.0\r\nHost: www.google.com\r\n\r\n")); err != nil {
+	if _, err := c2.Write(req); err != nil {
 		return ProxyPingResult{Success: false, Error: err.Error()}
 	}
 	go func() {
@@ -53,9 +97,8 @@ func (p *ProxyPing) TestServer(serverURL string) ProxyPingResult {
 	case err := <-overCH:
 		if err != nil {
 			return ProxyPingResult{Success: false, Error: err.Error()}
-		} else {
-			return ProxyPingResult{Success: true, Latency: int(time.Since(start).Milliseconds())}
 		}
+		return ProxyPingResult{Success: true, Latency: int(time.Since(start).Milliseconds())}
 	case <-timer.C:
 		return ProxyPingResult{Success: false, Error: "timeout"}
 	}

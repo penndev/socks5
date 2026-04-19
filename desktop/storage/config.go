@@ -12,6 +12,8 @@ type ProxySettings struct {
 	Port     int    `json:"port"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+	// LatencyTestHost 延迟探测用的 HTTP 目标，形如 host、host:port（默认 80）。
+	LatencyTestHost string `json:"latencyTestHost"`
 }
 
 type SystemSettings struct {

@@ -163,6 +163,7 @@ import { Storage } from "@bindings/desktop/storage";
 import { TestServer } from "@bindings/desktop/proxy/proxyping";
 import { AppConfig, ProxyScheme } from "@bindings/desktop/internal/appconst";
 import { useServerStore } from "../stores/server";
+import { useSettingsStore } from "../stores/settings";
 import { t } from "@/i18n";
 import { storeToRefs } from "pinia";
 
@@ -172,6 +173,7 @@ const { token } = theme.useToken();
 
 const serverStore = useServerStore();
 const { selectedServer } = storeToRefs(serverStore);
+const settingsStore = useSettingsStore();
 
 // 所有节点
 const servers = ref([]);
@@ -289,9 +291,9 @@ function serverProxyURL(server) {
   return `${protocol}://${username}:${password}@${server.host}`;
 }
 
-async function pingOneServer(server) {
+async function pingOneServer(server, latencyHost) {
   try {
-    const result = await TestServer(serverProxyURL(server));
+    const result = await TestServer(serverProxyURL(server), latencyHost);
     if (result.success) {
       latencyById.value[server.id] = result.latency;
     } else {
@@ -304,9 +306,16 @@ async function pingOneServer(server) {
 
 async function pingAllServers() {
   if (servers.value.length === 0) return;
+  const latencyHost = (settingsStore.proxy.latencyTestHost || "").trim();
+  if (!latencyHost) {
+    message.warning(t("settings.latencyTestHostRequired"));
+    return;
+  }
   pingingAll.value = true;
   try {
-    await Promise.all(servers.value.map((s) => pingOneServer(s)));
+    await Promise.all(
+      servers.value.map((s) => pingOneServer(s, latencyHost)),
+    );
     message.success(t("serverList.pingAllDone"));
   } finally {
     pingingAll.value = false;

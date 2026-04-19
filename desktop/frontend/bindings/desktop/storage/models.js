@@ -40,6 +40,14 @@ export class ProxySettings {
              */
             this["password"] = "";
         }
+        if (!("latencyTestHost" in $$source)) {
+            /**
+             * LatencyTestHost 延迟探测用的 HTTP 目标，形如 host、host:port（默认 80）。
+             * @member
+             * @type {string}
+             */
+            this["latencyTestHost"] = "";
+        }
 
         Object.assign(this, $$source);
     }

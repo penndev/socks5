@@ -65,7 +65,7 @@ func httpConnet(conn, remote net.Conn, user, pass, address string) error {
 func Http(host, user, pass string) HandleConnect {
 	return func(conn net.Conn, network, address string) error {
 		if network != "tcp" {
-			return fmt.Errorf("http proxy: unsupported network %q", network)
+			return localHandle(conn, network, address)
 		}
 		// 1. 拨号到底层代理服务器
 		var remote net.Conn
@@ -86,7 +86,7 @@ func Http(host, user, pass string) HandleConnect {
 func HttpOverTLS(host, user, pass string, conf *tls.Config) HandleConnect {
 	return func(conn net.Conn, network, address string) error {
 		if network != "tcp" {
-			return fmt.Errorf("http proxy: unsupported network %q", network)
+			return localHandle(conn, network, address)
 		}
 		// 1. 拨号到底层代理服务器
 		var dialTCP net.Conn

@@ -38,6 +38,13 @@
               allow-clear
             />
           </a-form-item>
+          <a-form-item :label="t('settings.latencyTestHost')">
+            <a-input
+              v-model:value="settingsStore.proxy.latencyTestHost"
+              :placeholder="t('settings.latencyTestHostPlaceholder')"
+              allow-clear
+            />
+          </a-form-item>
 
           <div class="section-title">{{ t("settings.system") }}</div>
           <a-form-item :label="t('settings.systemLanguage')">

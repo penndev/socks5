@@ -7,20 +7,29 @@ import { defaultLocale, setLocale, t } from "@/i18n";
 // 存储的键名
 const KEY = "settings";
 
+function defaultProxyState() {
+  return {
+    host: "127.0.0.1",
+    port: 1080,
+    latencyTestHost: "",
+    username: "",
+    password: "",
+  };
+}
+
+function defaultSystemState() {
+  return {
+    language: defaultLocale,
+    themeMode: "system",
+    startupOnBoot: false,
+    enableLogRecording: false,
+  };
+}
+
 export const useSettingsStore = defineStore(KEY, {
   state: () => ({
-    proxy: {
-      host: "127.0.0.1",
-      port: 1080,
-      username: "",
-      password: "",
-    },
-    system: {
-      language: defaultLocale,
-      themeMode: "system",
-      startupOnBoot: false,
-      enableLogRecording: false,
-    },
+    proxy: defaultProxyState(),
+    system: defaultSystemState(),
   }),
 
   actions: {
@@ -49,7 +58,14 @@ export const useSettingsStore = defineStore(KEY, {
       try {
         const storedSettings = await Storage.GetSettings();
         if (storedSettings) {
-          Object.assign(this, storedSettings);
+          this.proxy = {
+            ...defaultProxyState(),
+            ...(storedSettings.proxy ?? {}),
+          };
+          this.system = {
+            ...defaultSystemState(),
+            ...(storedSettings.system ?? {}),
+          };
         }
         const save = debounce(this.save, 800)
         this.$subscribe(save);
