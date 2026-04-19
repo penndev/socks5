@@ -5,11 +5,14 @@ type appConst struct {
 	LogTypeName_STATUS string
 	// 连接日志列表的消息名称
 	LogTypeName_LOG string
+	// 语言切换事件（payload 为语言标识字符串）
+	EventNameLocaleChanged string
 }
 
 var AppConfig = appConst{
-	LogTypeName_STATUS: "logServerStatus",
-	LogTypeName_LOG:    "logProxyList",
+	LogTypeName_STATUS:     "logServerStatus",
+	LogTypeName_LOG:        "logProxyList",
+	EventNameLocaleChanged: "localeChanged",
 }
 
 type AppConst struct{}

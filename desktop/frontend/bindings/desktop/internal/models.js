@@ -28,6 +28,14 @@ export class appConst {
              */
             this["LogTypeName_LOG"] = "";
         }
+        if (!("EventNameLocaleChanged" in $$source)) {
+            /**
+             * 语言切换事件（payload 为语言标识字符串）
+             * @member
+             * @type {string}
+             */
+            this["EventNameLocaleChanged"] = "";
+        }
 
         Object.assign(this, $$source);
     }

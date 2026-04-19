@@ -26,11 +26,23 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed, nextTick } from "vue";
+import {
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  computed,
+  nextTick,
+} from "vue";
 import { Window } from "@wailsio/runtime";
 import { theme } from "ant-design-vue";
 import { useSettingsStore } from "@/stores/settings";
-import { setLocale, t } from "@/i18n";
+import {
+  setLocale,
+  t,
+  subscribeLocaleEvents,
+  unsubscribeLocaleEvents,
+} from "@/i18n";
 
 import ActionPanel from "./components/ActionPanel.vue";
 import ServePanel from "./components/ServePanel.vue";
@@ -41,8 +53,16 @@ const settingsStore = useSettingsStore();
 
 watch(
   () => settingsStore.system.language,
-  () => setLocale(settingsStore.system.language)
+  (lang) => {
+    void setLocale(lang);
+  },
 );
+
+function syncPiniaLanguageFromGo(loc) {
+  if (settingsStore.system.language !== loc) {
+    settingsStore.system.language = loc;
+  }
+}
 
 // 将 antd token 映射为布局 CSS 变量
 const { token } = theme.useToken();
@@ -83,7 +103,9 @@ const handleDividerMove = (e) => {
   appWidth.value = Math.min(APP_MAX_WIDTH, Math.max(APP_MIN_WIDTH, e.clientX));
 };
 
-onMounted(async() => {
+onMounted(async () => {
+  await subscribeLocaleEvents(syncPiniaLanguageFromGo);
+
   window.addEventListener("resize", () => {
     if (window.innerWidth < APP_MAX_WIDTH) {
       extensionVisible.value = false;
@@ -94,10 +116,15 @@ onMounted(async() => {
   });
   
   await settingsStore.init();
-  await nextTick()
+  await setLocale(settingsStore.system.language);
+  await nextTick();
   // const { host, port, username, password } = settingsStore.proxy
   // console.log(`我准备启动${host}:${port}`, username, password)
   // SetLocal(`${host}:${port}`, username, password)
+});
+
+onBeforeUnmount(() => {
+  unsubscribeLocaleEvents();
 });
 </script>
 
