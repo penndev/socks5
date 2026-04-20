@@ -112,6 +112,9 @@ tasks:
     dir: build/windows/nsis
     deps:
       - task: build
+        vars:
+          # 避免环境残留 DEV=true 时用开发参数打包，导致缺少 -H windowsgui 而出现控制台黑窗口
+          DEV: "false"
     cmds:
       # Create the Microsoft WebView2 bootstrapper if it doesn't exist
       - wails3 generate webview2bootstrapper -dir "{{.ROOT_DIR}}/build/windows/nsis"
@@ -129,6 +132,8 @@ tasks:
     summary: Creates an MSIX package
     deps:
       - task: build
+        vars:
+          DEV: "false"
     cmds:
       - |-
         wails3 tool msix \
@@ -163,6 +168,8 @@ tasks:
       Password is retrieved from system keychain (run: wails3 setup signing)
     deps:
       - task: build
+        vars:
+          DEV: "false"
     cmds:
       - wails3 tool sign --input "{{.BIN_DIR}}/{{.APP_NAME}}.exe" {{if .SIGN_CERTIFICATE}}--certificate {{.SIGN_CERTIFICATE}}{{end}} {{if .SIGN_THUMBPRINT}}--thumbprint {{.SIGN_THUMBPRINT}}{{end}} {{if .TIMESTAMP_SERVER}}--timestamp {{.TIMESTAMP_SERVER}}{{end}}
     preconditions:

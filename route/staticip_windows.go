@@ -8,8 +8,18 @@ import (
 	"net/netip"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
+
+	"golang.org/x/sys/windows"
 )
+
+func hideConsole(cmd *exec.Cmd) {
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow:    true,
+		CreationFlags: windows.CREATE_NO_WINDOW,
+	}
+}
 
 func prefixMask(p netip.Prefix) net.IP {
 	if !p.IsValid() {
@@ -36,7 +46,9 @@ func SetDevAddr(tunName string, prefix netip.Prefix) error {
 	}
 	log.Println("netsh", strings.Join(args, " "))
 
-	out, err := exec.Command("netsh", args...).CombinedOutput()
+	cmd := exec.Command("netsh", args...)
+	hideConsole(cmd)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("netsh failed: %v, %s", err, string(out))
 	}
@@ -47,7 +59,9 @@ func SetDevAddr(tunName string, prefix netip.Prefix) error {
 		for {
 			select {
 			case <-ticker.C:
-				out, err := exec.Command("ipconfig").CombinedOutput()
+				ic := exec.Command("ipconfig")
+				hideConsole(ic)
+				out, err := ic.CombinedOutput()
 				if err != nil {
 					continue
 				}
@@ -84,7 +98,9 @@ func SetRouteAddr(addr netip.Prefix, gateway net.IP) error {
 
 	log.Println("route", strings.Join(args, " "))
 
-	out, err := exec.Command("route", args...).CombinedOutput()
+	rc := exec.Command("route", args...)
+	hideConsole(rc)
+	out, err := rc.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("route failed: %v, output: %s", err, string(out))
 	}
