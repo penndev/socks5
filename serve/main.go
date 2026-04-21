@@ -21,7 +21,7 @@ func main() {
 		log.Println("req ->", network, address)
 		return handle(conn, network, address)
 	}
-	log.Printf("start -> %s  %s:%s", *addr, *user, *pass)
+	log.Printf("start -> %s %s %s", *addr, *user, *pass)
 	err := s.ListenAndServe()
 	if err != nil {
 		log.Println("listen failed: ", err)

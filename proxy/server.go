@@ -41,12 +41,12 @@ func (s *Server) Close() {
 	}
 }
 
-func (s *Server) ListenAndServe() error {
+func (s *Server) initSocks5Server() {
+	// 绑定socks5到server
 	s.socks5Server = &socks5.Server{
 		Addr:     s.Addr,
 		Username: s.Username,
 		Password: s.Password,
-		Method:   socks5.METHOD_NO_AUTH,
 		HandleConnect: func(c net.Conn, req socks5.Requests, rep socks5.HandleReply) error {
 			var err error
 			host := req.Addr()
@@ -65,13 +65,16 @@ func (s *Server) ListenAndServe() error {
 		},
 	}
 	go s.socks5Server.UDPListen()
+}
 
+func (s *Server) ListenAndServe() error {
 	var err error
 	s.ln, err = net.Listen("tcp", s.Addr)
 	if err != nil {
 		return err
 	}
 	defer s.ln.Close()
+	s.initSocks5Server()
 	for {
 		conn, err := s.ln.Accept()
 		if err != nil {
