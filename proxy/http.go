@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net"
@@ -10,6 +11,31 @@ import (
 
 	"github.com/penndev/gopkg/util"
 )
+
+func (s *Server) verifyHTTPProxyAuth(req *http.Request) bool {
+	// 未配置用户名密码时，不做鉴权。
+	if s.Username == "" && s.Password == "" {
+		return true
+	}
+	auth := req.Header.Get("Proxy-Authorization")
+	if auth == "" {
+		return false
+	}
+	const prefix = "Basic "
+	if !strings.HasPrefix(auth, prefix) {
+		return false
+	}
+	raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(strings.TrimPrefix(auth, prefix)))
+	if err != nil {
+		return false
+	}
+	userpass := string(raw)
+	i := strings.IndexByte(userpass, ':')
+	if i < 0 {
+		return false
+	}
+	return userpass[:i] == s.Username && userpass[i+1:] == s.Password
+}
 
 // handleHTTPConnect 处理 CONNECT（常见于 HTTPS），建立双向隧道。
 // client 必须为已 Hijack 的连接，否则 net/http 在 handler 返回后可能继续写回包，破坏 TLS。
@@ -64,28 +90,31 @@ func (s *Server) handleHTTPProxyForward(client net.Conn, req *http.Request) erro
 func (s *Server) ProxyHTTP(conn net.Conn) {
 	listener := &HttpSingleConnListener{conn: conn}
 	http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodConnect {
-			hijacker, ok := w.(http.Hijacker)
-			if !ok {
-				http.Error(w, "hijacking not supported", http.StatusInternalServerError)
+		if s.verifyHTTPProxyAuth(r) {
+			// http tcp代理
+			if r.Method == http.MethodConnect {
+				hijacker, ok := w.(http.Hijacker)
+				if !ok {
+					http.Error(w, "hijacking not supported", http.StatusInternalServerError)
+					return
+				}
+				client, _, err := hijacker.Hijack()
+				if err != nil {
+					log.Println("hijack failed: ", err)
+					return
+				}
+				if err := s.handleHTTPConnect(client, r); err != nil {
+					log.Println("connect failed: ", err)
+				}
 				return
 			}
-			client, _, err := hijacker.Hijack()
-			if err != nil {
-				log.Println("hijack failed: ", err)
+			// 传统http代理
+			if r.URL.IsAbs() && strings.HasPrefix(r.URL.Scheme, "http") {
+				if err := s.handleHTTPProxyForward(conn, r); err != nil {
+					log.Println("http proxy forward failed: ", err)
+				}
 				return
 			}
-			if err := s.handleHTTPConnect(client, r); err != nil {
-				log.Println("connect failed: ", err)
-			}
-			return
-		}
-		// 传统http代理
-		if r.URL.IsAbs() && strings.HasPrefix(r.URL.Scheme, "http") {
-			if err := s.handleHTTPProxyForward(conn, r); err != nil {
-				log.Println("http proxy forward failed: ", err)
-			}
-			return
 		}
 		// httpweb请求
 		http.NotFound(w, r)
