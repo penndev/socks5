@@ -2,13 +2,12 @@
 package lang
 
 import (
+	"desktop/internal"
 	"embed"
 	"encoding/json"
 	"path"
 	"sort"
 	"sync"
-
-	"desktop/internal"
 )
 
 const defaultLocale = "zh-CN"
@@ -89,7 +88,6 @@ func (l *Lang) SetLocale(locale string) error {
 	}
 	l.locale = locale
 	l.mu.Unlock()
-
 	if internal.App != nil {
 		internal.App.Event.Emit(internal.AppConfig.EventNameLocaleChanged, locale)
 	}

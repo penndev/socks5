@@ -1,11 +1,11 @@
 package proxy
 
 import (
+	"desktop/internal"
 	"net"
 	"net/netip"
 	"net/url"
-
-	"desktop/internal"
+	"sync"
 
 	"github.com/penndev/prism/proxy"
 	"github.com/penndev/prism/route"
@@ -20,7 +20,16 @@ type Proxy struct {
 	dev *tun.Tun
 }
 
+var dialerOnce sync.Once
+
 func (p *Proxy) SetStart(host, user, pass string) error {
+
+	dialerOnce.Do(func() {
+		// 循环设置检查心跳。
+		// dialer.TCPDialer
+		// dialer.UDPDialer
+	})
+
 	internal.App.Event.Emit(
 		internal.AppConfig.LogTypeName_STATUS,
 		"localServer://"+user+":"+pass+"@"+host,
