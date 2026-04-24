@@ -50,6 +50,9 @@ func Socks5OverTLS(host, user, pass string, conf *tls.Config) HandleConnect {
 		} else {
 			dialTcp, err = dialer.TCPDialer.Dial("tcp", host)
 		}
+		if err != nil {
+			return err
+		}
 		dialTls := tls.Client(dialTcp, conf)
 		if err = dialTls.Handshake(); err != nil {
 			return err

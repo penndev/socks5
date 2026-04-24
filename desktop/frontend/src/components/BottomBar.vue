@@ -31,16 +31,27 @@
         {{ t("log.connectionTitle") }}
         <span v-if="logCount > 0" class="badge">{{ logCount }}</span>
       </span>
+      <span class="status-spacer" />
+      <span class="traffic-item" :title="t('log.downlink')">
+        <ArrowDownOutlined />
+        {{ readSpeedText }} ({{ readTotalText }})
+      </span>
+      <span class="traffic-item" :title="t('log.uplink')">
+        <ArrowUpOutlined />
+        {{ writeSpeedText }} ({{ writeTotalText }})
+      </span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { theme } from "ant-design-vue";
+import { ArrowDownOutlined, ArrowUpOutlined } from "@ant-design/icons-vue";
 import { t } from "@/i18n";
 import StatusPanel from "./bottombar/StatusPanel.vue";
 import LogPanel from "./bottombar/LogPanel.vue";
+import { TrafficBytes } from "@bindings/desktop/proxy/proxy";
 
 const PANEL_HEIGHT_MIN = 80;
 const PANEL_HEIGHT_MAX = 480;
@@ -56,6 +67,7 @@ const logCount = ref(0);
 const { token } = theme.useToken();
 
 const panelHeightPx = computed(() => `${panelHeight.value}px`);
+
 
 function startResize(e) {
   e.preventDefault();
@@ -91,6 +103,66 @@ function togglePanel(name) {
 function closePanel() {
   activePanel.value = null;
 }
+
+
+const readSpeedText = ref("0 B/s");
+const writeSpeedText = ref("0 B/s");
+const readTotalText = ref("0 B");
+const writeTotalText = ref("0 B");
+let trafficTimer = null;
+let lastReadBytes = 0;
+let lastWriteBytes = 0;
+let lastSampleAt = 0;
+
+
+function formatBytes(value) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return "0 B";
+  }
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let next = value;
+  let idx = 0;
+  while (next >= 1024 && idx < units.length - 1) {
+    next /= 1024;
+    idx += 1;
+  }
+  const precision = idx === 0 ? 0 : next >= 100 ? 0 : next >= 10 ? 1 : 2;
+  return `${next.toFixed(precision)} ${units[idx]}`;
+}
+
+async function sampleTraffic() {
+  try {
+    const [readBytes, writeBytes] = await TrafficBytes();
+    const now = Date.now();
+    if (lastSampleAt > 0) {
+      const elapsedSeconds = (now - lastSampleAt) / 1000;
+      if (elapsedSeconds > 0) {
+        const readDelta = Math.max(0, readBytes - lastReadBytes);
+        const writeDelta = Math.max(0, writeBytes - lastWriteBytes);
+        readSpeedText.value = `${formatBytes(readDelta / elapsedSeconds)}/s`;
+        writeSpeedText.value = `${formatBytes(writeDelta / elapsedSeconds)}/s`;
+      }
+    }
+    readTotalText.value = formatBytes(readBytes);
+    writeTotalText.value = formatBytes(writeBytes);
+    lastReadBytes = readBytes;
+    lastWriteBytes = writeBytes;
+    lastSampleAt = now;
+  } catch (e) {
+    console.error("[BottomBar] TrafficBytes() failed:", e);
+  }
+}
+
+onMounted(async () => {
+  trafficTimer = window.setInterval(sampleTraffic, 1000);
+});
+
+onBeforeUnmount(() => {
+  if (trafficTimer !== null) {
+    window.clearInterval(trafficTimer);
+    trafficTimer = null;
+  }
+});
 </script>
 
 <style scoped lang="scss">
@@ -139,6 +211,18 @@ function closePanel() {
       align-items: center;
       justify-content: center;
     }
+  }
+
+  .traffic-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+    color: v-bind("token.colorTextSecondary");
+  }
+
+  .status-spacer {
+    flex: 1;
   }
 }
 </style>

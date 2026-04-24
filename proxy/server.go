@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net"
+	"sync/atomic"
 
 	"github.com/penndev/gopkg/socks5"
 	"github.com/penndev/prism/transport"
@@ -16,6 +17,8 @@ type Server struct {
 	Password      string
 	socks5Server  *socks5.Server
 	ln            net.Listener
+	readBytes     uint64
+	writeBytes    uint64
 }
 
 func (s *Server) handleConn(conn *Conn) {
@@ -39,6 +42,12 @@ func (s *Server) Close() {
 	if s.ln != nil {
 		s.ln.Close()
 	}
+}
+
+func (s *Server) TrafficBytes() (read uint64, write uint64) {
+	read = atomic.LoadUint64(&s.readBytes)
+	write = atomic.LoadUint64(&s.writeBytes)
+	return
 }
 
 func (s *Server) initSocks5Server() {
@@ -84,7 +93,7 @@ func (s *Server) ListenAndServe() error {
 			log.Println("accept failed: ", err)
 			continue
 		}
-		go s.handleConn(NewConn(conn))
+		go s.handleConn(NewConn(conn, &s.readBytes, &s.writeBytes))
 	}
 	return err
 }

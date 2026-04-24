@@ -72,3 +72,10 @@ export function SetStart(host, user, pass) {
 export function SetStop() {
     return $Call.ByID(1757767676);
 }
+
+/**
+ * @returns {$CancellablePromise<[number, number]>}
+ */
+export function TrafficBytes() {
+    return $Call.ByID(3808826388);
+}

@@ -5,7 +5,7 @@ import (
 	"net"
 	"net/netip"
 	"net/url"
-	"sync"
+	"time"
 
 	"github.com/penndev/prism/proxy"
 	"github.com/penndev/prism/route"
@@ -16,18 +16,30 @@ import (
 type Proxy struct {
 	proxy.Server
 
+	// 远程代理信息，用于检查心跳。
+	remoteURL *url.URL
 	// tun用
 	dev *tun.Tun
 }
 
-var dialerOnce sync.Once
-
 func (p *Proxy) SetStart(host, user, pass string) error {
 
 	dialerOnce.Do(func() {
-		// 循环设置检查心跳。
-		// dialer.TCPDialer
-		// dialer.UDPDialer
+		go func() {
+			// 循环设置检查心跳。设置出网网卡的IP。来应对网络变化。
+			// 检查应对的目标服务器是 p.remoteURL
+			p.updateDialer()
+			ticker := time.NewTicker(10 * time.Second)
+			defer ticker.Stop()
+			for {
+				if p.remoteURL == nil { // 等待设置远程代理信息。
+					time.Sleep(1 * time.Second)
+					continue
+				}
+				p.updateDialer()
+				time.Sleep(10 * time.Second)
+			}
+		}()
 	})
 
 	internal.App.Event.Emit(
@@ -57,15 +69,16 @@ func (p *Proxy) SetStart(host, user, pass string) error {
 }
 
 func (p *Proxy) SetRemote(remote string) error {
-	ru, err := url.Parse(remote)
+	var err error
+	p.remoteURL, err = url.Parse(remote)
 	if err != nil {
 		internal.App.Event.Emit(internal.AppConfig.LogTypeName_STATUS, err.Error())
 	}
 	internal.App.Event.Emit(
 		internal.AppConfig.LogTypeName_STATUS,
-		"SetRemote-> "+ru.Scheme+"://"+ru.User.String()+"@"+ru.Host,
+		"SetRemote-> "+p.remoteURL.Scheme+"://"+p.remoteURL.User.String()+"@"+p.remoteURL.Host,
 	)
-	handle, err := HandleConnect(ru)
+	handle, err := HandleConnect(p.remoteURL)
 	p.HandleConnect = func(conn net.Conn, network, address string) error {
 		internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, "local -> "+network+" "+address)
 		return handle(conn, network, address)
@@ -139,4 +152,8 @@ func (p *Proxy) SetStop() {
 		internal.AppConfig.LogTypeName_STATUS,
 		"local server close success",
 	)
+}
+
+func (p *Proxy) TrafficBytes() (read uint64, write uint64) {
+	return p.Server.TrafficBytes()
 }
