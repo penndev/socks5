@@ -86,12 +86,9 @@ func (p *Proxy) updateDialer() {
 	}
 
 	dialer.TCPDialer = &net.Dialer{
-		Timeout:   10 * time.Second,
-		KeepAlive: 30 * time.Second,
 		LocalAddr: &net.TCPAddr{IP: localIP},
 	}
 	dialer.UDPDialer = &net.Dialer{
-		Timeout:   10 * time.Second,
 		LocalAddr: &net.UDPAddr{IP: localIP},
 	}
 }

@@ -92,7 +92,7 @@ func New() (*Storage, error) {
 		return nil, err
 	}
 
-	dbDir := filepath.Join(upath, "Socks5Desktop")
+	dbDir := filepath.Join(upath, "prism")
 	if err := os.MkdirAll(dbDir, 0700); err != nil {
 		return nil, err
 	}

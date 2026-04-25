@@ -28,16 +28,14 @@ func (p *Proxy) SetStart(host, user, pass string) error {
 		go func() {
 			// 循环设置检查心跳。设置出网网卡的IP。来应对网络变化。
 			// 检查应对的目标服务器是 p.remoteURL
-			p.updateDialer()
-			ticker := time.NewTicker(10 * time.Second)
-			defer ticker.Stop()
 			for {
 				if p.remoteURL == nil { // 等待设置远程代理信息。
 					time.Sleep(1 * time.Second)
 					continue
+				} else {
+					p.updateDialer()
+					time.Sleep(10 * time.Second)
 				}
-				p.updateDialer()
-				time.Sleep(10 * time.Second)
 			}
 		}()
 	})
