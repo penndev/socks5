@@ -1,4 +1,4 @@
-// 封装类似 sqlite 的 bolt 数据库给前端持久化数据使用。
+// 封装类似 sqlite 的 bbolt 数据库给前端持久化数据使用。
 package storage
 
 import (
@@ -7,13 +7,13 @@ import (
 	"os"
 	"path/filepath"
 
-	bolt "go.etcd.io/bbolt"
+	"go.etcd.io/bbolt"
 )
 
 const bucketName = "data"
 
 type Storage struct {
-	db *bolt.DB
+	db *bbolt.DB
 }
 
 func (s *Storage) SetSettings(v Settings) error {
@@ -58,7 +58,7 @@ func (s *Storage) putJSON(key string, v any) error {
 	if err != nil {
 		return err
 	}
-	return s.db.Update(func(tx *bolt.Tx) error {
+	return s.db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		return b.Put([]byte(key), data)
 	})
@@ -68,7 +68,7 @@ func (s *Storage) getJSON(key string, dest any) (found bool, err error) {
 	if key == "" {
 		return false, errors.New("key不能为空")
 	}
-	err = s.db.View(func(tx *bolt.Tx) error {
+	err = s.db.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket([]byte(bucketName))
 		v := b.Get([]byte(key))
 		if v == nil {
@@ -98,12 +98,12 @@ func New() (*Storage, error) {
 	}
 
 	dbPath := filepath.Join(dbDir, "data.db")
-	db, err := bolt.Open(dbPath, 0600, nil)
+	db, err := bbolt.Open(dbPath, 0600, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	err = db.Update(func(tx *bbolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(bucketName))
 		return err
 	})
@@ -114,3 +114,5 @@ func New() (*Storage, error) {
 
 	return &Storage{db: db}, nil
 }
+
+var DefaultStorage *Storage
