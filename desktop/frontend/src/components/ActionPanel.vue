@@ -43,6 +43,21 @@ import { theme } from "ant-design-vue";
 
 const { token } = theme.useToken();
 
+const settingsStore = useSettingsStore();
+
+async function startProxy() {
+  const { host, port, username, password } = settingsStore.proxy;
+  if (!host || !port) {
+    console.warn("[proxy] skip start: host or port is empty", { host, port });
+    return;
+  }
+  try {
+    await SetStart(`${host}:${port}`, username, password);
+  } catch (error) {
+    console.error("[proxy] SetStart failed", error);
+  }
+}
+
 
 // 代理模式，默认为手动
 const proxyMode = ref("manual");
@@ -53,31 +68,24 @@ watch(proxyMode, async (newMode) => {
 // 修改远程节点
 const serverStore = useServerStore();
 watch(serverStore, async () => {
-
   const { host, username, password, protocol } = serverStore.selectedServer || {};
   if (host && protocol) {
     await SetRemote(`${protocol}://${username}:${password}@${host}`);
-    (()=>{
-      const { host, port, username, password } = settingsStore.proxy
-      SetStart(`${host}:${port}`, username, password);
-    })()
+    await startProxy();
   }else{
-    await SetStop()
+    // await SetStop()
   }
 });
 
 // 启动代理，golang设置可以启动多次，会自动重启并应用新的设置
-const settingsStore = useSettingsStore();
+watch(
+  () => settingsStore.proxy,
+  async () => {
+    await startProxy();
+  },
+  { deep: true, immediate: true },
+);
 
-
-watch(settingsStore.proxy, async () => {
-  const { host, port, username, password } = settingsStore.proxy
-  await SetStart(`${host}:${port}`, username, password);
-});
-
-onMounted(() => {
-
-});
 
 </script>
 

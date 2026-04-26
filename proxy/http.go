@@ -117,6 +117,10 @@ func (s *Server) ProxyHTTP(conn net.Conn) {
 			}
 		}
 		// httpweb请求
+		if s.HandlerFunc != nil {
+			s.HandlerFunc(w, r)
+			return
+		}
 		http.NotFound(w, r)
 	}))
 }

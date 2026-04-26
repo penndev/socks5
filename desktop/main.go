@@ -19,11 +19,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	app, err := internal.SetUPApp([]application.Service{
 		application.NewService(store),
 		application.NewService(language),
 		application.NewService(&internal.AppConst{}),
-		application.NewService(&proxy.Proxy{}),
+		application.NewService(proxy.New()),
 		application.NewService(&proxy.ProxyPing{}),
 	})
 	if err != nil {

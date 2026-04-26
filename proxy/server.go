@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net"
+	"net/http"
 	"sync/atomic"
 
 	"github.com/penndev/gopkg/socks5"
@@ -13,6 +14,7 @@ import (
 type Server struct {
 	Addr          string
 	HandleConnect transport.HandleConnect
+	HandlerFunc   http.HandlerFunc
 	Username      string
 	Password      string
 	socks5Server  *socks5.Server

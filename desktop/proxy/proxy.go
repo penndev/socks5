@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"desktop/internal"
+	"desktop/web"
 	"net"
 	"net/netip"
 	"net/url"
@@ -23,7 +24,6 @@ type Proxy struct {
 }
 
 func (p *Proxy) SetStart(host, user, pass string) error {
-
 	dialerOnce.Do(func() {
 		go func() {
 			// 循环设置检查心跳。设置出网网卡的IP。来应对网络变化。
@@ -154,4 +154,11 @@ func (p *Proxy) SetStop() {
 
 func (p *Proxy) TrafficBytes() (read uint64, write uint64) {
 	return p.Server.TrafficBytes()
+}
+
+func New() *Proxy {
+	p := &Proxy{}
+	p.HandlerFunc = web.Route
+	// 获取配置的代理服务器信息
+	return p
 }
