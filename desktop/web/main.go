@@ -8,5 +8,6 @@ func Route(w http.ResponseWriter, r *http.Request) {
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("/"))
 	})
+	registerSubscribe(router)
 	router.ServeHTTP(w, r)
 }

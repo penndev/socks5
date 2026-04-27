@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prism · 订阅节点</title>
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="stylesheet" href="subscribe.css">
+</head>
+<body>
+  <div class="page">
+    <header class="page-head">
+      <div class="brand">
+        <img class="brand-logo" src="logo.png" width="38" height="38" alt="Prism">
+        <div>
+          <h1>Prism 订阅节点管理</h1>
+          <p>重点支持批量管理：多选节点后可批量删除、批量修改备注。</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="panel">
+      <h2>批量管理</h2>
+      <p class="subline">建议流程：筛选 -> 多选 -> 批量操作 -> 保存并导出。</p>
+      <div class="toolbar">
+        <input id="keyword" type="text" placeholder="按 id / host / remark / username 过滤..." autocomplete="off">
+        <div class="stats">
+          <span id="statsTotal">总数: 0</span>
+          <span id="statsSelected">已选: 0</span>
+          <span id="statsVisible">可见: 0</span>
+        </div>
+      </div>
+      <div class="bulk-panel">
+        <div class="bulk-grid">
+          <input id="bulkRemarkPrefix" type="text" placeholder="备注前缀，如 [香港]">
+          <input id="bulkRemarkSuffix" type="text" placeholder="备注后缀，如 -A组">
+          <button type="button" onclick="applyBulkEdit()">应用到已选</button>
+        </div>
+        <div class="sub-link-grid">
+          <input id="subscribeUrl" type="text" placeholder="粘贴订阅链接（将转换 https/socks5 为本应用 JSON）" autocomplete="off">
+          <button type="button" onclick="previewFromSubscription()">解析订阅链接</button>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" onclick="selectAll()">全选</button>
+        <button type="button" onclick="invertSelection()">反选</button>
+        <button type="button" class="danger" onclick="deleteSelected()">删除已选</button>
+        <button id="refreshBtn" type="button" onclick="manualRefresh()">刷新</button>
+        <button type="button" class="primary" onclick="saveServers()">保存全部</button>
+        <button type="button" onclick="exportServers()">导出 JSON</button>
+        <input id="importFile" type="file" accept=".json,application/json">
+        <button id="confirmImportBtn" type="button" class="primary" onclick="confirmImport()" disabled>保存导入（覆盖）</button>
+      </div>
+      <div id="importPreview" class="import-preview" hidden>
+        <div class="import-preview-head">
+          <strong id="importPreviewTitle">导入预览</strong>
+          <span id="importPreviewMeta"></span>
+        </div>
+        <pre id="importPreviewBody"></pre>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="check-col"><input id="checkAllVisible" type="checkbox" aria-label="全选" onchange="selectAll(this.checked)"></th>
+              <th>ID</th>
+              <th>Host</th>
+              <th>备注</th>
+              <th>用户</th>
+              <th>协议</th>
+            </tr>
+          </thead>
+          <tbody id="serverBody"></tbody>
+        </table>
+      </div>
+      <div id="msg" class="msg" role="status" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <script>
+    const API_BASE = '/subscribe/api';
+    let servers = [];
+    let selectedIds = new Set();
+    let importPreviewServers = null;
+    const msgEl = document.getElementById('msg');
+    const keywordEl = document.getElementById('keyword');
+    const refreshBtnEl = document.getElementById('refreshBtn');
+    const importFileEl = document.getElementById('importFile');
+    const confirmImportBtnEl = document.getElementById('confirmImportBtn');
+    const importPreviewEl = document.getElementById('importPreview');
+    const importPreviewMetaEl = document.getElementById('importPreviewMeta');
+    const importPreviewBodyEl = document.getElementById('importPreviewBody');
+    const subscribeUrlEl = document.getElementById('subscribeUrl');
+    let msgHideTimer = null;
+
+    /** 短暂提示，约 3.2 秒后自动清空，避免一直占位 */
+    function showMsg(text, isErr = false) {
+      if (msgHideTimer != null) {
+        clearTimeout(msgHideTimer);
+        msgHideTimer = null;
+      }
+      msgEl.textContent = text || '';
+      msgEl.className = 'msg ' + (isErr ? 'err' : 'ok');
+      if (!text) return;
+      msgHideTimer = setTimeout(() => {
+        msgEl.textContent = '';
+        msgEl.className = 'msg';
+        msgHideTimer = null;
+      }, 3200);
+    }
+
+    async function request(url, opt = {}) {
+      const resp = await fetch(url, opt);
+      if (!resp.ok) throw new Error(await resp.text());
+      const ct = resp.headers.get('content-type') || '';
+      if (ct.includes('application/json')) return await resp.json();
+      return await resp.text();
+    }
+
+    function normalizeServers(data) {
+      if (!Array.isArray(data)) {
+        throw new Error('JSON 必须是数组');
+      }
+      return data.map((item, idx) => {
+        if (item == null || typeof item !== 'object') {
+          throw new Error('第 ' + (idx + 1) + ' 项不是对象');
+        }
+        const host = String(item.host || '').trim();
+        if (!host) {
+          throw new Error('第 ' + (idx + 1) + ' 项缺少 host');
+        }
+        const id = String(item.id || host).trim();
+        return {
+          id,
+          host,
+          remark: String(item.remark || ''),
+          username: String(item.username || ''),
+          password: String(item.password || ''),
+          protocol: String(item.protocol || 'http')
+        };
+      });
+    }
+
+    function showImportPreview(serversToPreview, sourceLabel = '') {
+      importPreviewServers = serversToPreview;
+      const prefix = sourceLabel ? (sourceLabel + '，') : '';
+      importPreviewMetaEl.textContent = prefix + '共 ' + serversToPreview.length + ' 条';
+      importPreviewBodyEl.textContent = JSON.stringify(serversToPreview, null, 2);
+      importPreviewEl.hidden = false;
+      confirmImportBtnEl.disabled = false;
+    }
+
+    function resetImportPreview() {
+      importPreviewServers = null;
+      importPreviewEl.hidden = true;
+      importPreviewMetaEl.textContent = '';
+      importPreviewBodyEl.textContent = '';
+      confirmImportBtnEl.disabled = true;
+    }
+
+    function getFilteredServers() {
+      const k = keywordEl.value.trim().toLowerCase();
+      if (!k) return servers;
+      return servers.filter(s => {
+        return [s.id, s.host, s.remark, s.username].some(v => (v || '').toLowerCase().includes(k));
+      });
+    }
+
+    function syncStats(visibleServers) {
+      document.getElementById('statsTotal').textContent = '总数: ' + servers.length;
+      document.getElementById('statsSelected').textContent = '已选: ' + selectedIds.size;
+      document.getElementById('statsVisible').textContent = '可见: ' + visibleServers.length;
+
+      const visibleIds = visibleServers.map(s => s.id).filter(Boolean);
+      const allChecked = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
+      document.getElementById('checkAllVisible').checked = allChecked;
+    }
+
+    function renderServers() {
+      const body = document.getElementById('serverBody');
+      body.innerHTML = '';
+      const visibleServers = getFilteredServers();
+      visibleServers.forEach(s => {
+        const tr = document.createElement('tr');
+        const checked = s.id && selectedIds.has(s.id);
+        if (checked) tr.classList.add('selected');
+        tr.innerHTML =
+          '<td class="check-col"><input type="checkbox" data-id="' + escapeHtml(s.id || '') + '"' + (checked ? ' checked' : '') + '></td>' +
+          '<td>' + escapeHtml(s.id || '') + '</td>' +
+          '<td>' + escapeHtml(s.host || '') + '</td>' +
+          '<td>' + escapeHtml(s.remark || '') + '</td>' +
+          '<td>' + escapeHtml(s.username || '') + '</td>' +
+          '<td>' + escapeHtml(s.protocol || '') + '</td>';
+        const checkbox = tr.querySelector('input[type="checkbox"]');
+        checkbox.onclick = (e) => {
+          e.stopPropagation();
+          const id = s.id || '';
+          if (!id) return;
+          if (checkbox.checked) selectedIds.add(id);
+          else selectedIds.delete(id);
+          syncStats(visibleServers);
+        };
+        tr.onclick = () => {
+          const id = s.id || '';
+          if (!id) return;
+          if (selectedIds.has(id)) selectedIds.delete(id);
+          else selectedIds.add(id);
+          renderServers();
+        };
+        body.appendChild(tr);
+      });
+      syncStats(visibleServers);
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    async function refreshServers(notify = false) {
+      try {
+        refreshBtnEl.disabled = true;
+        refreshBtnEl.textContent = '刷新中...';
+        servers = await request(API_BASE + '/servers');
+        selectedIds = new Set(
+          [...selectedIds].filter(id => servers.some(s => s.id === id))
+        );
+        renderServers();
+        if (notify) showMsg('刷新完成');
+      } catch (e) {
+        showMsg(e.message, true);
+      } finally {
+        refreshBtnEl.disabled = false;
+        refreshBtnEl.textContent = '刷新';
+      }
+    }
+
+    async function saveServers() {
+      try {
+        await request(API_BASE + '/servers', {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(servers)
+        });
+        showMsg('已保存全部节点');
+      } catch (e) {
+        showMsg(e.message, true);
+      }
+    }
+
+    function selectAll(checked = true) {
+      const visibleServers = getFilteredServers();
+      visibleServers.forEach(s => {
+        if (!s.id) return;
+        if (checked) selectedIds.add(s.id);
+        else selectedIds.delete(s.id);
+      });
+      renderServers();
+    }
+
+    function invertSelection() {
+      const visibleServers = getFilteredServers();
+      visibleServers.forEach(s => {
+        if (!s.id) return;
+        if (selectedIds.has(s.id)) selectedIds.delete(s.id);
+        else selectedIds.add(s.id);
+      });
+      renderServers();
+    }
+
+    async function applyBulkEdit() {
+      try {
+        if (selectedIds.size === 0) throw new Error('请先选择节点');
+        const prefix = document.getElementById('bulkRemarkPrefix').value;
+        const suffix = document.getElementById('bulkRemarkSuffix').value;
+
+        let touched = 0;
+        servers = servers.map(s => {
+          if (!s.id || !selectedIds.has(s.id)) return s;
+          touched += 1;
+          return {
+            ...s,
+            remark: (prefix || '') + (s.remark || '') + (suffix || '')
+          };
+        });
+        await saveServers();
+        renderServers();
+        showMsg('批量修改完成，影响 ' + touched + ' 条');
+      } catch (e) {
+        showMsg(e.message, true);
+      }
+    }
+
+    async function deleteSelected() {
+      try {
+        if (selectedIds.size === 0) throw new Error('请先选择节点');
+        servers = servers.filter(s => !s.id || !selectedIds.has(s.id));
+        selectedIds = new Set();
+        await saveServers();
+        renderServers();
+        showMsg('已删除选中节点');
+      } catch (e) {
+        showMsg(e.message, true);
+      }
+    }
+
+    function exportServers() {
+      window.location.href = API_BASE + '/servers/export';
+    }
+
+    async function previewFromSubscription() {
+      try {
+        const url = subscribeUrlEl.value.trim();
+        if (!url) throw new Error('请先输入订阅链接');
+        const resp = await request(API_BASE + '/subscription/convert', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const converted = normalizeServers(resp.servers || []);
+        showImportPreview(converted, '订阅转换');
+        showMsg('订阅解析成功，请先检查预览再保存导入');
+      } catch (e) {
+        resetImportPreview();
+        showMsg(e.message, true);
+      }
+    }
+
+    async function queueImportPreview() {
+      try {
+        const f = importFileEl.files[0];
+        if (!f) throw new Error('请先选择 JSON 文件');
+        const text = await f.text();
+        const parsed = JSON.parse(text);
+        const normalized = normalizeServers(parsed);
+        showImportPreview(normalized, '本地文件');
+        showMsg('已解析文件，请先检查预览再保存导入');
+      } catch (e) {
+        resetImportPreview();
+        showMsg(e.message, true);
+      }
+    }
+
+    async function confirmImport() {
+      try {
+        if (!importPreviewServers || importPreviewServers.length === 0) {
+          throw new Error('暂无可导入的数据，请先选择 JSON');
+        }
+        await request(API_BASE + '/servers/import', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(importPreviewServers)
+        });
+        selectedIds = new Set();
+        await refreshServers();
+        showMsg('导入成功，已覆盖当前列表');
+        importFileEl.value = '';
+        resetImportPreview();
+      } catch (e) {
+        showMsg(e.message, true);
+      }
+    }
+
+    function manualRefresh() {
+      refreshServers(true);
+    }
+
+    importFileEl.addEventListener('change', queueImportPreview);
+    keywordEl.addEventListener('input', renderServers);
+    refreshServers();
+  </script>
+</body>
+</html>

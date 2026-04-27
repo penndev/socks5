@@ -1,15 +1,24 @@
 <template>
   <a-card class="socks5-server-card" :title="t('serverList.title')">
     <template #extra>
-      <a-button
-        type="link"
-        size="small"
-        :loading="pingingAll"
-        :disabled="servers.length === 0"
-        @click="pingAllServers"
-      >
-        {{ t("serverList.pingAll") }}
-      </a-button>
+      <div class="card-extra-actions">
+        <a-tooltip :title="t('serverList.pingAll')">
+          <a-button
+            type="text"
+            size="small"
+            :loading="pingingAll"
+            :disabled="servers.length === 0"
+            @click="pingAllServers"
+          >
+            <ThunderboltOutlined />
+          </a-button>
+        </a-tooltip>
+        <a-tooltip title="打开订阅节点批量编辑页面">
+          <a-button type="text" size="small" @click="openSubscribeEditor">
+            <EditOutlined />
+          </a-button>
+        </a-tooltip>
+      </div>
     </template>
     <div class="server-list-scroll" v-if="servers.length > 0">
       <a-list :data-source="servers" bordered>
@@ -157,6 +166,7 @@ import {
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons-vue";
 import { Modal, message } from "ant-design-vue";
 import { Storage } from "@bindings/desktop/storage";
@@ -322,6 +332,18 @@ async function pingAllServers() {
   }
 }
 
+function openSubscribeEditor() {
+  const rawHost = (settingsStore.proxy.host || "").trim();
+  const host = rawHost === "0.0.0.0" || rawHost === "" ? "127.0.0.1" : rawHost;
+  const port = Number(settingsStore.proxy.port);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    message.warning("请先配置正确的本地代理端口");
+    return;
+  }
+  const url = `http://${host}:${port}/subscribe/`;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 // 获取延迟样式类
 function getLatencyClass(latency) {
   if (latency < 100) return "latency-good";
@@ -366,6 +388,12 @@ onMounted(async () => {
 
   :deep(.ant-list-item-meta-description) {
     min-width: 0;
+  }
+
+  .card-extra-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .server-list-scroll {

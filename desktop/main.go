@@ -11,21 +11,21 @@ import (
 )
 
 func main() {
-	// 处理存储
-	storage, err := storage.New()
-	if err != nil {
-		panic(err)
-	}
 	// 语言文件
 	language, err := lang.New()
 	if err != nil {
 		panic(err)
 	}
+	// 处理存储
+	storage.DefaultStorage, err = storage.New()
+	if err != nil {
+		panic(err)
+	}
 	// -
 	app, err := internal.SetUPApp([]application.Service{
-		application.NewService(storage),
 		application.NewService(language),
 		application.NewService(proxy.New()),
+		application.NewService(storage.DefaultStorage),
 		application.NewService(&internal.AppConst{}),
 		application.NewService(&proxy.ProxyPing{}),
 	})
