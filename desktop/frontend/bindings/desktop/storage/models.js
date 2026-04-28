@@ -6,6 +6,41 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+export class PACConfig {
+    /**
+     * Creates a new PACConfig instance.
+     * @param {Partial<PACConfig>} [$$source = {}] - The source object to create the PACConfig.
+     */
+    constructor($$source = {}) {
+        if (!("domains" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["domains"] = "";
+        }
+        if (!("mode" in $$source)) {
+            /**
+             * @member
+             * @type {string}
+             */
+            this["mode"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new PACConfig instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {PACConfig}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new PACConfig(/** @type {Partial<PACConfig>} */($$parsedSource));
+    }
+}
+
 export class ProxySettings {
     /**
      * Creates a new ProxySettings instance.

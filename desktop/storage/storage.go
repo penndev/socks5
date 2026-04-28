@@ -16,6 +16,18 @@ type Storage struct {
 	db *bbolt.DB
 }
 
+func AppDir() (string, error) {
+	upath, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	dbDir := filepath.Join(upath, "prism")
+	if err := os.MkdirAll(dbDir, 0700); err != nil {
+		return "", err
+	}
+	return dbDir, nil
+}
+
 func (s *Storage) SetSettings(v Settings) error {
 	return s.putJSON(KeySettings, v)
 }
@@ -50,6 +62,20 @@ func (s *Storage) GetServers() ([]ServerEntry, error) {
 	return out, nil
 }
 
+func (s *Storage) SetPACConfig(v PACConfig) error {
+	return s.putJSON(KeyPAC, v)
+}
+
+// GetPACConfig 无记录时返回 nil, nil。
+func (s *Storage) GetPACConfig() (*PACConfig, error) {
+	var out PACConfig
+	ok, err := s.getJSON(KeyPAC, &out)
+	if err != nil || !ok {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (s *Storage) putJSON(key string, v any) error {
 	if key == "" {
 		return errors.New("key不能为空")
@@ -62,6 +88,31 @@ func (s *Storage) putJSON(key string, v any) error {
 		b := tx.Bucket([]byte(bucketName))
 		return b.Put([]byte(key), data)
 	})
+}
+
+func SavePACScript(content string) (string, error) {
+	dir, err := AppDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(dir, "pac.js")
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
+func LoadPACScript() (string, error) {
+	dir, err := AppDir()
+	if err != nil {
+		return "", err
+	}
+	path := filepath.Join(dir, "pac.js")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
 
 func (s *Storage) getJSON(key string, dest any) (found bool, err error) {
@@ -87,13 +138,8 @@ func (s *Storage) Close() error {
 }
 
 func New() (*Storage, error) {
-	upath, err := os.UserConfigDir()
+	dbDir, err := AppDir()
 	if err != nil {
-		return nil, err
-	}
-
-	dbDir := filepath.Join(upath, "prism")
-	if err := os.MkdirAll(dbDir, 0700); err != nil {
 		return nil, err
 	}
 

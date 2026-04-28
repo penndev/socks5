@@ -32,7 +32,13 @@ type ServerEntry struct {
 	Protocol string `json:"protocol"`
 }
 
+type PACConfig struct {
+	Domains string `json:"domains"`
+	Mode    string `json:"mode"`
+}
+
 const (
 	KeySettings = "settings"
 	KeyServers  = "servers"
+	KeyPAC      = "pac"
 )

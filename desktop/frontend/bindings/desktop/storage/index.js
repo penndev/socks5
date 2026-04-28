@@ -8,6 +8,7 @@ export {
 };
 
 export {
+    PACConfig,
     ProxySettings,
     ServerEntry,
     Settings,

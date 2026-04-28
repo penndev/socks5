@@ -18,12 +18,22 @@ export function Close() {
 }
 
 /**
+ * GetPACConfig 无记录时返回 nil, nil。
+ * @returns {$CancellablePromise<$models.PACConfig | null>}
+ */
+export function GetPACConfig() {
+    return $Call.ByID(1516652270).then(/** @type {($result: any) => any} */(($result) => {
+        return $$createType1($result);
+    }));
+}
+
+/**
  * GetServers 无记录时返回空切片。
  * @returns {$CancellablePromise<$models.ServerEntry[]>}
  */
 export function GetServers() {
     return $Call.ByID(2458702056).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType1($result);
+        return $$createType3($result);
     }));
 }
 
@@ -33,8 +43,16 @@ export function GetServers() {
  */
 export function GetSettings() {
     return $Call.ByID(3566655053).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType3($result);
+        return $$createType5($result);
     }));
+}
+
+/**
+ * @param {$models.PACConfig} v
+ * @returns {$CancellablePromise<void>}
+ */
+export function SetPACConfig(v) {
+    return $Call.ByID(1235780322, v);
 }
 
 /**
@@ -54,7 +72,9 @@ export function SetSettings(v) {
 }
 
 // Private type creation functions
-const $$createType0 = $models.ServerEntry.createFrom;
-const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = $models.Settings.createFrom;
-const $$createType3 = $Create.Nullable($$createType2);
+const $$createType0 = $models.PACConfig.createFrom;
+const $$createType1 = $Create.Nullable($$createType0);
+const $$createType2 = $models.ServerEntry.createFrom;
+const $$createType3 = $Create.Array($$createType2);
+const $$createType4 = $models.Settings.createFrom;
+const $$createType5 = $Create.Nullable($$createType4);

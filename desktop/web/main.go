@@ -1,6 +1,10 @@
 package web
 
-import "net/http"
+import (
+	"desktop/web/pac"
+	"desktop/web/subscribe"
+	"net/http"
+)
 
 func Route(w http.ResponseWriter, r *http.Request) {
 	router := newRouter()
@@ -10,21 +14,21 @@ func Route(w http.ResponseWriter, r *http.Request) {
 func newRouter() *http.ServeMux {
 	router := http.NewServeMux()
 	router.HandleFunc("/", handleRoot)
-	router.HandleFunc("/subscribe", handleSubscribeRedirect)
-	router.HandleFunc("/subscribe/logo.png", handleSubscribeLogo)
-	router.HandleFunc("/subscribe/api/servers", handleSubscribeServers)
-	router.HandleFunc("/subscribe/api/servers/import", handleSubscribeImportServers)
-	router.HandleFunc("/subscribe/api/servers/export", handleSubscribeExportServers)
-	router.HandleFunc("/subscribe/api/subscription/convert", handleSubscribeSubscriptionConvert)
-	router.HandleFunc("/subscribe/api/app-config", handleSubscribeAppConfig)
-	router.Handle("/subscribe/", http.StripPrefix("/subscribe/", handleSubscribeFileServer()))
+	router.HandleFunc("/api/app-config", handleAppConfig)
+	router.Handle("/common/", http.StripPrefix("/common/", handleCommonFileServer()))
+	// 订阅页面
+	router.HandleFunc("/subscribe", subscribe.HandleSubscribeRedirect)
+	router.HandleFunc("/subscribe/logo.png", subscribe.HandleSubscribeLogo)
+	router.HandleFunc("/subscribe/api/servers", subscribe.HandleServers)
+	router.HandleFunc("/subscribe/api/servers/import", subscribe.HandleImportServers)
+	router.HandleFunc("/subscribe/api/servers/export", subscribe.HandleExportServers)
+	router.HandleFunc("/subscribe/api/subscription/convert", subscribe.HandleSubscriptionConvert)
+	router.Handle("/subscribe/", http.StripPrefix("/subscribe/", subscribe.HandleSubscribeFileServer()))
+	// pac管理
+	router.HandleFunc("/pac", pac.HandlePACRedirect)
+	router.HandleFunc("/pac/api/config", pac.HandlePACConfig)
+	router.HandleFunc("/pac/api/script", pac.HandlePACScript)
+	router.Handle("/pac/", http.StripPrefix("/pac/", pac.HandlePACFileServer()))
+	router.HandleFunc("/pac.js", pac.HandlePACScript)
 	return router
-}
-
-func handleRoot(w http.ResponseWriter, _ *http.Request) {
-	_, _ = w.Write([]byte("/"))
-}
-
-func handleSubscribeRedirect(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/subscribe/", http.StatusFound)
 }
