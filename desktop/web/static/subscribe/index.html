@@ -13,43 +13,30 @@
       <div class="brand">
         <img class="brand-logo" src="logo.png" width="38" height="38" alt="Prism">
         <div>
-          <h1>Prism 订阅节点管理</h1>
-          <p>重点支持批量管理：多选节点后可批量删除、批量修改备注。</p>
+          <h1>Prism 节点管理</h1>
+          <p>订阅导入、预览确认、列表管理。</p>
         </div>
       </div>
     </header>
 
     <section class="panel">
-      <h2>批量管理</h2>
-      <p class="subline">建议流程：筛选 -> 多选 -> 批量操作 -> 保存并导出。</p>
-      <div class="toolbar">
-        <input id="keyword" type="text" placeholder="按 id / host / remark / username 过滤..." autocomplete="off">
-        <div class="stats">
-          <span id="statsTotal">总数: 0</span>
-          <span id="statsSelected">已选: 0</span>
-          <span id="statsVisible">可见: 0</span>
-        </div>
-      </div>
-      <div class="bulk-panel">
-        <div class="bulk-grid">
-          <input id="bulkRemarkPrefix" type="text" placeholder="备注前缀，如 [香港]">
-          <input id="bulkRemarkSuffix" type="text" placeholder="备注后缀，如 -A组">
-          <button type="button" onclick="applyBulkEdit()">应用到已选</button>
-        </div>
+      <h2>订阅与导入</h2>
+      <p class="subline">先从订阅链接或本地文件导入，预览无误后覆盖当前列表。</p>
+      <div class="import-actions">
         <div class="sub-link-grid">
-          <input id="subscribeUrl" type="text" placeholder="粘贴订阅链接（将转换 https/socks5 为本应用 JSON）" autocomplete="off">
-          <button type="button" onclick="previewFromSubscription()">解析订阅链接</button>
+          <select id="subscribeType" aria-label="订阅类型">
+            <option value="prism">Prism</option>
+            <option value="shadowrocket">Shadowrocket</option>
+          </select>
+          <input id="subscribeUrl" type="text" placeholder="粘贴订阅链接（支持 https/socks5）" autocomplete="off">
+          <button type="button" onclick="previewFromSubscription()">解析订阅</button>
         </div>
-      </div>
-      <div class="actions">
-        <button type="button" onclick="selectAll()">全选</button>
-        <button type="button" onclick="invertSelection()">反选</button>
-        <button type="button" class="danger" onclick="deleteSelected()">删除已选</button>
-        <button id="refreshBtn" type="button" onclick="manualRefresh()">刷新</button>
-        <button type="button" class="primary" onclick="saveServers()">保存全部</button>
-        <button type="button" onclick="exportServers()">导出 JSON</button>
-        <input id="importFile" type="file" accept=".json,application/json">
-        <button id="confirmImportBtn" type="button" class="primary" onclick="confirmImport()" disabled>保存导入（覆盖）</button>
+        <div class="file-import-grid">
+          <label for="importFile" class="file-pick-btn">导入文件</label>
+          <input id="importFile" class="file-hidden-input" type="file" accept=".json,application/json">
+          <span id="importFileName" class="file-name-text">未选择文件</span>
+          <button id="confirmImportBtn" type="button" class="primary" onclick="confirmImport()" hidden disabled>导入并覆盖</button>
+        </div>
       </div>
       <div id="importPreview" class="import-preview" hidden>
         <div class="import-preview-head">
@@ -57,6 +44,26 @@
           <span id="importPreviewMeta"></span>
         </div>
         <pre id="importPreviewBody"></pre>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>列表管理</h2>
+      <p class="subline">用于筛选、选择与删除节点。</p>
+      <div class="toolbar">
+        <input id="keyword" type="text" placeholder="搜索 id / host / 备注 / 用户名" autocomplete="off">
+        <div class="stats">
+          <span id="statsTotal">总数: 0</span>
+          <span id="statsSelected">已选: 0</span>
+          <span id="statsVisible">可见: 0</span>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" onclick="selectAll()">全选</button>
+        <button type="button" onclick="invertSelection()">反选</button>
+        <button id="refreshBtn" type="button" onclick="manualRefresh()">刷新</button>
+        <button type="button" class="danger" onclick="deleteSelected()">删除</button>
+        <button type="button" class="export-btn" onclick="exportServers()">导出</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -73,8 +80,8 @@
           <tbody id="serverBody"></tbody>
         </table>
       </div>
-      <div id="msg" class="msg" role="status" aria-live="polite"></div>
     </section>
+    <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-atomic="true"></div>
   </div>
 
   <script>
@@ -82,7 +89,7 @@
     let servers = [];
     let selectedIds = new Set();
     let importPreviewServers = null;
-    const msgEl = document.getElementById('msg');
+    const toastWrapEl = document.getElementById('toastWrap');
     const keywordEl = document.getElementById('keyword');
     const refreshBtnEl = document.getElementById('refreshBtn');
     const importFileEl = document.getElementById('importFile');
@@ -90,23 +97,20 @@
     const importPreviewEl = document.getElementById('importPreview');
     const importPreviewMetaEl = document.getElementById('importPreviewMeta');
     const importPreviewBodyEl = document.getElementById('importPreviewBody');
+    const importFileNameEl = document.getElementById('importFileName');
     const subscribeUrlEl = document.getElementById('subscribeUrl');
-    let msgHideTimer = null;
-
-    /** 短暂提示，约 3.2 秒后自动清空，避免一直占位 */
+    const subscribeTypeEl = document.getElementById('subscribeType');
     function showMsg(text, isErr = false) {
-      if (msgHideTimer != null) {
-        clearTimeout(msgHideTimer);
-        msgHideTimer = null;
-      }
-      msgEl.textContent = text || '';
-      msgEl.className = 'msg ' + (isErr ? 'err' : 'ok');
       if (!text) return;
-      msgHideTimer = setTimeout(() => {
-        msgEl.textContent = '';
-        msgEl.className = 'msg';
-        msgHideTimer = null;
-      }, 3200);
+      const toast = document.createElement('div');
+      toast.className = 'toast-item ' + (isErr ? 'toast-err' : 'toast-ok');
+      toast.textContent = text;
+      toastWrapEl.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 180);
+      }, 2600);
     }
 
     async function request(url, opt = {}) {
@@ -117,10 +121,17 @@
       return await resp.text();
     }
 
-    function normalizeServers(data) {
+    function buildGeneratedID(idx) {
+      return 'node-' + (idx + 1);
+    }
+
+    function normalizeServers(data, options = {}) {
+      const forceRegenerateID = !!options.forceRegenerateID;
+      const preserveEmptyID = !!options.preserveEmptyID;
       if (!Array.isArray(data)) {
         throw new Error('JSON 必须是数组');
       }
+      const seen = new Map();
       return data.map((item, idx) => {
         if (item == null || typeof item !== 'object') {
           throw new Error('第 ' + (idx + 1) + ' 项不是对象');
@@ -129,14 +140,30 @@
         if (!host) {
           throw new Error('第 ' + (idx + 1) + ' 项缺少 host');
         }
-        const id = String(item.id || host).trim();
+        const sourceID = String(item.id == null ? '' : item.id).trim();
+        const baseID = forceRegenerateID
+          ? buildGeneratedID(idx)
+          : (sourceID || (preserveEmptyID ? '' : buildGeneratedID(idx)));
+        if (!baseID) {
+          return {
+            id: '',
+            host,
+            remark: String(item.remark || '').trim(),
+            username: String(item.username || '').trim(),
+            password: String(item.password || ''),
+            protocol: String(item.protocol || 'http').trim().toLowerCase()
+          };
+        }
+        const n = seen.get(baseID) || 0;
+        seen.set(baseID, n + 1);
+        const id = n > 0 ? (baseID + '-' + (n + 1)) : baseID;
         return {
           id,
           host,
-          remark: String(item.remark || ''),
-          username: String(item.username || ''),
+          remark: String(item.remark || '').trim(),
+          username: String(item.username || '').trim(),
           password: String(item.password || ''),
-          protocol: String(item.protocol || 'http')
+          protocol: String(item.protocol || 'http').trim().toLowerCase()
         };
       });
     }
@@ -147,6 +174,7 @@
       importPreviewMetaEl.textContent = prefix + '共 ' + serversToPreview.length + ' 条';
       importPreviewBodyEl.textContent = JSON.stringify(serversToPreview, null, 2);
       importPreviewEl.hidden = false;
+      confirmImportBtnEl.hidden = false;
       confirmImportBtnEl.disabled = false;
     }
 
@@ -155,13 +183,14 @@
       importPreviewEl.hidden = true;
       importPreviewMetaEl.textContent = '';
       importPreviewBodyEl.textContent = '';
+      confirmImportBtnEl.hidden = true;
       confirmImportBtnEl.disabled = true;
+      importFileNameEl.textContent = '未选择文件';
     }
 
     function getFilteredServers() {
       const k = keywordEl.value.trim().toLowerCase();
-      if (!k) return servers;
-      return servers.filter(s => {
+      return !k ? servers.slice() : servers.filter(s => {
         return [s.id, s.host, s.remark, s.username].some(v => (v || '').toLowerCase().includes(k));
       });
     }
@@ -222,7 +251,7 @@
       try {
         refreshBtnEl.disabled = true;
         refreshBtnEl.textContent = '刷新中...';
-        servers = await request(API_BASE + '/servers');
+        servers = normalizeServers(await request(API_BASE + '/servers'));
         selectedIds = new Set(
           [...selectedIds].filter(id => servers.some(s => s.id === id))
         );
@@ -236,16 +265,19 @@
       }
     }
 
-    async function saveServers() {
+    async function persistServers(successMsg = '') {
       try {
         await request(API_BASE + '/servers', {
           method: 'PUT',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify(servers)
         });
-        showMsg('已保存全部节点');
+        await refreshServers();
+        if (successMsg) showMsg(successMsg);
+        return true;
       } catch (e) {
         showMsg(e.message, true);
+        return false;
       }
     }
 
@@ -269,37 +301,13 @@
       renderServers();
     }
 
-    async function applyBulkEdit() {
-      try {
-        if (selectedIds.size === 0) throw new Error('请先选择节点');
-        const prefix = document.getElementById('bulkRemarkPrefix').value;
-        const suffix = document.getElementById('bulkRemarkSuffix').value;
-
-        let touched = 0;
-        servers = servers.map(s => {
-          if (!s.id || !selectedIds.has(s.id)) return s;
-          touched += 1;
-          return {
-            ...s,
-            remark: (prefix || '') + (s.remark || '') + (suffix || '')
-          };
-        });
-        await saveServers();
-        renderServers();
-        showMsg('批量修改完成，影响 ' + touched + ' 条');
-      } catch (e) {
-        showMsg(e.message, true);
-      }
-    }
-
     async function deleteSelected() {
       try {
         if (selectedIds.size === 0) throw new Error('请先选择节点');
         servers = servers.filter(s => !s.id || !selectedIds.has(s.id));
         selectedIds = new Set();
-        await saveServers();
+        await persistServers('已删除选中节点');
         renderServers();
-        showMsg('已删除选中节点');
       } catch (e) {
         showMsg(e.message, true);
       }
@@ -312,13 +320,17 @@
     async function previewFromSubscription() {
       try {
         const url = subscribeUrlEl.value.trim();
+        const subType = String(subscribeTypeEl.value || 'prism').trim().toLowerCase();
         if (!url) throw new Error('请先输入订阅链接');
         const resp = await request(API_BASE + '/subscription/convert', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ url })
+          body: JSON.stringify({ url, type: subType })
         });
-        const converted = normalizeServers(resp.servers || []);
+        const converted = normalizeServers(resp.servers || [], {
+          forceRegenerateID: false,
+          preserveEmptyID: subType === 'shadowrocket'
+        });
         showImportPreview(converted, '订阅转换');
         showMsg('订阅解析成功，请先检查预览再保存导入');
       } catch (e) {
@@ -331,9 +343,10 @@
       try {
         const f = importFileEl.files[0];
         if (!f) throw new Error('请先选择 JSON 文件');
+        importFileNameEl.textContent = f.name || '已选择文件';
         const text = await f.text();
         const parsed = JSON.parse(text);
-        const normalized = normalizeServers(parsed);
+        const normalized = normalizeServers(parsed, { forceRegenerateID: true });
         showImportPreview(normalized, '本地文件');
         showMsg('已解析文件，请先检查预览再保存导入');
       } catch (e) {
@@ -354,7 +367,7 @@
         });
         selectedIds = new Set();
         await refreshServers();
-        showMsg('导入成功，已覆盖当前列表');
+        showMsg('导入完成，已覆盖当前列表');
         importFileEl.value = '';
         resetImportPreview();
       } catch (e) {

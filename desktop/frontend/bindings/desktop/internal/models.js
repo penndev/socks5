@@ -36,6 +36,14 @@ export class appConst {
              */
             this["EventNameLocaleChanged"] = "";
         }
+        if (!("EventNameServersChanged" in $$source)) {
+            /**
+             * 节点列表变更事件（payload 为更新时间戳）
+             * @member
+             * @type {string}
+             */
+            this["EventNameServersChanged"] = "";
+        }
 
         Object.assign(this, $$source);
     }

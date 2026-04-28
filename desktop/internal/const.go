@@ -1,5 +1,12 @@
 package internal
 
+import (
+	"net/url"
+	"strings"
+
+	"github.com/pkg/browser"
+)
+
 type appConst struct {
 	// 应用运行状态日志名称
 	LogTypeName_STATUS string
@@ -7,12 +14,15 @@ type appConst struct {
 	LogTypeName_LOG string
 	// 语言切换事件（payload 为语言标识字符串）
 	EventNameLocaleChanged string
+	// 节点列表变更事件（payload 为更新时间戳）
+	EventNameServersChanged string
 }
 
 var AppConfig = appConst{
-	LogTypeName_STATUS:     "logServerStatus",
-	LogTypeName_LOG:        "logProxyList",
-	EventNameLocaleChanged: "localeChanged",
+	LogTypeName_STATUS:      "logServerStatus",
+	LogTypeName_LOG:         "logProxyList",
+	EventNameLocaleChanged:  "localeChanged",
+	EventNameServersChanged: "serversChanged",
 }
 
 type AppConst struct{}
@@ -28,4 +38,19 @@ func (a AppConst) ProxyScheme() []string {
 		"Http",
 		"HttpOverTLS",
 	}
+}
+
+func (a AppConst) OpenExternalURL(rawURL string) error {
+	u := strings.TrimSpace(rawURL)
+	if u == "" {
+		return nil
+	}
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return err
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return nil
+	}
+	return browser.OpenURL(parsed.String())
 }

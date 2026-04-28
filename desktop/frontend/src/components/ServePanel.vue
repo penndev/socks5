@@ -172,10 +172,12 @@ import { Modal, message } from "ant-design-vue";
 import { Storage } from "@bindings/desktop/storage";
 import { TestServer } from "@bindings/desktop/proxy/proxyping";
 import { AppConfig, ProxyScheme } from "@bindings/desktop/internal/appconst";
+import { OpenExternalURL } from "@bindings/desktop/internal/appconst";
 import { useServerStore } from "../stores/server";
 import { useSettingsStore } from "../stores/settings";
 import { t } from "@/i18n";
 import { storeToRefs } from "pinia";
+import { Events } from "@wailsio/runtime";
 
 import { theme } from "ant-design-vue";
 const { token } = theme.useToken();
@@ -332,7 +334,7 @@ async function pingAllServers() {
   }
 }
 
-function openSubscribeEditor() {
+async function openSubscribeEditor() {
   const rawHost = (settingsStore.proxy.host || "").trim();
   const host = rawHost === "0.0.0.0" || rawHost === "" ? "127.0.0.1" : rawHost;
   const port = Number(settingsStore.proxy.port);
@@ -341,7 +343,11 @@ function openSubscribeEditor() {
     return;
   }
   const url = `http://${host}:${port}/subscribe/`;
-  window.open(url, "_blank", "noopener,noreferrer");
+  try {
+    await OpenExternalURL(url);
+  } catch (e) {
+    message.error(e?.message || "打开浏览器失败");
+  }
 }
 
 // 获取延迟样式类
@@ -356,13 +362,21 @@ const proxySchemes = ref([]);
 onMounted(async () => {
   const schemes = await ProxyScheme();
   proxySchemes.value = schemes;
+  await loadServers();
+  const appConfig = await AppConfig();
+  Events.On(appConfig.EventNameServersChanged, async () => {
+    await loadServers();
+  });
+});
+
+async function loadServers() {
   try {
     const raw = await Storage.GetServers();
     servers.value = Array.isArray(raw) ? raw.map(omitLatency) : [];
   } catch {
     message.error(t("serverList.loadFailed"));
   }
-});
+}
 </script>
 
 <style scoped lang="scss">

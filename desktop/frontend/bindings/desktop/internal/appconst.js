@@ -20,6 +20,14 @@ export function AppConfig() {
 }
 
 /**
+ * @param {string} rawURL
+ * @returns {$CancellablePromise<void>}
+ */
+export function OpenExternalURL(rawURL) {
+    return $Call.ByID(1935962305, rawURL);
+}
+
+/**
  * @returns {$CancellablePromise<string[]>}
  */
 export function ProxyScheme() {
