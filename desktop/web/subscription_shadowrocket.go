@@ -55,7 +55,6 @@ func subscriptionParseShadowrocket(text string) ([]storage.ServerEntry, error) {
 			remark = host
 		}
 		servers = append(servers, storage.ServerEntry{
-			ID:       "",
 			Host:     host,
 			Remark:   remark,
 			Username: username,

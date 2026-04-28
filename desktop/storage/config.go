@@ -25,7 +25,6 @@ type SystemSettings struct {
 
 // ServerEntry 与前端服务器列表项一致（不含运行时延迟字段）。
 type ServerEntry struct {
-	ID       string `json:"id"`
 	Host     string `json:"host"`
 	Remark   string `json:"remark"`
 	Username string `json:"username"`

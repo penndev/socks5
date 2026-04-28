@@ -49,9 +49,9 @@
 
     <section class="panel">
       <h2>列表管理</h2>
-      <p class="subline">用于筛选、选择与删除节点。</p>
+      <p class="subline">用于筛选、选择与删除节点（列表 ID = host + 协议 + 用户 + 密码 拼接）。</p>
       <div class="toolbar">
-        <input id="keyword" type="text" placeholder="搜索 id / host / 备注 / 用户名" autocomplete="off">
+        <input id="keyword" type="text" placeholder="搜索 host / 备注 / 用户名 / 协议 / ID" autocomplete="off">
         <div class="stats">
           <span id="statsTotal">总数: 0</span>
           <span id="statsSelected">已选: 0</span>
@@ -121,13 +121,7 @@
       return await resp.text();
     }
 
-    function buildGeneratedID(idx) {
-      return 'node-' + (idx + 1);
-    }
-
-    function normalizeServers(data, options = {}) {
-      const forceRegenerateID = !!options.forceRegenerateID;
-      const preserveEmptyID = !!options.preserveEmptyID;
+    function normalizeServers(data) {
       if (!Array.isArray(data)) {
         throw new Error('JSON 必须是数组');
       }
@@ -140,30 +134,21 @@
         if (!host) {
           throw new Error('第 ' + (idx + 1) + ' 项缺少 host');
         }
-        const sourceID = String(item.id == null ? '' : item.id).trim();
-        const baseID = forceRegenerateID
-          ? buildGeneratedID(idx)
-          : (sourceID || (preserveEmptyID ? '' : buildGeneratedID(idx)));
-        if (!baseID) {
-          return {
-            id: '',
-            host,
-            remark: String(item.remark || '').trim(),
-            username: String(item.username || '').trim(),
-            password: String(item.password || ''),
-            protocol: String(item.protocol || 'http').trim().toLowerCase()
-          };
-        }
-        const n = seen.get(baseID) || 0;
-        seen.set(baseID, n + 1);
-        const id = n > 0 ? (baseID + '-' + (n + 1)) : baseID;
+        const remark = String(item.remark || '').trim();
+        const username = String(item.username || '').trim();
+        const password = String(item.password || '');
+        const protocol = String(item.protocol || 'http').trim().toLowerCase();
+        const base = host + '|' + protocol + '|' + username + '|' + password;
+        const n = (seen.get(base) || 0) + 1;
+        seen.set(base, n);
+        const id = n > 1 ? base + '#' + n : base;
         return {
           id,
           host,
-          remark: String(item.remark || '').trim(),
-          username: String(item.username || '').trim(),
-          password: String(item.password || ''),
-          protocol: String(item.protocol || 'http').trim().toLowerCase()
+          remark,
+          username,
+          password,
+          protocol
         };
       });
     }
@@ -191,7 +176,7 @@
     function getFilteredServers() {
       const k = keywordEl.value.trim().toLowerCase();
       return !k ? servers.slice() : servers.filter(s => {
-        return [s.id, s.host, s.remark, s.username].some(v => (v || '').toLowerCase().includes(k));
+        return [s.id, s.host, s.remark, s.username, s.protocol].some(v => (v || '').toLowerCase().includes(k));
       });
     }
 
@@ -267,10 +252,11 @@
 
     async function persistServers(successMsg = '') {
       try {
+        const payload = servers.map(({ id, ...rest }) => rest);
         await request(API_BASE + '/servers', {
           method: 'PUT',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(servers)
+          body: JSON.stringify(payload)
         });
         await refreshServers();
         if (successMsg) showMsg(successMsg);
@@ -327,10 +313,7 @@
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ url, type: subType })
         });
-        const converted = normalizeServers(resp.servers || [], {
-          forceRegenerateID: false,
-          preserveEmptyID: subType === 'shadowrocket'
-        });
+        const converted = normalizeServers(resp.servers || []);
         showImportPreview(converted, '订阅转换');
         showMsg('订阅解析成功，请先检查预览再保存导入');
       } catch (e) {
@@ -346,7 +329,7 @@
         importFileNameEl.textContent = f.name || '已选择文件';
         const text = await f.text();
         const parsed = JSON.parse(text);
-        const normalized = normalizeServers(parsed, { forceRegenerateID: true });
+        const normalized = normalizeServers(parsed);
         showImportPreview(normalized, '本地文件');
         showMsg('已解析文件，请先检查预览再保存导入');
       } catch (e) {
@@ -363,7 +346,7 @@
         await request(API_BASE + '/servers/import', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(importPreviewServers)
+          body: JSON.stringify(importPreviewServers.map(({ id, ...rest }) => rest))
         });
         selectedIds = new Set();
         await refreshServers();

@@ -72,13 +72,6 @@ export class ServerEntry {
      * @param {Partial<ServerEntry>} [$$source = {}] - The source object to create the ServerEntry.
      */
     constructor($$source = {}) {
-        if (!("id" in $$source)) {
-            /**
-             * @member
-             * @type {string}
-             */
-            this["id"] = "";
-        }
         if (!("host" in $$source)) {
             /**
              * @member

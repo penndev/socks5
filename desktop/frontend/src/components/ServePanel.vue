@@ -21,12 +21,9 @@
       </div>
     </template>
     <div class="server-list-scroll" v-if="servers.length > 0">
-      <a-list :data-source="servers" bordered>
+      <a-list :data-source="servers" row-key="__id" bordered>
         <template #renderItem="{ item }">
-          <a-list-item
-            :class="{ active: selectedServer?.id === item.id }"
-            @click="selectedServer = item"
-          >
+          <a-list-item :class="{ active: isServerSelected(item) }" @click="selectedServer = item">
             <template #actions>
               <a-button type="text" size="small" @click.stop="edit.open(item)">
                 <EditOutlined />
@@ -44,22 +41,19 @@
             <a-list-item-meta>
               <template #title>
                 <span class="server-title-row">
-                  <CheckCircleFilled
-                    v-if="selectedServer?.id === item.id"
-                    class="selected-icon"
-                  />
+                  <CheckCircleFilled v-if="isServerSelected(item)" class="selected-icon" />
                   <span class="server-host" :title="item.remark || item.host">
                     {{ item.remark || item.host }}
                   </span>
                   <span
-                    v-if="latencyById[item.id] !== undefined"
+                    v-if="latencyById[item.__id] !== undefined"
                     class="latency-inline"
                   >
                     <span
-                      v-if="latencyById[item.id] >= 0"
-                      :class="getLatencyClass(latencyById[item.id])"
+                      v-if="latencyById[item.__id] >= 0"
+                      :class="getLatencyClass(latencyById[item.__id])"
                     >
-                      {{ latencyById[item.id] }}ms
+                      {{ latencyById[item.__id] }}ms
                     </span>
                     <span v-else class="latency-error">{{
                       t("serverList.pingFailed")
@@ -189,13 +183,21 @@ const settingsStore = useSettingsStore();
 
 // 所有节点
 const servers = ref([]);
-/** 仅内存：测速结果按节点 id 存，不写入 storage */
+/** 仅内存：测速结果按列表运行时 id 存，不写入 storage */
 const latencyById = ref({});
 const pingingAll = ref(false);
 
-function omitLatency(server) {
-  const { latency: _l, ...rest } = server;
-  return rest;
+function withRuntimeIds(serverList) {
+  const list = Array.isArray(serverList) ? serverList : [];
+  return list.map((server) => {
+    const __id = `${server.host}|${server.protocol}|${server.username}|${server.password}`;
+    return { ...server, __id };
+  });
+}
+
+function isServerSelected(server) {
+  if (!selectedServer.value) return false;
+  return selectedServer.value.__id === server?.__id;
 }
 
 const editRef = ref();
@@ -204,7 +206,7 @@ const edit = reactive({
   visible: false,
   loading: false,
   title: "",
-  id: 0,
+  key: "",
   form: {
     host: "",
     remark: "",
@@ -226,8 +228,8 @@ const edit = reactive({
   },
 
   open(server = null) {
-    edit.id = server?.id ?? null;
-    edit.title = edit.id ? t("serverList.editTitle") : t("serverList.addTitle");
+    edit.key = server ? server.__id : "";
+    edit.title = edit.key ? t("serverList.editTitle") : t("serverList.addTitle");
     edit.form.host = server?.host ?? "";
     edit.form.remark = server?.remark ?? "";
     edit.form.username = server?.username ?? "";
@@ -249,22 +251,36 @@ const edit = reactive({
         protocol: edit.form.protocol,
       };
 
-      if (edit.id) {
-        const idx = servers.value.findIndex((s) => s.id === edit.id);
-        if (idx >= 0)
-          servers.value[idx] = { ...servers.value[idx], ...payload };
+      const selectedWasEdited =
+        !!edit.key &&
+        !!selectedServer.value &&
+        selectedServer.value.__id === edit.key;
+      let editedIdx = -1;
 
-        if (selectedServer.value?.id === edit.id)
-          selectedServer.value = { ...selectedServer.value, ...payload };
+      if (edit.key) {
+        editedIdx = servers.value.findIndex((s) => s.__id === edit.key);
+        if (editedIdx >= 0)
+          servers.value[editedIdx] = {
+            ...servers.value[editedIdx],
+            ...payload,
+          };
 
-        delete latencyById.value[edit.id];
+        delete latencyById.value[edit.key];
         message.success(t("serverList.updateSuccess"));
       } else {
-        servers.value.push({ id: Date.now().toString(), ...payload });
+        servers.value.push(payload);
         message.success(t("serverList.addSuccess"));
       }
 
-      await Storage.SetServers(servers.value.map(omitLatency));
+      servers.value = withRuntimeIds(servers.value);
+      if (selectedWasEdited && editedIdx >= 0)
+        selectedServer.value = servers.value[editedIdx];
+      await Storage.SetServers(
+        servers.value.map((row) => {
+          const { id: _i, __id: _x, ...rest } = /** @type {any} */ (row);
+          return rest;
+        }),
+      );
       edit.visible = false;
     } catch (e) {
       if (!e?.errorFields)
@@ -276,6 +292,7 @@ const edit = reactive({
 });
 
 function deleteModal(item) {
+  const key = item.__id;
   Modal.confirm({
     title: t("serverList.deleteTitle"),
     content: `${t("serverList.deleteContentPrefix")}${
@@ -285,35 +302,20 @@ function deleteModal(item) {
     okText: t("serverList.deleteOkText"),
     cancelText: t("serverList.deleteCancelText"),
     async onOk() {
-      servers.value = servers.value.filter((s) => s.id !== item.id);
-      delete latencyById.value[item.id];
-      if (selectedServer.value?.id === item.id)
+      servers.value = servers.value.filter((s) => s.__id !== key);
+      servers.value = withRuntimeIds(servers.value);
+      delete latencyById.value[key];
+      if (selectedServer.value && selectedServer.value.__id === key)
         selectedServer.value = null;
-      await Storage.SetServers(servers.value.map(omitLatency));
+      await Storage.SetServers(
+        servers.value.map((row) => {
+          const { id: _i, __id: _x, ...rest } = /** @type {any} */ (row);
+          return rest;
+        }),
+      );
       message.success(t("serverList.deleteSuccess"));
     },
   });
-}
-
-/** 与代理 SetRemote 一致：protocol://user:pass@host */
-function serverProxyURL(server) {
-  const protocol = server.protocol.toLowerCase();
-  const username = server.username || "";
-  const password = server.password || "";
-  return `${protocol}://${username}:${password}@${server.host}`;
-}
-
-async function pingOneServer(server, latencyHost) {
-  try {
-    const result = await TestServer(serverProxyURL(server), latencyHost);
-    if (result.success) {
-      latencyById.value[server.id] = result.latency;
-    } else {
-      latencyById.value[server.id] = -1;
-    }
-  } catch {
-    latencyById.value[server.id] = -1;
-  }
 }
 
 async function pingAllServers() {
@@ -326,7 +328,19 @@ async function pingAllServers() {
   pingingAll.value = true;
   try {
     await Promise.all(
-      servers.value.map((s) => pingOneServer(s, latencyHost)),
+      servers.value.map(async (server) => {
+        const key = server.__id;
+        const protocol = server.protocol.toLowerCase();
+        const username = server.username || "";
+        const password = server.password || "";
+        const proxyURL = `${protocol}://${username}:${password}@${server.host}`;
+        try {
+          const result = await TestServer(proxyURL, latencyHost);
+          latencyById.value[key] = result.success ? result.latency : -1;
+        } catch {
+          latencyById.value[key] = -1;
+        }
+      }),
     );
     message.success(t("serverList.pingAllDone"));
   } finally {
@@ -372,7 +386,12 @@ onMounted(async () => {
 async function loadServers() {
   try {
     const raw = await Storage.GetServers();
-    servers.value = Array.isArray(raw) ? raw.map(omitLatency) : [];
+    servers.value = withRuntimeIds(
+      (Array.isArray(raw) ? raw : []).map((row) => {
+        const { id: _i, __id: _x, ...rest } = /** @type {any} */ (row);
+        return rest;
+      }),
+    );
   } catch {
     message.error(t("serverList.loadFailed"));
   }
@@ -487,6 +506,7 @@ async function loadServers() {
       align-items: center;
       gap: 4px;
       min-width: 0;
+      overflow: hidden;
     }
 
     .server-protocol,
@@ -503,9 +523,6 @@ async function loadServers() {
       max-width: 100%;
     }
 
-    .server-meta {
-      overflow: hidden;
-    }
   }
 }
 </style>
