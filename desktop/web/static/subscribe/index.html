@@ -13,26 +13,26 @@
       <div class="brand">
         <img class="brand-logo" src="logo.png" width="38" height="38" alt="Prism">
         <div>
-          <h1>Prism 节点管理</h1>
-          <p>订阅导入、预览确认、列表管理。</p>
+          <h1 id="titleMain">Prism 节点管理</h1>
+          <p id="titleDesc">订阅导入、预览确认、列表管理。</p>
         </div>
       </div>
     </header>
 
     <section class="panel">
-      <h2>订阅与导入</h2>
-      <p class="subline">先从订阅链接或本地文件导入，预览无误后覆盖当前列表。</p>
+      <h2 id="sectionImportTitle">订阅与导入</h2>
+      <p id="sectionImportDesc" class="subline">先从订阅链接或本地文件导入，预览无误后覆盖当前列表。</p>
       <div class="import-actions">
         <div class="sub-link-grid">
           <select id="subscribeType" aria-label="订阅类型">
             <option value="prism">Prism</option>
             <option value="shadowrocket">Shadowrocket</option>
           </select>
-          <input id="subscribeUrl" type="text" placeholder="粘贴订阅链接（支持 https/socks5）" autocomplete="off">
-          <button type="button" onclick="previewFromSubscription()">解析订阅</button>
+          <input id="subscribeUrl" type="text" placeholder="粘贴订阅链接" autocomplete="off">
+          <button id="btnPreviewSubscription" type="button" onclick="previewFromSubscription()">解析订阅</button>
         </div>
         <div class="file-import-grid">
-          <label for="importFile" class="file-pick-btn">导入文件</label>
+          <label id="labelImportFile" for="importFile" class="file-pick-btn">导入文件</label>
           <input id="importFile" class="file-hidden-input" type="file" accept=".json,application/json">
           <span id="importFileName" class="file-name-text">未选择文件</span>
           <button id="confirmImportBtn" type="button" class="primary" onclick="confirmImport()" hidden disabled>导入并覆盖</button>
@@ -48,10 +48,10 @@
     </section>
 
     <section class="panel">
-      <h2>列表管理</h2>
-      <p class="subline">用于筛选、选择与删除节点（列表 ID = host + 协议 + 用户 + 密码 拼接）。</p>
+      <h2 id="sectionListTitle">列表管理</h2>
+      <p id="sectionListDesc" class="subline">用于筛选、选择与删除节点。</p>
       <div class="toolbar">
-        <input id="keyword" type="text" placeholder="搜索 host / 备注 / 用户名 / 协议 / ID" autocomplete="off">
+        <input id="keyword" type="text" placeholder="搜索 host / 备注 / 用户名 / 协议" autocomplete="off">
         <div class="stats">
           <span id="statsTotal">总数: 0</span>
           <span id="statsSelected">已选: 0</span>
@@ -59,22 +59,21 @@
         </div>
       </div>
       <div class="actions">
-        <button type="button" onclick="selectAll()">全选</button>
-        <button type="button" onclick="invertSelection()">反选</button>
+        <button id="btnSelectAll" type="button" onclick="selectAll()">全选</button>
+        <button id="btnInvertSelection" type="button" onclick="invertSelection()">反选</button>
         <button id="refreshBtn" type="button" onclick="manualRefresh()">刷新</button>
-        <button type="button" class="danger" onclick="deleteSelected()">删除</button>
-        <button type="button" class="export-btn" onclick="exportServers()">导出</button>
+        <button id="btnDeleteSelected" type="button" class="danger" onclick="deleteSelected()">删除</button>
+        <button id="btnExport" type="button" class="export-btn" onclick="exportServers()">导出</button>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
               <th class="check-col"><input id="checkAllVisible" type="checkbox" aria-label="全选" onchange="selectAll(this.checked)"></th>
-              <th>ID</th>
-              <th>Host</th>
-              <th>备注</th>
-              <th>用户</th>
-              <th>协议</th>
+              <th id="thHost">Host</th>
+              <th id="thRemark">备注</th>
+              <th id="thUser">用户</th>
+              <th id="thProtocol">协议</th>
             </tr>
           </thead>
           <tbody id="serverBody"></tbody>
@@ -84,8 +83,15 @@
     <div id="toastWrap" class="toast-wrap" aria-live="polite" aria-atomic="true"></div>
   </div>
 
+  <script src="subscribe.i18n.js"></script>
   <script>
     const API_BASE = '/subscribe/api';
+    const I18N = window.SUBSCRIBE_I18N || {};
+    const APP_CONFIG_DEFAULT = {
+      language: 'zh-CN',
+      themeMode: 'system'
+    };
+    let currentLang = APP_CONFIG_DEFAULT.language;
     let servers = [];
     let selectedIds = new Set();
     let importPreviewServers = null;
@@ -100,6 +106,72 @@
     const importFileNameEl = document.getElementById('importFileName');
     const subscribeUrlEl = document.getElementById('subscribeUrl');
     const subscribeTypeEl = document.getElementById('subscribeType');
+    function formatI18n(text, params) {
+      if (!params || typeof params !== 'object') return text;
+      return String(text).replace(/\{(\w+)\}/g, (_, token) => {
+        return Object.prototype.hasOwnProperty.call(params, token) ? String(params[token]) : '';
+      });
+    }
+
+    function t(key, params) {
+      const table = I18N[currentLang] || I18N['zh-CN'] || {};
+      return formatI18n(table[key] || key, params);
+    }
+
+    function normalizeLanguage(value) {
+      const lang = String(value || '').trim();
+      return I18N[lang] ? lang : 'zh-CN';
+    }
+
+    function getSystemTheme() {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    function applyTheme(mode) {
+      const normalized = String(mode || 'system').toLowerCase();
+      const theme = normalized === 'dark' ? 'dark' : normalized === 'light' ? 'light' : getSystemTheme();
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+
+    async function loadAppConfig() {
+      try {
+        const cfg = await request(API_BASE + '/app-config');
+        currentLang = normalizeLanguage(cfg.language);
+        applyTheme(cfg.themeMode || APP_CONFIG_DEFAULT.themeMode);
+      } catch (_) {
+        currentLang = APP_CONFIG_DEFAULT.language;
+        applyTheme(APP_CONFIG_DEFAULT.themeMode);
+      }
+    }
+
+    function applyI18n() {
+      document.title = t('title.document');
+      document.getElementById('titleMain').textContent = t('title.main');
+      document.getElementById('titleDesc').textContent = t('title.desc');
+      document.getElementById('sectionImportTitle').textContent = t('section.import.title');
+      document.getElementById('sectionImportDesc').textContent = t('section.import.desc');
+      subscribeTypeEl.setAttribute('aria-label', t('input.subscribeType.aria'));
+      subscribeUrlEl.placeholder = t('input.subscribeUrl.placeholder');
+      document.getElementById('btnPreviewSubscription').textContent = t('button.previewSubscription');
+      document.getElementById('labelImportFile').textContent = t('button.importFile');
+      importFileNameEl.textContent = t('import.file.none');
+      confirmImportBtnEl.textContent = t('button.confirmImport');
+      document.getElementById('importPreviewTitle').textContent = t('import.preview.title');
+      document.getElementById('sectionListTitle').textContent = t('section.list.title');
+      document.getElementById('sectionListDesc').textContent = t('section.list.desc');
+      keywordEl.placeholder = t('input.keyword.placeholder');
+      document.getElementById('btnSelectAll').textContent = t('button.selectAll');
+      document.getElementById('btnInvertSelection').textContent = t('button.invertSelection');
+      document.getElementById('refreshBtn').textContent = t('button.refresh');
+      document.getElementById('btnDeleteSelected').textContent = t('button.deleteSelected');
+      document.getElementById('btnExport').textContent = t('button.export');
+      document.getElementById('checkAllVisible').setAttribute('aria-label', t('input.checkAllVisible.aria'));
+      document.getElementById('thHost').textContent = t('table.host');
+      document.getElementById('thRemark').textContent = t('table.remark');
+      document.getElementById('thUser').textContent = t('table.user');
+      document.getElementById('thProtocol').textContent = t('table.protocol');
+    }
+
     function showMsg(text, isErr = false) {
       if (!text) return;
       const toast = document.createElement('div');
@@ -123,16 +195,16 @@
 
     function normalizeServers(data) {
       if (!Array.isArray(data)) {
-        throw new Error('JSON 必须是数组');
+        throw new Error(t('error.jsonArrayRequired'));
       }
       const seen = new Map();
       return data.map((item, idx) => {
         if (item == null || typeof item !== 'object') {
-          throw new Error('第 ' + (idx + 1) + ' 项不是对象');
+          throw new Error(t('error.itemNotObject', { index: idx + 1 }));
         }
         const host = String(item.host || '').trim();
         if (!host) {
-          throw new Error('第 ' + (idx + 1) + ' 项缺少 host');
+          throw new Error(t('error.itemMissingHost', { index: idx + 1 }));
         }
         const remark = String(item.remark || '').trim();
         const username = String(item.username || '').trim();
@@ -156,7 +228,7 @@
     function showImportPreview(serversToPreview, sourceLabel = '') {
       importPreviewServers = serversToPreview;
       const prefix = sourceLabel ? (sourceLabel + '，') : '';
-      importPreviewMetaEl.textContent = prefix + '共 ' + serversToPreview.length + ' 条';
+      importPreviewMetaEl.textContent = prefix + t('import.preview.count', { count: serversToPreview.length });
       importPreviewBodyEl.textContent = JSON.stringify(serversToPreview, null, 2);
       importPreviewEl.hidden = false;
       confirmImportBtnEl.hidden = false;
@@ -170,20 +242,20 @@
       importPreviewBodyEl.textContent = '';
       confirmImportBtnEl.hidden = true;
       confirmImportBtnEl.disabled = true;
-      importFileNameEl.textContent = '未选择文件';
+      importFileNameEl.textContent = t('import.file.none');
     }
 
     function getFilteredServers() {
       const k = keywordEl.value.trim().toLowerCase();
       return !k ? servers.slice() : servers.filter(s => {
-        return [s.id, s.host, s.remark, s.username, s.protocol].some(v => (v || '').toLowerCase().includes(k));
+        return [s.host, s.remark, s.username, s.protocol].some(v => (v || '').toLowerCase().includes(k));
       });
     }
 
     function syncStats(visibleServers) {
-      document.getElementById('statsTotal').textContent = '总数: ' + servers.length;
-      document.getElementById('statsSelected').textContent = '已选: ' + selectedIds.size;
-      document.getElementById('statsVisible').textContent = '可见: ' + visibleServers.length;
+      document.getElementById('statsTotal').textContent = t('stats.total', { count: servers.length });
+      document.getElementById('statsSelected').textContent = t('stats.selected', { count: selectedIds.size });
+      document.getElementById('statsVisible').textContent = t('stats.visible', { count: visibleServers.length });
 
       const visibleIds = visibleServers.map(s => s.id).filter(Boolean);
       const allChecked = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
@@ -200,7 +272,6 @@
         if (checked) tr.classList.add('selected');
         tr.innerHTML =
           '<td class="check-col"><input type="checkbox" data-id="' + escapeHtml(s.id || '') + '"' + (checked ? ' checked' : '') + '></td>' +
-          '<td>' + escapeHtml(s.id || '') + '</td>' +
           '<td>' + escapeHtml(s.host || '') + '</td>' +
           '<td>' + escapeHtml(s.remark || '') + '</td>' +
           '<td>' + escapeHtml(s.username || '') + '</td>' +
@@ -235,18 +306,18 @@
     async function refreshServers(notify = false) {
       try {
         refreshBtnEl.disabled = true;
-        refreshBtnEl.textContent = '刷新中...';
+        refreshBtnEl.textContent = t('button.refreshing');
         servers = normalizeServers(await request(API_BASE + '/servers'));
         selectedIds = new Set(
           [...selectedIds].filter(id => servers.some(s => s.id === id))
         );
         renderServers();
-        if (notify) showMsg('刷新完成');
+        if (notify) showMsg(t('toast.refreshDone'));
       } catch (e) {
         showMsg(e.message, true);
       } finally {
         refreshBtnEl.disabled = false;
-        refreshBtnEl.textContent = '刷新';
+        refreshBtnEl.textContent = t('button.refresh');
       }
     }
 
@@ -289,10 +360,10 @@
 
     async function deleteSelected() {
       try {
-        if (selectedIds.size === 0) throw new Error('请先选择节点');
+        if (selectedIds.size === 0) throw new Error(t('error.selectFirst'));
         servers = servers.filter(s => !s.id || !selectedIds.has(s.id));
         selectedIds = new Set();
-        await persistServers('已删除选中节点');
+        await persistServers(t('toast.deletedSelected'));
         renderServers();
       } catch (e) {
         showMsg(e.message, true);
@@ -307,15 +378,15 @@
       try {
         const url = subscribeUrlEl.value.trim();
         const subType = String(subscribeTypeEl.value || 'prism').trim().toLowerCase();
-        if (!url) throw new Error('请先输入订阅链接');
+        if (!url) throw new Error(t('error.inputSubscriptionUrl'));
         const resp = await request(API_BASE + '/subscription/convert', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ url, type: subType })
         });
         const converted = normalizeServers(resp.servers || []);
-        showImportPreview(converted, '订阅转换');
-        showMsg('订阅解析成功，请先检查预览再保存导入');
+        showImportPreview(converted, t('import.source.subscription'));
+        showMsg(t('toast.subscriptionParsed'));
       } catch (e) {
         resetImportPreview();
         showMsg(e.message, true);
@@ -325,13 +396,13 @@
     async function queueImportPreview() {
       try {
         const f = importFileEl.files[0];
-        if (!f) throw new Error('请先选择 JSON 文件');
-        importFileNameEl.textContent = f.name || '已选择文件';
+        if (!f) throw new Error(t('error.selectJsonFirst'));
+        importFileNameEl.textContent = f.name || t('import.file.selected');
         const text = await f.text();
         const parsed = JSON.parse(text);
         const normalized = normalizeServers(parsed);
-        showImportPreview(normalized, '本地文件');
-        showMsg('已解析文件，请先检查预览再保存导入');
+        showImportPreview(normalized, t('import.source.localFile'));
+        showMsg(t('toast.fileParsed'));
       } catch (e) {
         resetImportPreview();
         showMsg(e.message, true);
@@ -341,7 +412,7 @@
     async function confirmImport() {
       try {
         if (!importPreviewServers || importPreviewServers.length === 0) {
-          throw new Error('暂无可导入的数据，请先选择 JSON');
+          throw new Error(t('error.noImportData'));
         }
         await request(API_BASE + '/servers/import', {
           method: 'POST',
@@ -350,7 +421,7 @@
         });
         selectedIds = new Set();
         await refreshServers();
-        showMsg('导入完成，已覆盖当前列表');
+        showMsg(t('toast.importDone'));
         importFileEl.value = '';
         resetImportPreview();
       } catch (e) {
@@ -364,7 +435,12 @@
 
     importFileEl.addEventListener('change', queueImportPreview);
     keywordEl.addEventListener('input', renderServers);
-    refreshServers();
+
+    (async function bootstrap() {
+      await loadAppConfig();
+      applyI18n();
+      await refreshServers();
+    })();
   </script>
 </body>
 </html>

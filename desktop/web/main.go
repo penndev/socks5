@@ -16,6 +16,7 @@ func newRouter() *http.ServeMux {
 	router.HandleFunc("/subscribe/api/servers/import", handleSubscribeImportServers)
 	router.HandleFunc("/subscribe/api/servers/export", handleSubscribeExportServers)
 	router.HandleFunc("/subscribe/api/subscription/convert", handleSubscribeSubscriptionConvert)
+	router.HandleFunc("/subscribe/api/app-config", handleSubscribeAppConfig)
 	router.Handle("/subscribe/", http.StripPrefix("/subscribe/", handleSubscribeFileServer()))
 	return router
 }

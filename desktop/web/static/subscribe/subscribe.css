@@ -13,6 +13,19 @@
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
+:root[data-theme="dark"] {
+  --bg: #0f172a;
+  --surface: #111827;
+  --surface-soft: #0b1220;
+  --border: #263244;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --danger: #ef4444;
+  --success: #22c55e;
+}
+
 *,
 *::before,
 *::after {
@@ -27,6 +40,10 @@ body {
   line-height: 1.5;
   color: var(--text);
   background: linear-gradient(180deg, #f8faff 0%, var(--bg) 40%, var(--bg) 100%);
+}
+
+:root[data-theme="dark"] body {
+  background: linear-gradient(180deg, #0b1220 0%, var(--bg) 45%, var(--bg) 100%);
 }
 
 .page {
@@ -55,6 +72,10 @@ header.page-head {
   background: #fff;
   border: 1px solid var(--border);
   box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+}
+
+:root[data-theme="dark"] .brand-logo {
+  background: #0f172a;
 }
 
 .page-head h1 {
@@ -114,7 +135,7 @@ header.page-head {
   padding: 0 0.9rem;
   border-radius: 6px;
   border: 1px solid #d6deea;
-  background: #fff;
+  background: var(--surface-soft);
   color: var(--text);
   cursor: pointer;
   user-select: none;
@@ -167,7 +188,7 @@ select {
   padding: 0.5rem 0.65rem;
   font: inherit;
   color: var(--text);
-  background: #fff;
+  background: var(--surface-soft);
   border: 1px solid var(--border);
   border-radius: 6px;
 }
@@ -193,7 +214,7 @@ button {
   padding: 0.5rem 0.9rem;
   border-radius: 6px;
   border: 1px solid #d6deea;
-  background: #fff;
+  background: var(--surface-soft);
   color: var(--text);
 }
 
@@ -271,7 +292,7 @@ button.danger:hover {
   margin: 0.9rem 0;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fbfdff;
+  background: var(--surface-soft);
 }
 
 .import-preview-head {
@@ -292,7 +313,7 @@ button.danger:hover {
   overflow: auto;
   font-size: 12px;
   line-height: 1.45;
-  color: #334155;
+  color: var(--text);
 }
 
 table {
@@ -304,7 +325,7 @@ table {
 thead th {
   text-align: left;
   padding: 0.65rem 0.85rem;
-  background: #f7faff;
+  background: var(--surface-soft);
   color: var(--muted);
   font-weight: 600;
   font-size: 0.72rem;
@@ -351,7 +372,7 @@ tbody tr:last-child td {
   max-width: 420px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   color: var(--text);
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
   padding: 10px 12px;
