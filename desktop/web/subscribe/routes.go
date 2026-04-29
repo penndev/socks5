@@ -22,7 +22,9 @@ func HandleServers(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, http.StatusOK, servers)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(servers)
 	case http.MethodPost, http.MethodPut:
 		var payload []storage.ServerEntry
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -34,7 +36,9 @@ func HandleServers(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		emitServersChanged()
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -61,7 +65,9 @@ func HandleImportServers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	emitServersChanged()
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "count": len(imported)})
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "count": len(imported)})
 }
 
 func HandleExportServers(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +119,9 @@ func HandleSubscriptionConvert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]any{
 		"ok":      true,
 		"count":   len(servers),
 		"servers": servers,
@@ -127,8 +135,3 @@ func emitServersChanged() {
 	internal.App.Event.Emit(internal.AppConfig.EventNameServersChanged, time.Now().UnixMilli())
 }
 
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
-}

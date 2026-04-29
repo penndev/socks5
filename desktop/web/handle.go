@@ -2,6 +2,9 @@ package web
 
 import (
 	"desktop/storage"
+	"embed"
+	"encoding/json"
+	"io/fs"
 	"net/http"
 	"strings"
 )
@@ -31,8 +34,25 @@ func handleAppConfig(w http.ResponseWriter, r *http.Request) {
 			themeMode = strings.ToLower(v)
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(map[string]any{
 		"language":  language,
 		"themeMode": themeMode,
 	})
+}
+
+func handleRoot(w http.ResponseWriter, _ *http.Request) {
+	_, _ = w.Write([]byte("/"))
+}
+
+//go:embed all:static/common
+var staticCommonFS embed.FS
+
+func handleCommonFileServer() http.Handler {
+	sub, err := fs.Sub(staticCommonFS, "static/common")
+	if err != nil {
+		panic(err)
+	}
+	return http.FileServer(http.FS(sub))
 }

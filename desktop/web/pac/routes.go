@@ -37,7 +37,9 @@ func HandlePACConfig(w http.ResponseWriter, r *http.Request) {
 		if cfg == nil {
 			cfg = &storage.PACConfig{Mode: "proxy"}
 		}
-		writeJSON(w, http.StatusOK, cfg)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(cfg)
 	case http.MethodPut, http.MethodPost:
 		var payload ConfigPayload
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -66,7 +68,9 @@ func HandlePACConfig(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true})
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -189,12 +193,6 @@ func getProxyAddress() string {
 		port = 1080
 	}
 	return host + ":" + strconv.Itoa(port)
-}
-
-func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(v)
 }
 
 //go:embed all:static
