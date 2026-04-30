@@ -1,10 +1,10 @@
 version: '3'
 
 info:
-  companyName: "Socks5"
+  companyName: "Prism"
   productName: "prism-desktop"
   productIdentifier: "com.socks5.desktop"
-  description: "Socks5 代理桌面应用"
+  description: "Prism 代理桌面应用"
   copyright: "(c) 2025"
   version: "0.0.1"
 

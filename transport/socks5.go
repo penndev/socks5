@@ -53,6 +53,14 @@ func Socks5OverTLS(host, user, pass string, conf *tls.Config) HandleConnect {
 		if err != nil {
 			return err
 		}
+		if conf.ServerName == "" && !conf.InsecureSkipVerify {
+			domain, _, err := net.SplitHostPort(host)
+			if err != nil {
+				conf.InsecureSkipVerify = true
+			} else {
+				conf.ServerName = domain
+			}
+		}
 		dialTls := tls.Client(dialTcp, conf)
 		if err = dialTls.Handshake(); err != nil {
 			return err

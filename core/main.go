@@ -25,7 +25,6 @@ func init() {
 
 func main() {
 	var handleConnect transport.HandleConnect
-	handleConnect = transport.Local()
 	proxyURL, err := url.Parse(proxy)
 	if err != nil {
 		panic(err)
@@ -46,6 +45,21 @@ func main() {
 			password,
 			&tls.Config{},
 		)
+	case "http":
+		handleConnect = transport.Http(
+			proxyURL.Host,
+			username,
+			password,
+		)
+	case "https":
+		handleConnect = transport.HttpOverTLS(
+			proxyURL.Host,
+			username,
+			password,
+			&tls.Config{},
+		)
+	default:
+		panic("error schem:" + proxyURL.Scheme)
 	}
 
 	dev, err := tun.New(tun.Options{

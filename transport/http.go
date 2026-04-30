@@ -99,6 +99,15 @@ func HttpOverTLS(host, user, pass string, conf *tls.Config) HandleConnect {
 		if err != nil {
 			return err
 		}
+
+		if conf.ServerName == "" && !conf.InsecureSkipVerify {
+			domain, _, err := net.SplitHostPort(host)
+			if err != nil {
+				conf.InsecureSkipVerify = true
+			} else {
+				conf.ServerName = domain
+			}
+		}
 		remoteTLS := tls.Client(dialTCP, conf)
 		if err = remoteTLS.Handshake(); err != nil {
 			return err

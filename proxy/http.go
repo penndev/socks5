@@ -60,7 +60,10 @@ func (s *Server) handleHTTPProxyForward(client net.Conn, req *http.Request) erro
 
 	remote, local := net.Pipe()
 	go func() {
-		s.HandleConnect(remote, "tcp", addr)
+		err := s.HandleConnect(remote, "tcp", addr)
+		if err != nil {
+			log.Println("handleHTTPProxyForward", err)
+		}
 	}()
 
 	// 复写请求
