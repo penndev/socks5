@@ -31,10 +31,10 @@ func (s *Server) handleConn(conn *Conn) {
 		return
 	}
 	if buf[0] == 0x05 {
-		s.ProxySocks5(conn)
+		s.proxySocks5(conn)
 		return
 	}
-	s.ProxyHTTP(conn)
+	s.proxyHTTP(conn)
 }
 
 func (s *Server) Close() {

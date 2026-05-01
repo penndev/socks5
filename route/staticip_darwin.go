@@ -115,4 +115,3 @@ func SetRouteAddr(addr netip.Prefix, gateway net.IP) error {
 	}
 	return lastErr
 }
-

@@ -4,7 +4,6 @@ import (
 	"desktop/internal"
 	"desktop/web"
 	"net"
-	"net/netip"
 	"net/url"
 	"time"
 
@@ -111,8 +110,8 @@ func (p *Proxy) setModeTun() error {
 	})
 	route.Start(route.Options{
 		DevName:      p.dev.Name(),
-		DevIP:        netip.MustParsePrefix("172.19.0.1/32"),
-		RouteAddress: []netip.Prefix{netip.MustParsePrefix("0.0.0.0/0")},
+		DevIP:        TUN_IP,
+		RouteAddress: Routes,
 	})
 	return nil
 }

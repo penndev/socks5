@@ -6,7 +6,7 @@ import (
 	"github.com/penndev/gopkg/socks5"
 )
 
-func (s *Server) ProxySocks5(conn net.Conn) {
+func (s *Server) proxySocks5(conn net.Conn) {
 	if s.socks5Server.Username != "" {
 		s.socks5Server.Method = socks5.METHOD_USERNAME_PASSWORD
 	}

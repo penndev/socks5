@@ -90,7 +90,7 @@ func (s *Server) handleHTTPProxyForward(client net.Conn, req *http.Request) erro
 	return nil
 }
 
-func (s *Server) ProxyHTTP(conn net.Conn) {
+func (s *Server) proxyHTTP(conn net.Conn) {
 	listener := &HttpSingleConnListener{conn: conn}
 	http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if s.verifyHTTPProxyAuth(r) {
