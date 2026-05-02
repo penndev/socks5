@@ -88,6 +88,9 @@ func (p *Proxy) SetRemote(remote string) error {
 }
 
 func (p *Proxy) setModeTun() error {
+	if !tunPermission() {
+		return nil
+	}
 	var err error
 	p.dev, err = tun.New(tun.Options{
 		Name:   TUN_NAME,

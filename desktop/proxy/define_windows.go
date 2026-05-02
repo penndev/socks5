@@ -1,7 +1,11 @@
 package proxy
 
 import (
+	"desktop/internal"
 	"net/netip"
+	"os"
+	"os/exec"
+	"time"
 
 	"golang.org/x/sys/windows"
 	"golang.zx2c4.com/wireguard/tun"
@@ -26,4 +30,21 @@ func init() {
 		Data3: 0x469f,
 		Data4: [8]byte{0x91, 0x3b, 0xea, 0xeb, 0x22, 0xe2, 0x28, 0x24},
 	}
+}
+
+func tunPermission() bool {
+	if os.Getuid() == 0 {
+		return true
+	}
+	exePath, _ := os.Executable()
+	cmd := exec.Command("powershell",
+		"-Command",
+		`Start-Process "`+exePath+`" -Verb RunAs`,
+	)
+	_ = cmd.Start()
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		internal.App.Event.Emit(internal.AppConfig.EventNameServiceAppQuit, true)
+	}()
+	return false
 }

@@ -1,6 +1,12 @@
 package proxy
 
-import "net/netip"
+import (
+	"desktop/internal"
+	"net/netip"
+	"os"
+	"os/exec"
+	"time"
+)
 
 // netsh interface ipv4 set address name="PrismTUN" source=static addr=172.19.0.1 mask=255.255.255.255
 const TUN_NAME = "utun"
@@ -24,4 +30,20 @@ func init() {
 		netip.MustParsePrefix("128.0.0.0/1"),
 		netip.MustParsePrefix("198.18.0.0/15"),
 	}
+}
+
+func tunPermission() bool {
+	if os.Getuid() == 0 {
+		return true
+	}
+	exePath, _ := os.Executable()
+	cmd := exec.Command("sh", "-c",
+		`osascript -e 'do shell script quoted form of "`+exePath+`" with administrator privileges' &`,
+	)
+	_ = cmd.Start()
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		internal.App.Event.Emit(internal.AppConfig.EventNameServiceAppQuit, true)
+	}()
+	return false
 }

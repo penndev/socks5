@@ -60,6 +60,11 @@ func main() {
 		systrayMenuQuit.SetLabel(language.T("systray.quit"))
 	})
 
+	// 监听退出
+	app.Event.On(internal.AppConfig.EventNameServiceAppQuit, func(_ *application.CustomEvent) {
+		app.Quit()
+	})
+
 	if err := app.Run(); err != nil {
 		panic(err)
 	}
