@@ -73,12 +73,12 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item :label="t('settings.startupOnBoot')">
+          <!-- <a-form-item :label="t('settings.startupOnBoot')">
             <a-switch v-model:checked="settingsStore.system.startupOnBoot" />
             <span class="setting-desc">
               {{ t("settings.startupOnBootDesc") }}
             </span>
-          </a-form-item>
+          </a-form-item> -->
           <a-form-item :label="t('settings.enableLogRecording')">
             <a-switch
               v-model:checked="settingsStore.system.enableLogRecording"

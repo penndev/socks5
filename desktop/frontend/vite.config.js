@@ -19,5 +19,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@bindings': path.resolve(__dirname, './bindings'),
     }
-  }
+  },
+  // Wails v3 dev proxy dials IPv4 loopback (tcp4) for localhost; Vite's default
+  // `localhost` bind can be IPv6-only on macOS, causing persistent proxy 502s.
+  server: {
+    host: "127.0.0.1",
+    strictPort: true,
+  },
 });

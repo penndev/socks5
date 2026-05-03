@@ -25,14 +25,41 @@ window.WebAppUI = (function () {
   }
 
   function getSystemTheme() {
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (!window.matchMedia) return 'light';
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return isDark ? 'dark' : 'light';
   }
 
+  var systemThemeListenerOff = null;
+
   function applyTheme(mode) {
+    if (systemThemeListenerOff) {
+      systemThemeListenerOff();
+      systemThemeListenerOff = null;
+    }
+
     const normalized = String(mode || 'system').toLowerCase();
-    const theme = normalized === 'dark' ? 'dark' : normalized === 'light' ? 'light' : getSystemTheme();
-    document.documentElement.setAttribute('data-theme', theme);
-    return theme;
+    const resolved =
+      normalized === 'dark'
+        ? 'dark'
+        : normalized === 'light'
+          ? 'light'
+          : getSystemTheme();
+
+    document.documentElement.setAttribute('data-theme', resolved);
+
+    if (normalized === 'system' && window.matchMedia) {
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      var handler = function () {
+        document.documentElement.setAttribute('data-theme', getSystemTheme());
+      };
+      mql.addEventListener('change', handler);
+      systemThemeListenerOff = function () {
+        mql.removeEventListener('change', handler);
+      };
+    }
+
+    return resolved;
   }
 
   async function fetchAppConfig(requestFn) {

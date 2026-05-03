@@ -67,19 +67,24 @@ function syncPiniaLanguageFromGo(loc) {
 // 将 antd token 映射为布局 CSS 变量
 const { token } = theme.useToken();
 
-// 设置系统皮肤模板
-const antdThemeConfig = computed(() => {
-  let baseAlgorithm = theme.defaultAlgorithm;
-  let token = {};
-  if (settingsStore.system.themeMode === "dark") {
-    baseAlgorithm = theme.darkAlgorithm;
-  }
-  return {
-    algorithm: [baseAlgorithm],
-    token,
-    components: { Button: { primaryShadow: "none" } },
-  };
-});
+const systemPrefersDark = ref(
+  typeof window !== "undefined" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches,
+);
+
+function isThemeDark() {
+  const mode = settingsStore.system.themeMode;
+  if (mode === "dark") return true;
+  if (mode === "light") return false;
+  return systemPrefersDark.value;
+}
+
+const antdThemeConfig = computed(() => ({
+  algorithm: [
+    isThemeDark() ? theme.darkAlgorithm : theme.defaultAlgorithm,
+  ],
+  components: { Button: { primaryShadow: "none" } },
+}));
 
 const APP_MIN_WIDTH = 400;
 const APP_MAX_WIDTH = 600;
@@ -103,7 +108,16 @@ const handleDividerMove = (e) => {
   appWidth.value = Math.min(APP_MAX_WIDTH, Math.max(APP_MIN_WIDTH, e.clientX));
 };
 
+let colorSchemeMql = null;
+function onPrefersColorSchemeChange(e) {
+  systemPrefersDark.value = e.matches;
+}
+
 onMounted(async () => {
+  colorSchemeMql = window.matchMedia("(prefers-color-scheme: dark)");
+  systemPrefersDark.value = colorSchemeMql.matches;
+  colorSchemeMql.addEventListener("change", onPrefersColorSchemeChange);
+
   await subscribeLocaleEvents(syncPiniaLanguageFromGo);
 
   window.addEventListener("resize", () => {
@@ -124,6 +138,9 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  if (colorSchemeMql) {
+    colorSchemeMql.removeEventListener("change", onPrefersColorSchemeChange);
+  }
   unsubscribeLocaleEvents();
 });
 </script>
@@ -179,13 +196,5 @@ onBeforeUnmount(() => {
     border-top: 1px solid v-bind("token.colorBorderSecondary");
     background: v-bind("token.colorBgElevated");
   }
-}
-
-:global(.theme-dark)
-  .socks5-layout
-  .socks5-app
-  .socks5-app-header
-  .socks5-app-title {
-  color: #ffffff;
 }
 </style>
