@@ -5,6 +5,7 @@ import (
 	"net/netip"
 	"os"
 	"os/exec"
+	"syscall"
 	"time"
 
 	"golang.org/x/sys/windows"
@@ -32,16 +33,27 @@ func init() {
 	}
 }
 
+func hideConsole(cmd *exec.Cmd) {
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		HideWindow:    true,
+		CreationFlags: windows.CREATE_NO_WINDOW,
+	}
+}
+
 func tunPermission() bool {
-	if os.Getuid() == 0 {
+	cmd := exec.Command("net", "session")
+	hideConsole(cmd)
+	if cmd.Run() == nil {
 		return true
 	}
 	exePath, _ := os.Executable()
-	cmd := exec.Command("powershell",
+	cmd = exec.Command("powershell",
 		"-Command",
 		`Start-Process "`+exePath+`" -Verb RunAs`,
 	)
+	hideConsole(cmd)
 	_ = cmd.Start()
+	// 退出当前进程
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		internal.App.Event.Emit(internal.AppConfig.EventNameServiceAppQuit, true)
