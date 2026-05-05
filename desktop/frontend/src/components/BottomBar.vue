@@ -13,7 +13,6 @@
       :startResize="startResize"
       @update:count="logCount = $event"
     />
-
     <!-- 底部状态栏：状态日志 | 连接日志 -->
     <div class="status-bar">
       <span
@@ -48,7 +47,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { theme } from "ant-design-vue";
 import { ArrowDownOutlined, ArrowUpOutlined } from "@ant-design/icons-vue";
-import { t } from "@/i18n";
+import { t } from "@/locale";
 import StatusPanel from "./bottombar/StatusPanel.vue";
 import LogPanel from "./bottombar/LogPanel.vue";
 import { TrafficBytes } from "@bindings/desktop/proxy/proxy";

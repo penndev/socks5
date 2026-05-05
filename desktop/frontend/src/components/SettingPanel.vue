@@ -74,12 +74,6 @@
             </a-select>
           </a-form-item>
 
-          <!-- <a-form-item :label="t('settings.startupOnBoot')">
-            <a-switch v-model:checked="settingsStore.system.startupOnBoot" />
-            <span class="setting-desc">
-              {{ t("settings.startupOnBootDesc") }}
-            </span>
-          </a-form-item> -->
           <a-form-item :label="t('settings.enableLogRecording')">
             <a-switch
               v-model:checked="settingsStore.system.enableLogRecording"
@@ -97,12 +91,11 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useSettingsStore } from "@/stores/settings";
-import { t } from "@/i18n";
+import { t } from "@/locale";
 import { theme } from "ant-design-vue";
 
 // 将 antd token 映射为布局 CSS 变量
 const { token } = theme.useToken();
-
 const settingsStore = useSettingsStore();
 
 const props = defineProps({
@@ -113,7 +106,6 @@ const props = defineProps({
 });
 
 const isDividerDragging = ref(false);
-
 // 拓展面板左右拖拽限制大小
 const handleDividerMove = (e) => {
   if (!isDividerDragging.value) return;

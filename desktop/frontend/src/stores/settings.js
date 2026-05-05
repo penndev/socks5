@@ -2,34 +2,24 @@ import { defineStore } from "pinia";
 import { Storage } from "@bindings/desktop/storage";
 import { notification } from "ant-design-vue";
 import { debounce } from "@/utils";
-import { defaultLocale, setLocale, t } from "@/i18n";
+import { t, subscribeLocaleEvents } from "@/locale";
+import { SetLocale } from "@bindings/desktop/lang/lang";
 
-// 存储的键名
-const KEY = "settings";
-
-function defaultProxyState() {
-  return {
-    host: "127.0.0.1",
-    port: 1080,
-    latencyTestHost: "",
-    username: "",
-    password: "",
-  };
-}
-
-function defaultSystemState() {
-  return {
-    language: defaultLocale,
-    themeMode: "system",
-    startupOnBoot: false,
-    enableLogRecording: false,
-  };
-}
-
-export const useSettingsStore = defineStore(KEY, {
+export const useSettingsStore = defineStore("settings", {
   state: () => ({
-    proxy: defaultProxyState(),
-    system: defaultSystemState(),
+    proxy: {
+      host: "127.0.0.1",
+      port: 1080,
+      latencyTestHost: "google.com",
+      username: "",
+      password: "",
+    },
+    system: {
+      language: '',
+      themeMode: "system",
+      startupOnBoot: false,
+      enableLogRecording: false,
+    },
   }),
 
   actions: {
@@ -37,9 +27,11 @@ export const useSettingsStore = defineStore(KEY, {
     async save() {
       try {
         await Storage.SetSettings({
-          proxy: { ...this.proxy },
-          system: { ...this.system },
+          proxy: this.proxy,
+          system: this.system,
         });
+        // 设置切换语言环境
+        SetLocale(this.system.language);
         notification.success({
           message: t("settings.saveSuccess"),
           placement: "topRight",
@@ -52,23 +44,25 @@ export const useSettingsStore = defineStore(KEY, {
       }
     },
 
-
     /** 从存储加载并合并到 state */
     async init() {
       try {
         const storedSettings = await Storage.GetSettings();
         if (storedSettings) {
           this.proxy = {
-            ...defaultProxyState(),
+            ...this.proxy,
             ...(storedSettings.proxy ?? {}),
-          };
+          }; 
           this.system = {
-            ...defaultSystemState(),
+            ...this.system,
             ...(storedSettings.system ?? {}),
           };
         }
         const save = debounce(this.save, 800)
         this.$subscribe(save);
+        // 设置初始语言
+        await subscribeLocaleEvents();
+        SetLocale(this.system.language);
       } catch (error) {
         notification.error({
           message: t("settings.loadError"),

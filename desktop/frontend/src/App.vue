@@ -29,20 +29,13 @@
 import {
   ref,
   onMounted,
-  onBeforeUnmount,
   watch,
   computed,
-  nextTick,
 } from "vue";
 import { Window } from "@wailsio/runtime";
 import { theme } from "ant-design-vue";
 import { useSettingsStore } from "@/stores/settings";
-import {
-  setLocale,
-  t,
-  subscribeLocaleEvents,
-  unsubscribeLocaleEvents,
-} from "@/i18n";
+import { t } from "@/locale";
 
 import ActionPanel from "./components/ActionPanel.vue";
 import ServePanel from "./components/ServePanel.vue";
@@ -51,37 +44,16 @@ import BottomBar from "./components/BottomBar.vue";
 
 const settingsStore = useSettingsStore();
 
-watch(
-  () => settingsStore.system.language,
-  (lang) => {
-    void setLocale(lang);
-  },
-);
-
-function syncPiniaLanguageFromGo(loc) {
-  if (settingsStore.system.language !== loc) {
-    settingsStore.system.language = loc;
-  }
-}
-
 // 将 antd token 映射为布局 CSS 变量
 const { token } = theme.useToken();
-
-const systemPrefersDark = ref(
-  typeof window !== "undefined" &&
-    window.matchMedia("(prefers-color-scheme: dark)").matches,
-);
-
-function isThemeDark() {
-  const mode = settingsStore.system.themeMode;
-  if (mode === "dark") return true;
-  if (mode === "light") return false;
-  return systemPrefersDark.value;
-}
-
+const colorScheme = window.matchMedia("(prefers-color-scheme: dark)")
+const prefersColor = ref(colorScheme.matches);
 const antdThemeConfig = computed(() => ({
   algorithm: [
-    isThemeDark() ? theme.darkAlgorithm : theme.defaultAlgorithm,
+    settingsStore.system.themeMode == "dark" || 
+    prefersColor.value ? 
+    theme.darkAlgorithm : 
+    theme.defaultAlgorithm,
   ],
   components: { Button: { primaryShadow: "none" } },
 }));
@@ -93,7 +65,6 @@ const appWidth = ref(APP_MIN_WIDTH);
 
 // 右侧设置面板显示状态
 const extensionVisible = ref(true);
-
 watch(extensionVisible, async (isVisible) => {
     const { height } = await Window.Size();
     const targetWindowWidth = isVisible
@@ -108,18 +79,13 @@ const handleDividerMove = (e) => {
   appWidth.value = Math.min(APP_MAX_WIDTH, Math.max(APP_MIN_WIDTH, e.clientX));
 };
 
-let colorSchemeMql = null;
-function onPrefersColorSchemeChange(e) {
-  systemPrefersDark.value = e.matches;
-}
-
 onMounted(async () => {
-  colorSchemeMql = window.matchMedia("(prefers-color-scheme: dark)");
-  systemPrefersDark.value = colorSchemeMql.matches;
-  colorSchemeMql.addEventListener("change", onPrefersColorSchemeChange);
+  // 监听系统颜色模式改变
+  colorScheme.addEventListener("change", (e) => {
+    prefersColor.value = e.matches;
+  });
 
-  await subscribeLocaleEvents(syncPiniaLanguageFromGo);
-
+  // 调整app的布局
   window.addEventListener("resize", () => {
     if (window.innerWidth < APP_MAX_WIDTH) {
       extensionVisible.value = false;
@@ -128,20 +94,8 @@ onMounted(async () => {
     }
     extensionVisible.value = true;
   });
-  
+  // 初始化设置
   await settingsStore.init();
-  await setLocale(settingsStore.system.language);
-  await nextTick();
-  // const { host, port, username, password } = settingsStore.proxy
-  // console.log(`我准备启动${host}:${port}`, username, password)
-  // SetLocal(`${host}:${port}`, username, password)
-});
-
-onBeforeUnmount(() => {
-  if (colorSchemeMql) {
-    colorSchemeMql.removeEventListener("change", onPrefersColorSchemeChange);
-  }
-  unsubscribeLocaleEvents();
 });
 </script>
 

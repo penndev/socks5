@@ -20,9 +20,6 @@
         <a-radio-button value="manual">
           {{ t("proxy.mode.manual") }}
         </a-radio-button>
-        <!-- <a-radio-button value="system">
-        {{ t("proxy.mode.system") }}
-      </a-radio-button> -->
         <a-radio-button value="tun">
           {{ t("proxy.mode.tun") }}
         </a-radio-button>
@@ -51,10 +48,6 @@
         </div>
       </div>
     </template>
-
-    <!-- <div class="proxy-mode-desc">
-      <pre>{{ modeMessage }}</pre>
-    </div> -->
   </a-card>
 </template>
 
@@ -63,13 +56,20 @@ import { ref, watch, computed } from "vue";
 import { useServerStore } from "../stores/server";
 import { useSettingsStore } from "@/stores/settings";
 import { SetStart, SetStop, SetRemote, SetMode } from "@bindings/desktop/proxy/proxy";
-import { t } from "@/i18n";
+import { t } from "@/locale";
 import { theme, message } from "ant-design-vue";
 import { OpenExternalURL } from "@bindings/desktop/internal/appconst";
 
 const { token } = theme.useToken();
 
 const settingsStore = useSettingsStore();
+const serverStore = useServerStore();
+
+const proxyMode = ref("manual");
+
+function goProxyMode(mode) {
+  return mode === "tun" ? "tun" : "manual";
+}
 
 const webBaseURL = computed(() => {
   const rawHost = (settingsStore.proxy.host || "").trim();
@@ -114,36 +114,50 @@ async function copyPacScriptURL() {
 async function startProxy() {
   const { host, port, username, password } = settingsStore.proxy;
   if (!host || !port) {
-    console.warn("[proxy] skip start: host or port is empty", { host, port });
     return;
   }
   try {
     await SetStart(`${host}:${port}`, username, password);
-  } catch (error) {
-    console.error("[proxy] SetStart failed", error);
+  } catch (e) {
+    message.error(e?.message || t("serverList.operationFailed"));
   }
 }
 
+watch(
+  proxyMode,
+  async (mode) => {
+    try {
+      await SetMode(goProxyMode(mode));
+    } catch (e) {
+      message.error(e?.message || t("serverList.operationFailed"));
+    }
+  },
+  { immediate: true },
+);
 
-// 代理模式，默认为手动
-const proxyMode = ref("manual");
-watch(proxyMode, async (newMode) => {
-  await SetMode(newMode);
-});
+watch(
+  () => serverStore.selectedServer,
+  async (server) => {
+    if (server?.host && server?.protocol) {
+      try {
+        const user = server.username || "";
+        const pass = server.password || "";
+        await SetRemote(`${server.protocol}://${user}:${pass}@${server.host}`);
+        await SetMode(goProxyMode(proxyMode.value));
+        await startProxy();
+      } catch (e) {
+        message.error(e?.message || t("serverList.operationFailed"));
+      }
+    } else {
+      try {
+        await SetStop();
+      } catch (e) {
+        message.error(e?.message || t("serverList.operationFailed"));
+      }
+    }
+  },
+);
 
-// 修改远程节点
-const serverStore = useServerStore();
-watch(serverStore, async () => {
-  const { host, username, password, protocol } = serverStore.selectedServer || {};
-  if (host && protocol) {
-    await SetRemote(`${protocol}://${username}:${password}@${host}`);
-    await startProxy();
-  }else{
-    // await SetStop()
-  }
-});
-
-// 启动代理，golang设置可以启动多次，会自动重启并应用新的设置
 watch(
   () => settingsStore.proxy,
   async () => {
@@ -151,8 +165,6 @@ watch(
   },
   { deep: true, immediate: true },
 );
-
-
 </script>
 
 <style lang="scss" scoped>
@@ -260,11 +272,6 @@ watch(
     &.is-disabled {
       color: v-bind("token.colorTextDisabled");
     }
-  }
-
-  .proxy-mode-desc {
-    font-size: 12px;
-    color: v-bind("token.colorTextSecondary");
   }
 }
 </style>

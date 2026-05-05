@@ -24,7 +24,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { Events } from "@wailsio/runtime";
 import { CloseOutlined } from "@ant-design/icons-vue";
-import { t } from "@/i18n";
+import { t } from "@/locale";
 import { theme } from "ant-design-vue";
 import { AppConfig } from "@bindings/desktop/internal/appconst";
 

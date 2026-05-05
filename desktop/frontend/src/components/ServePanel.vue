@@ -169,7 +169,7 @@ import { AppConfig, ProxyScheme } from "@bindings/desktop/internal/appconst";
 import { OpenExternalURL } from "@bindings/desktop/internal/appconst";
 import { useServerStore } from "../stores/server";
 import { useSettingsStore } from "../stores/settings";
-import { t } from "@/i18n";
+import { t } from "@/locale";
 import { storeToRefs } from "pinia";
 import { Events } from "@wailsio/runtime";
 
