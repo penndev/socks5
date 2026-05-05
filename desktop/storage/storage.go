@@ -90,31 +90,6 @@ func (s *Storage) putJSON(key string, v any) error {
 	})
 }
 
-func SavePACScript(content string) (string, error) {
-	dir, err := AppDir()
-	if err != nil {
-		return "", err
-	}
-	path := filepath.Join(dir, "pac.js")
-	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
-		return "", err
-	}
-	return path, nil
-}
-
-func LoadPACScript() (string, error) {
-	dir, err := AppDir()
-	if err != nil {
-		return "", err
-	}
-	path := filepath.Join(dir, "pac.js")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
-}
-
 func (s *Storage) getJSON(key string, dest any) (found bool, err error) {
 	if key == "" {
 		return false, errors.New("key不能为空")

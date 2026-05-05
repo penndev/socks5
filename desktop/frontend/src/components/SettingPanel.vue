@@ -73,6 +73,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
+
           <!-- <a-form-item :label="t('settings.startupOnBoot')">
             <a-switch v-model:checked="settingsStore.system.startupOnBoot" />
             <span class="setting-desc">
@@ -157,6 +158,13 @@ watch(isDividerDragging, (isDragging) => {
     flex: 1;
     padding: 10px 12px;
     overflow-y: auto;
+  }
+
+  .setting-desc {
+    margin-top: 6px;
+    font-size: 12px;
+    color: v-bind("token.colorTextSecondary");
+    line-height: 1.45;
   }
 }
 </style>

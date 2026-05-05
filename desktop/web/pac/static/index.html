@@ -33,7 +33,27 @@
       </div>
       <div class="muted"><span id="pacLinkLabel">PAC 文件地址:</span> <a href="/pac.js" target="_blank">/pac.js</a></div>
     </section>
+
+    <section class="panel">
+      <h2 id="sectionTemplateTitle">PAC 生成模板</h2>
+      <p id="sectionTemplateDesc" class="subline">使用 Go text/template；须包含 <code>{{.Domains}}</code>、<code>{{.WhenMatch}}</code>、<code>{{.WhenDefault}}</code>，与规则一并保存。</p>
+      <textarea id="pacTemplate" class="template-view" spellcheck="false" aria-label="PAC template"></textarea>
+    </section>
   </div>
+<script>
+const defaultPACTemplate = `function FindProxyForURL(url, host) {
+  var domains = {{.Domains}};
+  host = String(host || "").toLowerCase();
+  for (var i = 0; i < domains.length; i++) {
+    var d = domains[i];
+    if (host == d || host.endsWith('.' + d)) {
+      return {{.WhenMatch}};
+    }
+  }
+  return {{.WhenDefault}};
+}
+`;
+</script>
   <script src="/common/app-ui.js"></script>
   <script src="/common/i18n.js"></script>
   <script>
@@ -84,13 +104,18 @@
       domainsEl.placeholder = t('domains.placeholder');
       btnSave.textContent = t('button.save');
       document.getElementById('pacLinkLabel').textContent = t('link.pac');
+      document.getElementById('sectionTemplateTitle').textContent = t('section.template.title');
+      document.getElementById('sectionTemplateDesc').innerHTML = t('section.template.desc');
     }
+
+    const pacTemplateEl = document.getElementById('pacTemplate');
 
     async function loadConfig() {
       try {
         const cfg = await api('/pac/api/config');
         domainsEl.value = cfg.domains || '';
         setMode(cfg.mode || 'proxy');
+        pacTemplateEl.value = cfg.pacTemplate ? cfg.pacTemplate : defaultPACTemplate;
         msgEl.textContent = t('status.loaded');
       } catch (e) {
         msgEl.textContent = e.message;
@@ -104,7 +129,11 @@
         await api('/pac/api/config', {
           method: 'PUT',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ domains: domainsEl.value, mode: getMode() })
+          body: JSON.stringify({
+            domains: domainsEl.value,
+            mode: getMode(),
+            pacTemplate: pacTemplateEl.value
+          })
         });
         msgEl.textContent = t('status.saved');
       } catch (e) {

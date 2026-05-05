@@ -26,9 +26,8 @@ func newRouter() *http.ServeMux {
 	router.Handle("/subscribe/", http.StripPrefix("/subscribe/", subscribe.HandleSubscribeFileServer()))
 	// pac管理
 	router.HandleFunc("/pac", pac.HandlePACRedirect)
-	router.HandleFunc("/pac/api/config", pac.HandlePACConfig)
-	router.HandleFunc("/pac/api/script", pac.HandlePACScript)
 	router.Handle("/pac/", http.StripPrefix("/pac/", pac.HandlePACFileServer()))
+	router.HandleFunc("/pac/api/config", pac.HandlePACConfig)
 	router.HandleFunc("/pac.js", pac.HandlePACScript)
 	return router
 }

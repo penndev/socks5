@@ -33,8 +33,9 @@ type ServerEntry struct {
 }
 
 type PACConfig struct {
-	Domains string `json:"domains"`
-	Mode    string `json:"mode"`
+	Domains     string `json:"domains"`
+	Mode        string `json:"mode"`
+	PACTemplate string `json:"pacTemplate"`
 }
 
 const (

@@ -7,14 +7,15 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 type ConfigPayload struct {
-	Domains string `json:"domains"`
-	Mode    string `json:"mode"`
+	Domains     string `json:"domains"`
+	Mode        string `json:"mode"`
+	PACTemplate string `json:"pacTemplate"`
 }
 
 func HandlePACRedirect(w http.ResponseWriter, r *http.Request) {
@@ -37,9 +38,10 @@ func HandlePACConfig(w http.ResponseWriter, r *http.Request) {
 		if cfg == nil {
 			cfg = &storage.PACConfig{Mode: "proxy"}
 		}
+		out := *cfg
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(cfg)
+		_ = json.NewEncoder(w).Encode(out)
 	case http.MethodPut, http.MethodPost:
 		var payload ConfigPayload
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -52,19 +54,15 @@ func HandlePACConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		cfg := storage.PACConfig{
-			Domains: payload.Domains,
-			Mode:    mode,
+			Domains:     payload.Domains,
+			Mode:        mode,
+			PACTemplate: payload.PACTemplate,
 		}
 		if err := st.SetPACConfig(cfg); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		script, err := buildPACScript(cfg)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if _, err := storage.SavePACScript(script); err != nil {
+		if _, err := buildPACScript(cfg); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -81,34 +79,23 @@ func HandlePACScript(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	script, err := storage.LoadPACScript()
+	st := storage.DefaultStorage
+	if st == nil {
+		http.Error(w, "storage not initialized", http.StatusInternalServerError)
+		return
+	}
+	cfg, err := st.GetPACConfig()
 	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		st := storage.DefaultStorage
-		if st == nil {
-			http.Error(w, "storage not initialized", http.StatusInternalServerError)
-			return
-		}
-		cfg, getErr := st.GetPACConfig()
-		if getErr != nil {
-			http.Error(w, getErr.Error(), http.StatusInternalServerError)
-			return
-		}
-		if cfg == nil {
-			cfg = &storage.PACConfig{Mode: "proxy"}
-		}
-		script, err = buildPACScript(*cfg)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		if _, err = storage.SavePACScript(script); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if cfg == nil {
+		cfg = &storage.PACConfig{Mode: "proxy"}
+	}
+	script, err := buildPACScript(*cfg)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
@@ -129,28 +116,41 @@ func buildPACScript(cfg storage.PACConfig) (string, error) {
 		defaultAction = "DIRECT"
 	}
 
-	var b strings.Builder
-	b.WriteString("function FindProxyForURL(url, host) {\n")
-	b.WriteString("  var domains = [\n")
-	for _, domain := range domains {
-		b.WriteString("    ")
-		b.WriteString(strconv.Quote(domain))
-		b.WriteString(",\n")
+	domainsLit, err := json.Marshal(domains)
+	if err != nil {
+		return "", err
 	}
-	b.WriteString("  ];\n")
-	b.WriteString("  host = String(host || \"\").toLowerCase();\n")
-	b.WriteString("  for (var i = 0; i < domains.length; i++) {\n")
-	b.WriteString("    var d = domains[i];\n")
-	b.WriteString("    if (host === d || dnsDomainIs(host, \".\" + d)) {\n")
-	b.WriteString("      return ")
-	b.WriteString(strconv.Quote(matchAction))
-	b.WriteString(";\n")
-	b.WriteString("    }\n")
-	b.WriteString("  }\n")
-	b.WriteString("  return ")
-	b.WriteString(strconv.Quote(defaultAction))
-	b.WriteString(";\n")
-	b.WriteString("}\n")
+	matchLit, err := json.Marshal(matchAction)
+	if err != nil {
+		return "", err
+	}
+	defaultLit, err := json.Marshal(defaultAction)
+	if err != nil {
+		return "", err
+	}
+
+	tmplSrc := strings.TrimSpace(cfg.PACTemplate)
+	if tmplSrc == "" {
+		return "", errors.New("pacTemplate不能为空")
+	}
+	tmpl, err := template.New("pac").Parse(tmplSrc)
+	if err != nil {
+		return "", err
+	}
+
+	var b strings.Builder
+	data := struct {
+		Domains       string
+		WhenMatch     string
+		WhenDefault   string
+	}{
+		Domains:     string(domainsLit),
+		WhenMatch:   string(matchLit),
+		WhenDefault: string(defaultLit),
+	}
+	if err := tmpl.Execute(&b, data); err != nil {
+		return "", err
+	}
 	return b.String(), nil
 }
 
@@ -177,9 +177,6 @@ func parseDomains(raw string) []string {
 
 func getProxyAddress() string {
 	st := storage.DefaultStorage
-	if st == nil {
-		return "127.0.0.1:1080"
-	}
 	settings, err := st.GetSettings()
 	if err != nil || settings == nil {
 		return "127.0.0.1:1080"

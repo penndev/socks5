@@ -109,7 +109,9 @@ window.WEB_I18N = {
       "link.pac": "PAC 文件地址:",
       "status.loaded": "已加载配置",
       "status.saving": "保存中...",
-      "status.saved": "保存成功，pac.js 已生成"
+      "status.saved": "保存成功，pac.js 已生成",
+      "section.template.title": "PAC 生成模板",
+      "section.template.desc": "使用 Go text/template 语法；须包含占位符 <code>{{.Domains}}</code>、<code>{{.WhenMatch}}</code>、<code>{{.WhenDefault}}</code>。与域名规则一并保存。"
     },
     "en": {
       "title.document": "Prism · PAC Rules",
@@ -124,7 +126,9 @@ window.WEB_I18N = {
       "link.pac": "PAC file URL:",
       "status.loaded": "Config loaded",
       "status.saving": "Saving...",
-      "status.saved": "Saved, pac.js generated"
+      "status.saved": "Saved, pac.js generated",
+      "section.template.title": "PAC generation template",
+      "section.template.desc": "Go <code>text/template</code> syntax; include <code>{{.Domains}}</code>, <code>{{.WhenMatch}}</code>, and <code>{{.WhenDefault}}</code>. Saved together with domain rules."
     }
   }
 };
