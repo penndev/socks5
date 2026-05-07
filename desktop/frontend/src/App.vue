@@ -14,7 +14,7 @@
         </div>
         <setting-panel
           v-if="extensionVisible"
-          :handleDividerMove="handleDividerMove"
+          :handleDividerMove="function(e){appWidth = Math.min(APP_MAX_WIDTH, Math.max(APP_MIN_WIDTH, e.clientX));}"
         />
       </div>
       <!-- 底部连接日志状态栏组件（设置开启时显示） -->
@@ -74,10 +74,6 @@ watch(extensionVisible, async (isVisible) => {
     appWidth.value = APP_MIN_WIDTH;
   }
 );
-
-const handleDividerMove = (e) => {
-  appWidth.value = Math.min(APP_MAX_WIDTH, Math.max(APP_MIN_WIDTH, e.clientX));
-};
 
 onMounted(async () => {
   // 监听系统颜色模式改变

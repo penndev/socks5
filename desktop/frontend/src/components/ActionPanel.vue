@@ -15,7 +15,7 @@
       {{ t("proxy.selectTip") }}
     </div>
 
-    <template v-else>
+    <!-- <template v-else> -->
       <a-radio-group v-model:value="proxyMode" class="proxy-mode-group">
         <a-radio-button value="manual">
           {{ t("proxy.mode.manual") }}
@@ -31,7 +31,7 @@
           <span class="proxy-pac-dot">·</span>
           <a
             href="#"
-            class="proxy-pac-link"
+            class="proxy-pac-link proxy-pac-js"
             :class="{ 'is-disabled': !webBaseURL }"
             @click.prevent="openPacEditor"
             >{{ t("settings.pacOpenEditor") }}</a
@@ -47,7 +47,7 @@
           >
         </div>
       </div>
-    </template>
+    <!-- </template> -->
   </a-card>
 </template>
 
@@ -66,10 +66,6 @@ const settingsStore = useSettingsStore();
 const serverStore = useServerStore();
 
 const proxyMode = ref("manual");
-
-function goProxyMode(mode) {
-  return mode === "tun" ? "tun" : "manual";
-}
 
 const webBaseURL = computed(() => {
   const rawHost = (settingsStore.proxy.host || "").trim();
@@ -122,19 +118,19 @@ async function startProxy() {
     message.error(e?.message || t("serverList.operationFailed"));
   }
 }
-
+// 切换代理模式
 watch(
   proxyMode,
   async (mode) => {
     try {
-      await SetMode(goProxyMode(mode));
+      await SetMode(mode);
     } catch (e) {
       message.error(e?.message || t("serverList.operationFailed"));
     }
   },
   { immediate: true },
 );
-
+// 切换代理服务器
 watch(
   () => serverStore.selectedServer,
   async (server) => {
@@ -143,7 +139,7 @@ watch(
         const user = server.username || "";
         const pass = server.password || "";
         await SetRemote(`${server.protocol}://${user}:${pass}@${server.host}`);
-        await SetMode(goProxyMode(proxyMode.value));
+        await SetMode(proxyMode.value);
         await startProxy();
       } catch (e) {
         message.error(e?.message || t("serverList.operationFailed"));
@@ -157,7 +153,7 @@ watch(
     }
   },
 );
-
+// 切换代理服务器代理端口IP地址
 watch(
   () => settingsStore.proxy,
   async () => {
