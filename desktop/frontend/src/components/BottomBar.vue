@@ -33,11 +33,11 @@
       <span class="status-spacer" />
       <span class="traffic-item" :title="t('log.downlink')">
         <ArrowDownOutlined />
-        {{ readSpeedText }} ({{ readTotalText }})
+        {{ writeSpeedText }} ({{ writeTotalText }})
       </span>
       <span class="traffic-item" :title="t('log.uplink')">
         <ArrowUpOutlined />
-        {{ writeSpeedText }} ({{ writeTotalText }})
+        {{ readSpeedText }} ({{ readTotalText }})
       </span>
     </div>
   </div>
