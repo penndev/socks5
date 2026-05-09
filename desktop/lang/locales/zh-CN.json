@@ -21,7 +21,7 @@
   "settings.theme.dark": "深色模式",
   "settings.pacTitle": "PAC",
   "settings.pacOpenEditor": "管理",
-  "settings.pacScriptUrl": "pac.js 地址",
+  "settings.pacScriptUrl": "复制PAC地址",
   "settings.pacScriptDesc": "可作系统代理自动配置 URL。",
   "settings.pacCopied": "已复制",
   "settings.pacCopyFailed": "复制失败",

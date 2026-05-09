@@ -40,8 +40,6 @@ defineProps({
   startResize: Function,
 });
 
-const emit = defineEmits(["update:count"]);
-
 const { system } = storeToRefs(useSettingsStore());
 const lines = ref([]);
 
@@ -52,12 +50,6 @@ const displayText = computed(
 function clearLogs() {
   lines.value = [];
 }
-
-watch(
-  () => lines.value.length,
-  (count) => emit("update:count", count),
-  { immediate: true },
-);
 
 let connectionEventOff = null;
 onMounted(async () => {

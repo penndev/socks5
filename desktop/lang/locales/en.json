@@ -21,7 +21,7 @@
   "settings.theme.dark": "Dark",
   "settings.pacTitle": "PAC",
   "settings.pacOpenEditor": "Manage",
-  "settings.pacScriptUrl": "pac.js URL",
+  "settings.pacScriptUrl": "Copy Pac Path",
   "settings.pacScriptDesc": "Use as system proxy auto-config URL.",
   "settings.pacCopied": "Copied",
   "settings.pacCopyFailed": "Copy failed",

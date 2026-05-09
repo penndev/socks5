@@ -43,7 +43,7 @@
             :class="{ 'is-disabled': !pacScriptURL }"
             :title="pacScriptURL || undefined"
             @click.prevent="copyPacScriptURL"
-            >pac.js</a
+            >{{ t("settings.pacScriptUrl") }}</a
           >
         </div>
       </div>

@@ -11,7 +11,6 @@
       :panelHeightPx="panelHeightPx"
       :onClose="closePanel"
       :startResize="startResize"
-      @update:count="logCount = $event"
     />
     <!-- 底部状态栏：状态日志 | 连接日志 -->
     <div class="status-bar">
@@ -28,7 +27,6 @@
         @click="togglePanel(PANEL_NAMES.LOG)"
       >
         {{ t("log.connectionTitle") }}
-        <span v-if="logCount > 0" class="badge">{{ logCount }}</span>
       </span>
       <span class="status-spacer" />
       <span class="traffic-item" :title="t('log.downlink')">
@@ -61,7 +59,6 @@ const PANEL_NAMES = {
 
 const activePanel = ref(null);
 const panelHeight = ref(160);
-const logCount = ref(0);
 
 const { token } = theme.useToken();
 
@@ -196,19 +193,6 @@ onBeforeUnmount(() => {
     &.active {
       color: #1677ff;
       font-weight: 500;
-    }
-
-    .badge {
-      min-width: 16px;
-      padding: 0 4px;
-      height: 14px;
-      border-radius: 999px;
-      background: #e5f0ff;
-      color: #1d4ed8;
-      font-size: 11px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
     }
   }
 
