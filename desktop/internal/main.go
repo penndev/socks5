@@ -26,6 +26,8 @@ func SetUPMainWindow() application.Window {
 		Title:            "Prism",
 		Width:            1000,
 		Height:           800,
+		MinWidth:         400,
+		MinHeight:        800,
 		BackgroundColour: application.NewRGB(27, 38, 54),
 		URL:              "/",
 		Windows: application.WindowsWindow{

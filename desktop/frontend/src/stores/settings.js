@@ -2,8 +2,8 @@ import { defineStore } from "pinia";
 import { Storage } from "@bindings/desktop/storage";
 import { notification } from "ant-design-vue";
 import { debounce } from "@/utils";
-import { t, subscribeLocaleEvents } from "@/locale";
-import { SetLocale } from "@bindings/desktop/lang/lang";
+import { t, subscribeLocaleEvents, languageLocale } from "@/locale";
+import { Bundle } from "@bindings/desktop/lang/lang";
 
 export const useSettingsStore = defineStore("settings", {
   state: () => ({
@@ -31,7 +31,9 @@ export const useSettingsStore = defineStore("settings", {
           system: this.system,
         });
         // 设置切换语言环境
-        SetLocale(this.system.language);
+        languageLocale.value = await Bundle(
+          this.system.language
+        ) 
         notification.success({
           message: t("settings.saveSuccess"),
           placement: "topRight",
@@ -62,7 +64,7 @@ export const useSettingsStore = defineStore("settings", {
         this.$subscribe(save);
         // 设置初始语言
         await subscribeLocaleEvents();
-        SetLocale(this.system.language);
+        languageLocale.value = await Bundle(this.system.language);
       } catch (error) {
         notification.error({
           message: t("settings.loadError"),

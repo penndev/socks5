@@ -20,6 +20,8 @@ type Lang struct {
 	bundles map[string]map[string]string
 }
 
+var DefaultLang *Lang
+
 // New 加载全部嵌入的语言 JSON。
 func New() (*Lang, error) {
 	bundles := make(map[string]map[string]string)

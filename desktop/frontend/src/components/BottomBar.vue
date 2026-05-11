@@ -29,13 +29,19 @@
         {{ t("log.connectionTitle") }}
       </span>
       <span class="status-spacer" />
-      <span class="traffic-item" :title="t('log.downlink')">
+      <span
+        class="traffic-item"
+        :title="`${t('log.trafficTotalDown')}: ${writeTotalText}`"
+      >
         <ArrowDownOutlined />
-        {{ writeSpeedText }} ({{ writeTotalText }})
+        {{ writeSpeedText }}
       </span>
-      <span class="traffic-item" :title="t('log.uplink')">
+      <span
+        class="traffic-item"
+        :title="`${t('log.trafficTotalUp')}: ${readTotalText}`"
+      >
         <ArrowUpOutlined />
-        {{ readSpeedText }} ({{ readTotalText }})
+        {{ readSpeedText }}
       </span>
     </div>
   </div>

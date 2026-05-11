@@ -2,6 +2,7 @@
 package storage
 
 import (
+	"desktop/lang"
 	"encoding/json"
 	"errors"
 	"os"
@@ -38,6 +39,9 @@ func (s *Storage) GetSettings() (*Settings, error) {
 	ok, err := s.getJSON(KeySettings, &out)
 	if err != nil || !ok {
 		return nil, err
+	}
+	if out.System.Language == "" {
+		out.System.Language = lang.DefaultLang.CurrentLocale()
 	}
 	return &out, nil
 }

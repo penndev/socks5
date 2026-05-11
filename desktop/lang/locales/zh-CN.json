@@ -72,6 +72,8 @@
   "log.clear": "清空",
   "log.connectionTitle": "连接日志",
   "log.connectionEmpty": "暂无连接日志",
+  "log.trafficTotalDown": "下载总流量",
+  "log.trafficTotalUp": "上传总流量",
   "proxy.title": "代理面板",
   "proxy.currentServerLabel": "当前节点",
   "proxy.noSelectedServer": "未选择节点",

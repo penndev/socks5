@@ -169,9 +169,23 @@ watch(
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
+  :deep(.ant-card-head) {
+    min-height: auto;
+    padding: 0 10px;
+  }
+
+  :deep(.ant-card-head-title) {
+    padding: 10px 0;
+    font-size: 14px;
+  }
+
+  :deep(.ant-card-body) {
+    padding: 12px;
+  }
+
   .proxy-current-server {
-    margin-bottom: 8px;
-    padding: 4px 8px;
+    margin-bottom: 6px;
+    padding: 3px 6px;
     background: v-bind("token.colorFillAlter");
     border-radius: 8px;
     display: flex;
@@ -201,12 +215,12 @@ watch(
   .proxy-mode-tip {
     font-size: 13px;
     color: v-bind("token.colorTextSecondary");
-    padding: 6px 0;
+    padding: 4px 0;
   }
 
   .proxy-mode-group {
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
     display: flex;
 
     :deep(.ant-radio-button-wrapper) {
@@ -216,8 +230,8 @@ watch(
   }
 
   .proxy-pac-section {
-    margin-top: 4px;
-    padding-top: 8px;
+    margin-top: 2px;
+    padding-top: 6px;
     border-top: 1px solid v-bind("token.colorBorderSecondary");
   }
 

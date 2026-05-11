@@ -1,5 +1,5 @@
 <template>
-  <a-card class="socks5-server-card" :title="t('serverList.title')">
+  <a-card class="server-panel" :title="t('serverList.title')">
     <template #extra>
       <div class="card-extra-actions">
         <a-tooltip :title="t('serverList.pingAll')">
@@ -20,7 +20,7 @@
         </a-tooltip>
       </div>
     </template>
-    <div class="server-list-scroll" v-if="servers.length > 0">
+    <div class="list" v-if="servers.length > 0">
       <a-list :data-source="servers" row-key="__id" bordered>
         <template #renderItem="{ item }">
           <a-list-item :class="{ active: isServerSelected(item) }" @click="selectedServer = item">
@@ -81,7 +81,7 @@
       </a-list>
     </div>
 
-    <div class="server-list-empty" v-else>
+    <div class="empty" v-else>
       <a-empty :description="t('serverList.emptyDescription')" />
     </div>
 
@@ -154,7 +154,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, onMounted } from "vue";
+import { storeToRefs } from "pinia";
 import {
   CheckCircleFilled,
   DeleteOutlined,
@@ -162,191 +163,63 @@ import {
   PlusOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons-vue";
-import { Modal, message } from "ant-design-vue";
+import { theme, message } from "ant-design-vue";
 import { Storage } from "@bindings/desktop/storage";
-import { TestServer } from "@bindings/desktop/proxy/proxyping";
-import { AppConfig, ProxyScheme } from "@bindings/desktop/internal/appconst";
-import { OpenExternalURL } from "@bindings/desktop/internal/appconst";
-import { useServerStore } from "../stores/server";
-import { useSettingsStore } from "../stores/settings";
-import { t } from "@/locale";
-import { storeToRefs } from "pinia";
+import { AppConfig, OpenExternalURL } from "@bindings/desktop/internal/appconst";
 import { Events } from "@wailsio/runtime";
+import { useServerStore } from "@/stores/server";
+import { useSettingsStore } from "@/stores/settings";
+import { t } from "@/locale";
+import { useServerPing } from "./servepanel/ServerPing";
+import { useServerEditor } from "./servepanel/ServerEditor";
+import { withRuntimeIds } from "@/utils";
 
-import { theme } from "ant-design-vue";
 const { token } = theme.useToken();
 
+const servers = ref([]);
+
+/** 从存储原始数据去掉运行时字段 */
+function normalizeRawServers(raw) {
+  return (Array.isArray(raw) ? raw : []).map((row) => {
+    const { id: _i, __id: _x, ...rest } = /** @type {any} */ (row);
+    return rest;
+  });
+}
+
+/** 写入 storage 前去掉 __id 等 */
+function stripForStorage(row) {
+  const { id: _i, __id: _x, ...rest } = /** @type {any} */ (row);
+  return rest;
+}
+
+async function loadServers() {
+  try {
+    const raw = await Storage.GetServers();
+    servers.value = withRuntimeIds(normalizeRawServers(raw));
+  } catch {
+    message.error(t("serverList.loadFailed"));
+  }
+}
+
+async function persistServers() {
+  await Storage.SetServers(servers.value.map(stripForStorage));
+}
+
+onMounted(async () => {
+  await loadServers();
+  const appConfig = await AppConfig();
+  Events.On(appConfig.EventNameServersChanged, loadServers);
+});
 
 const serverStore = useServerStore();
 const { selectedServer } = storeToRefs(serverStore);
-const settingsStore = useSettingsStore();
-
-// 所有节点
-const servers = ref([]);
-/** 仅内存：测速结果按列表运行时 id 存，不写入 storage */
-const latencyById = ref({});
-const pingingAll = ref(false);
-
-function withRuntimeIds(serverList) {
-  const list = Array.isArray(serverList) ? serverList : [];
-  return list.map((server) => {
-    const __id = `${server.host}|${server.protocol}|${server.username}|${server.password}`;
-    return { ...server, __id };
-  });
-}
 
 function isServerSelected(server) {
   if (!selectedServer.value) return false;
   return selectedServer.value.__id === server?.__id;
 }
 
-const editRef = ref();
-// 编辑态集中管理：弹窗状态、表单、校验与提交动作
-const edit = reactive({
-  visible: false,
-  loading: false,
-  title: "",
-  key: "",
-  form: {
-    host: "",
-    remark: "",
-    username: "",
-    password: "",
-    protocol: "Socks5",
-  },
-  rules: {
-    host: [
-      { required: true, message: t("serverList.validateHostRequired") },
-      {
-        pattern: /^[^:]+:\d{1,5}$/,
-        message: t("serverList.validateHostFormat"),
-      },
-    ],
-    protocol: [
-      { required: true, message: t("serverList.validateProtocolRequired") },
-    ],
-  },
-
-  open(server = null) {
-    edit.key = server ? server.__id : "";
-    edit.title = edit.key ? t("serverList.editTitle") : t("serverList.addTitle");
-    edit.form.host = server?.host ?? "";
-    edit.form.remark = server?.remark ?? "";
-    edit.form.username = server?.username ?? "";
-    edit.form.password = server?.password ?? "";
-    edit.form.protocol = server?.protocol ?? "Socks5";
-    edit.visible = true;
-  },
-
-  async submit() {
-    try {
-      await editRef.value.validate();
-      edit.loading = true;
-
-      const payload = {
-        host: edit.form.host.trim(),
-        remark: edit.form.remark?.trim() ?? "",
-        username: edit.form.username?.trim() ?? "",
-        password: edit.form.password ?? "",
-        protocol: edit.form.protocol,
-      };
-
-      const selectedWasEdited =
-        !!edit.key &&
-        !!selectedServer.value &&
-        selectedServer.value.__id === edit.key;
-      let editedIdx = -1;
-
-      if (edit.key) {
-        editedIdx = servers.value.findIndex((s) => s.__id === edit.key);
-        if (editedIdx >= 0)
-          servers.value[editedIdx] = {
-            ...servers.value[editedIdx],
-            ...payload,
-          };
-
-        delete latencyById.value[edit.key];
-        message.success(t("serverList.updateSuccess"));
-      } else {
-        servers.value.push(payload);
-        message.success(t("serverList.addSuccess"));
-      }
-
-      servers.value = withRuntimeIds(servers.value);
-      if (selectedWasEdited && editedIdx >= 0)
-        selectedServer.value = servers.value[editedIdx];
-      await Storage.SetServers(
-        servers.value.map((row) => {
-          const { id: _i, __id: _x, ...rest } = /** @type {any} */ (row);
-          return rest;
-        }),
-      );
-      edit.visible = false;
-    } catch (e) {
-      if (!e?.errorFields)
-        message.error(e?.message || t("serverList.operationFailed"));
-    } finally {
-      edit.loading = false;
-    }
-  },
-});
-
-function deleteModal(item) {
-  const key = item.__id;
-  Modal.confirm({
-    title: t("serverList.deleteTitle"),
-    content: `${t("serverList.deleteContentPrefix")}${
-      item.remark || item.host
-    }${t("serverList.deleteContentSuffix")}`,
-    okType: "danger",
-    okText: t("serverList.deleteOkText"),
-    cancelText: t("serverList.deleteCancelText"),
-    async onOk() {
-      servers.value = servers.value.filter((s) => s.__id !== key);
-      servers.value = withRuntimeIds(servers.value);
-      delete latencyById.value[key];
-      if (selectedServer.value && selectedServer.value.__id === key)
-        selectedServer.value = null;
-      await Storage.SetServers(
-        servers.value.map((row) => {
-          const { id: _i, __id: _x, ...rest } = /** @type {any} */ (row);
-          return rest;
-        }),
-      );
-      message.success(t("serverList.deleteSuccess"));
-    },
-  });
-}
-
-async function pingAllServers() {
-  if (servers.value.length === 0) return;
-  const latencyHost = (settingsStore.proxy.latencyTestHost || "").trim();
-  if (!latencyHost) {
-    message.warning(t("settings.latencyTestHostRequired"));
-    return;
-  }
-  pingingAll.value = true;
-  try {
-    await Promise.all(
-      servers.value.map(async (server) => {
-        const key = server.__id;
-        const protocol = server.protocol.toLowerCase();
-        const username = server.username || "";
-        const password = server.password || "";
-        const proxyURL = `${protocol}://${username}:${password}@${server.host}`;
-        try {
-          const result = await TestServer(proxyURL, latencyHost);
-          latencyById.value[key] = result.success ? result.latency : -1;
-        } catch {
-          latencyById.value[key] = -1;
-        }
-      }),
-    );
-    message.success(t("serverList.pingAllDone"));
-  } finally {
-    pingingAll.value = false;
-  }
-}
+const settingsStore = useSettingsStore();
 
 async function openSubscribeEditor() {
   const rawHost = (settingsStore.proxy.host || "").trim();
@@ -364,51 +237,38 @@ async function openSubscribeEditor() {
   }
 }
 
-// 获取延迟样式类
-function getLatencyClass(latency) {
-  if (latency < 100) return "latency-good";
-  if (latency < 300) return "latency-medium";
-  return "latency-bad";
-}
-
-const proxySchemes = ref([]);
-
-onMounted(async () => {
-  const schemes = await ProxyScheme();
-  proxySchemes.value = schemes;
-  await loadServers();
-  const appConfig = await AppConfig();
-  Events.On(appConfig.EventNameServersChanged, async () => {
-    await loadServers();
-  });
-});
-
-async function loadServers() {
-  try {
-    const raw = await Storage.GetServers();
-    servers.value = withRuntimeIds(
-      (Array.isArray(raw) ? raw : []).map((row) => {
-        const { id: _i, __id: _x, ...rest } = /** @type {any} */ (row);
-        return rest;
-      }),
-    );
-  } catch {
-    message.error(t("serverList.loadFailed"));
-  }
-}
+const { latencyById, pingingAll, pingAllServers, getLatencyClass } =
+  useServerPing(servers);
+const { edit, editRef, deleteModal, proxySchemes } = useServerEditor(
+  servers,
+  latencyById,
+  persistServers,
+  selectedServer,
+);
 </script>
 
 <style scoped lang="scss">
-.socks5-server-card {
-  min-height: 200px;
+.server-panel {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
+  :deep(.ant-card-head) {
+    min-height: auto;
+    padding: 0 10px;
+  }
+
+  :deep(.ant-card-head-title) {
+    padding: 10px 0;
+    font-size: 14px;
+  }
+
   :deep(.ant-card-body) {
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     padding: 12px;
@@ -429,13 +289,15 @@ async function loadServers() {
     gap: 4px;
   }
 
-  .server-list-scroll {
+  .list {
     flex: 1;
     margin-bottom: 8px;
+    margin-right: -12px;
     min-height: 0;
+    overflow: hidden auto;
   }
 
-  .server-list-empty {
+  .empty {
     flex: 1;
     min-height: 120px;
     display: flex;
@@ -449,6 +311,7 @@ async function loadServers() {
 
   :deep(.ant-list-item) {
     cursor: pointer;
+    padding: 12px 20px;
 
     &.active {
       background: v-bind("token.colorPrimaryBgHover");

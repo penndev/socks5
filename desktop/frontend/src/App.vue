@@ -1,24 +1,21 @@
 <template>
   <a-config-provider :theme="antdThemeConfig">
-    <div class="socks5-layout">
-      <div class="socks5-main">
-        <div class="socks5-app" :style="{ width: appWidth + 'px' }">
-          <div class="socks5-app-header">
-            <div class="socks5-app-title">{{ t("app.title") }}</div>
+    <div class="layout">
+      <div class="main">
+        <div class="app" :style="{ width: appWidth + 'px' }">
+          <header class="app-hd">
+            <span class="app-title">{{ t("app.title") }}</span>
             <a-switch v-model:checked="extensionVisible" size="small" />
-          </div>
-          <div class="socks5-app-body">
-            <action-panel />
-            <serve-panel />
-          </div>
+          </header>
+          <action-panel />
+          <serve-panel />
         </div>
         <setting-panel
           v-if="extensionVisible"
           :handleDividerMove="function(e){appWidth = Math.min(APP_MAX_WIDTH, Math.max(APP_MIN_WIDTH, e.clientX));}"
         />
       </div>
-      <!-- 底部连接日志状态栏组件（设置开启时显示） -->
-      <div v-if="settingsStore.system.enableLogRecording" class="socks5-bottom">
+      <div v-if="settingsStore.system.enableLogRecording" class="bottom">
         <bottom-bar />
       </div>
     </div>
@@ -44,15 +41,14 @@ import BottomBar from "./components/BottomBar.vue";
 
 const settingsStore = useSettingsStore();
 
-// 将 antd token 映射为布局 CSS 变量
 const { token } = theme.useToken();
 const colorScheme = window.matchMedia("(prefers-color-scheme: dark)")
 const prefersColor = ref(colorScheme.matches);
 const antdThemeConfig = computed(() => ({
   algorithm: [
-    settingsStore.system.themeMode == "dark" || 
-    prefersColor.value ? 
-    theme.darkAlgorithm : 
+    settingsStore.system.themeMode == "dark" ||
+    prefersColor.value ?
+    theme.darkAlgorithm :
     theme.defaultAlgorithm,
   ],
   components: { Button: { primaryShadow: "none" } },
@@ -63,25 +59,21 @@ const APP_MAX_WIDTH = 600;
 const EXTENSION_PANEL_WIDTH = 400;
 const appWidth = ref(APP_MIN_WIDTH);
 
-// 右侧设置面板显示状态
 const extensionVisible = ref(true);
 watch(extensionVisible, async (isVisible) => {
-    const { height } = await Window.Size();
-    const targetWindowWidth = isVisible
-      ? APP_MAX_WIDTH + EXTENSION_PANEL_WIDTH
-      : APP_MIN_WIDTH;
-    await Window.SetSize(targetWindowWidth, height);
-    appWidth.value = APP_MIN_WIDTH;
-  }
-);
+  const { height } = await Window.Size();
+  const targetWindowWidth = isVisible
+    ? APP_MAX_WIDTH + EXTENSION_PANEL_WIDTH
+    : APP_MIN_WIDTH;
+  await Window.SetSize(targetWindowWidth, height);
+  appWidth.value = APP_MIN_WIDTH;
+});
 
 onMounted(async () => {
-  // 监听系统颜色模式改变
   colorScheme.addEventListener("change", (e) => {
     prefersColor.value = e.matches;
   });
 
-  // 调整app的布局
   window.addEventListener("resize", () => {
     if (window.innerWidth < APP_MAX_WIDTH) {
       extensionVisible.value = false;
@@ -90,31 +82,40 @@ onMounted(async () => {
     }
     extensionVisible.value = true;
   });
-  // 初始化设置
   await settingsStore.init();
 });
 </script>
 
 <style lang="scss" scoped>
-.socks5-layout {
+.layout {
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  height: 100vh;
   background: v-bind("token.colorBgLayout");
 
-  .socks5-main {
+  .main {
     flex: 1;
     display: flex;
     min-height: 0;
   }
 
-  .socks5-app {
+  .app {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
+    gap: 8px;
+    padding: 0 10px 8px;
+    overflow: hidden;
+    font-size: 14px;
+    color: v-bind("token.colorText");
     background: v-bind("token.colorBgContainer");
 
-    .socks5-app-header {
+    .app-hd {
+      flex-shrink: 0;
       height: 48px;
+      margin: 0 -10px;
       padding: 0 12px;
       display: flex;
       align-items: center;
@@ -122,26 +123,15 @@ onMounted(async () => {
       background: v-bind("token.colorBgElevated");
       border-bottom: 1px solid v-bind("token.colorBorderSecondary");
 
-      .socks5-app-title {
+      .app-title {
         font-size: 16px;
         font-weight: 600;
         color: v-bind("token.colorText");
       }
     }
-
-    .socks5-app-body {
-      flex: 1;
-      padding: 10px 12px;
-      font-size: 14px;
-      color: v-bind("token.colorText");
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      overflow-y: auto;
-    }
   }
 
-  .socks5-bottom {
+  .bottom {
     flex-shrink: 0;
     border-top: 1px solid v-bind("token.colorBorderSecondary");
     background: v-bind("token.colorBgElevated");

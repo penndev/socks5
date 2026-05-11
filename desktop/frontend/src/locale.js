@@ -1,18 +1,17 @@
 import { ref } from "vue";
-import { Bundle } from "@bindings/desktop/lang/lang";
+import { Bundle, CurrentLocale } from "@bindings/desktop/lang/lang";
 import { Events } from "@wailsio/runtime";
 import { AppConfig } from "@bindings/desktop/internal/appconst";
 
 
 // 语言文件对象
-const languageLocale = ref({});
+export const languageLocale = ref({});
 
 // 监听语言改变事件
 export async function subscribeLocaleEvents() {
   const appConst = await AppConfig();
   Events.On(appConst.EventNameLocaleChanged, async (ev) => {
-    var locale = ev?.data ?? "zh-CN";
-    languageLocale.value = await Bundle(locale) 
+    languageLocale.value = await Bundle(ev.data);
   });
 }
 

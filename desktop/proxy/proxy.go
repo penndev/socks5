@@ -10,6 +10,7 @@ import (
 	"github.com/penndev/prism/proxy"
 	"github.com/penndev/prism/route"
 	"github.com/penndev/prism/stack"
+	"github.com/penndev/prism/transport"
 	"github.com/penndev/prism/tun"
 )
 
@@ -23,6 +24,7 @@ type Proxy struct {
 }
 
 func (p *Proxy) SetStart(host, user, pass string) error {
+	p.HandleConnect = transport.Local()
 	dialerOnce.Do(func() {
 		go func() {
 			// 循环设置检查心跳。设置出网网卡的IP。来应对网络变化。
