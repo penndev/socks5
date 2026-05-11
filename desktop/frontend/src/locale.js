@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { Bundle, CurrentLocale } from "@bindings/desktop/lang/lang";
+import { Bundle, CurrentLocale, SetLocale } from "@bindings/desktop/lang/lang";
 import { Events } from "@wailsio/runtime";
 import { AppConfig } from "@bindings/desktop/internal/appconst";
 
@@ -8,7 +8,9 @@ import { AppConfig } from "@bindings/desktop/internal/appconst";
 export const languageLocale = ref({});
 
 // 监听语言改变事件
-export async function subscribeLocaleEvents() {
+export async function subscribeLocaleEvents(language) {
+  languageLocale.value = await Bundle(language);
+  SetLocale(language); 
   const appConst = await AppConfig();
   Events.On(appConst.EventNameLocaleChanged, async (ev) => {
     languageLocale.value = await Bundle(ev.data);

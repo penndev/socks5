@@ -2,7 +2,7 @@
   <a-config-provider :theme="antdThemeConfig">
     <div class="layout">
       <div class="main">
-        <div class="app" :style="{ width: appWidth + 'px' }">
+        <div class="app" :style="mainStyle">
           <header class="app-hd">
             <span class="app-title">{{ t("app.title") }}</span>
             <a-switch v-model:checked="extensionVisible" size="small" />
@@ -12,7 +12,7 @@
         </div>
         <setting-panel
           v-if="extensionVisible"
-          :handleDividerMove="function(e){appWidth = Math.min(APP_MAX_WIDTH, Math.max(APP_MIN_WIDTH, e.clientX));}"
+          :start-width-resize="onResizeDivider"
         />
       </div>
       <div v-if="settingsStore.system.enableLogRecording" class="bottom">
@@ -25,64 +25,104 @@
 <script setup>
 import {
   ref,
-  onMounted,
-  watch,
   computed,
+  watch,
+  onMounted,
+  onBeforeUnmount,
 } from "vue";
-import { Window } from "@wailsio/runtime";
 import { theme } from "ant-design-vue";
+import { Window } from "@wailsio/runtime";
 import { useSettingsStore } from "@/stores/settings";
 import { t } from "@/locale";
-
 import ActionPanel from "./components/ActionPanel.vue";
 import ServePanel from "./components/ServePanel.vue";
 import SettingPanel from "./components/SettingPanel.vue";
 import BottomBar from "./components/BottomBar.vue";
+import { startAxisResize } from "@/utils";
 
 const settingsStore = useSettingsStore();
-
 const { token } = theme.useToken();
-const colorScheme = window.matchMedia("(prefers-color-scheme: dark)")
+const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
 const prefersColor = ref(colorScheme.matches);
 const antdThemeConfig = computed(() => ({
   algorithm: [
-    settingsStore.system.themeMode == "dark" ||
-    prefersColor.value ?
-    theme.darkAlgorithm :
-    theme.defaultAlgorithm,
+    settingsStore.system.themeMode === "dark" || prefersColor.value
+      ? theme.darkAlgorithm
+      : theme.defaultAlgorithm,
   ],
   components: { Button: { primaryShadow: "none" } },
 }));
 
-const APP_MIN_WIDTH = 400;
-const APP_MAX_WIDTH = 600;
-const EXTENSION_PANEL_WIDTH = 400;
-const appWidth = ref(APP_MIN_WIDTH);
+// —— 主栏 ↔ 设置栏：宽度规则（单位 px）——
+const MAIN_MIN = 400;
+const MAIN_MAX = 600;
+const RIGHT_MIN = 280;
+const SPLIT_MIN_INNER = 800;
+/** SetSize 多为窗口外框宽度，略大于 SPLIT_MIN_INNER，尽量保证客户区够双栏 */
+const SPLIT_WINDOW_OUTER_WIDTH = SPLIT_MIN_INNER + 40;
 
 const extensionVisible = ref(true);
-watch(extensionVisible, async (isVisible) => {
-  const { height } = await Window.Size();
-  const targetWindowWidth = isVisible
-    ? APP_MAX_WIDTH + EXTENSION_PANEL_WIDTH
-    : APP_MIN_WIDTH;
-  await Window.SetSize(targetWindowWidth, height);
-  appWidth.value = APP_MIN_WIDTH;
+const mainWidth = ref(MAIN_MIN);
+
+const mainStyle = computed(() =>
+  extensionVisible.value
+    ? { flex: `0 0 ${mainWidth.value}px`, width: `${mainWidth.value}px`, minWidth: 0 }
+    : { flex: "1 1 auto", width: "100%", minWidth: 0 },
+);
+
+/** 双栏时：当前窗口下主栏允许的最大宽度（保证右侧至少 RIGHT_MIN） */
+function mainMaxFor(innerW) {
+  return Math.min(MAIN_MAX, Math.max(MAIN_MIN, innerW - RIGHT_MIN));
+}
+
+function applyLayoutToWindow() {
+  const inner = window.innerWidth;
+  if (inner < SPLIT_MIN_INNER) {
+    extensionVisible.value = false;
+    return;
+  }
+  extensionVisible.value = true;
+  const cap = mainMaxFor(inner);
+  if (mainWidth.value > cap) mainWidth.value = cap;
+}
+
+function onResizeDivider(e) {
+  startAxisResize(e, {
+    axis: "x",
+    startValue: mainWidth.value,
+    min: MAIN_MIN,
+    max: mainMaxFor(window.innerWidth),
+    onChange: (v) => {
+      mainWidth.value = v;
+    },
+  });
+}
+
+watch(extensionVisible, async (visible) => {
+  mainWidth.value = MAIN_MIN;
+  if (!visible || window.innerWidth >= SPLIT_MIN_INNER) return;
+  try {
+    const { height } = await Window.Size();
+    await Window.SetSize(SPLIT_WINDOW_OUTER_WIDTH, height);
+  } finally {
+    applyLayoutToWindow();
+  }
 });
 
-onMounted(async () => {
-  colorScheme.addEventListener("change", (e) => {
-    prefersColor.value = e.matches;
-  });
+function onSystemColorChange(e) {
+  prefersColor.value = e.matches;
+}
 
-  window.addEventListener("resize", () => {
-    if (window.innerWidth < APP_MAX_WIDTH) {
-      extensionVisible.value = false;
-      appWidth.value = window.innerWidth;
-      return;
-    }
-    extensionVisible.value = true;
-  });
+onMounted(async () => {
+  colorScheme.addEventListener("change", onSystemColorChange);
   await settingsStore.init();
+  applyLayoutToWindow();
+  window.addEventListener("resize", applyLayoutToWindow);
+});
+
+onBeforeUnmount(() => {
+  colorScheme.removeEventListener("change", onSystemColorChange);
+  window.removeEventListener("resize", applyLayoutToWindow);
 });
 </script>
 
@@ -101,7 +141,7 @@ onMounted(async () => {
   }
 
   .app {
-    flex: 1;
+    box-sizing: border-box;
     min-height: 0;
     display: flex;
     flex-direction: column;

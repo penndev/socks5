@@ -1,6 +1,6 @@
 <template>
   <div class="socks5-extension">
-    <div class="socks5-divider" @mousedown="isDividerDragging = true" />
+    <div class="socks5-divider" @mousedown="startWidthResize" />
     <div class="socks5-extension-body">
       <div class="settings-panel">
         <a-form layout="vertical">
@@ -88,8 +88,8 @@
   </div>
 </template>
 
-<script setup>
-import { ref, watch } from "vue";
+<script setup lang="ts">
+import type { PropType } from "vue";
 import { useSettingsStore } from "@/stores/settings";
 import { t } from "@/locale";
 import { theme } from "ant-design-vue";
@@ -98,33 +98,11 @@ import { theme } from "ant-design-vue";
 const { token } = theme.useToken();
 const settingsStore = useSettingsStore();
 
-const props = defineProps({
-  handleDividerMove: {
-    type: Function,
+defineProps({
+  startWidthResize: {
+    type: Function as PropType<(e: MouseEvent) => void>,
     required: true,
   },
-});
-
-const isDividerDragging = ref(false);
-// 拓展面板左右拖拽限制大小
-const handleDividerMove = (e) => {
-  if (!isDividerDragging.value) return;
-  props.handleDividerMove(e);
-};
-
-watch(isDividerDragging, (isDragging) => {
-  if (isDragging) {
-    document.body.style.cursor = "e-resize";
-    document.body.style.userSelect = "none";
-    window.addEventListener("mousemove", handleDividerMove);
-    window.addEventListener("mouseup", () => {
-      isDividerDragging.value = false;
-    });
-  } else {
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-    window.removeEventListener("mousemove", handleDividerMove);
-  }
 });
 </script>
 
@@ -137,7 +115,7 @@ watch(isDividerDragging, (isDragging) => {
 
   .socks5-divider {
     width: 4px;
-    cursor: e-resize;
+    cursor: ew-resize;
     background: transparent;
     transition: background 0.15s;
 

@@ -52,7 +52,8 @@ func main() {
 	systray.SetIcon(build.Icon)
 	systray.SetMenu(systrayMenu)
 	systray.OnClick(func() {
-		internal.MainWindowSetPosition()
+		internal.MainWindow.Show()
+		internal.MainWindow.Focus()
 	})
 
 	// 设置任务托管栏文案随 Lang 切换更新

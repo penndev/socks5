@@ -24,7 +24,13 @@ type Proxy struct {
 }
 
 func (p *Proxy) SetStart(host, user, pass string) error {
-	p.HandleConnect = transport.Local()
+	if p.HandleConnect == nil {
+		handle := transport.Local()
+		p.HandleConnect = func(conn net.Conn, network, address string) error {
+			internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, "local -> "+network+" "+address)
+			return handle(conn, network, address)
+		}
+	}
 	dialerOnce.Do(func() {
 		go func() {
 			// 循环设置检查心跳。设置出网网卡的IP。来应对网络变化。
@@ -79,7 +85,7 @@ func (p *Proxy) SetRemote(remote string) error {
 	)
 	handle, err := HandleConnect(p.remoteURL)
 	p.HandleConnect = func(conn net.Conn, network, address string) error {
-		internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, "local -> "+network+" "+address)
+		internal.App.Event.Emit(internal.AppConfig.LogTypeName_LOG, p.remoteURL.Scheme+" -> "+network+" "+address)
 		return handle(conn, network, address)
 	}
 	if err != nil {

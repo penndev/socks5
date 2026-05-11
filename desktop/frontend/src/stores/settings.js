@@ -63,8 +63,7 @@ export const useSettingsStore = defineStore("settings", {
         const save = debounce(this.save, 800)
         this.$subscribe(save);
         // 设置初始语言
-        await subscribeLocaleEvents();
-        languageLocale.value = await Bundle(this.system.language);
+        await subscribeLocaleEvents(this.system.language);
       } catch (error) {
         notification.error({
           message: t("settings.loadError"),

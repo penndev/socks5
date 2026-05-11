@@ -115,6 +115,7 @@ onBeforeUnmount(() => {
 
   .panel-content {
     flex: 1;
+    min-height: 0;
     margin: 0;
     padding: 8px 10px;
     overflow: auto;

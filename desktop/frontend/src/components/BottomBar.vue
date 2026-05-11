@@ -55,6 +55,7 @@ import { t } from "@/locale";
 import StatusPanel from "./bottombar/StatusPanel.vue";
 import LogPanel from "./bottombar/LogPanel.vue";
 import { TrafficBytes } from "@bindings/desktop/proxy/proxy";
+import { startAxisResize } from "@/utils";
 
 const PANEL_HEIGHT_MIN = 80;
 const PANEL_HEIGHT_MAX = 480;
@@ -72,30 +73,15 @@ const panelHeightPx = computed(() => `${panelHeight.value}px`);
 
 
 function startResize(e) {
-  e.preventDefault();
-  const startY = e.clientY;
-  const startH = panelHeight.value;
-
-  function onMove(ev) {
-    const delta = startY - ev.clientY;
-    const next = Math.round(startH + delta);
-    panelHeight.value = Math.min(
-      PANEL_HEIGHT_MAX,
-      Math.max(PANEL_HEIGHT_MIN, next),
-    );
-  }
-
-  function onUp() {
-    document.removeEventListener("mousemove", onMove);
-    document.removeEventListener("mouseup", onUp);
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-  }
-
-  document.body.style.cursor = "ns-resize";
-  document.body.style.userSelect = "none";
-  document.addEventListener("mousemove", onMove);
-  document.addEventListener("mouseup", onUp);
+  startAxisResize(e, {
+    axis: "y",
+    startValue: panelHeight.value,
+    min: PANEL_HEIGHT_MIN,
+    max: PANEL_HEIGHT_MAX,
+    onChange: (v) => {
+      panelHeight.value = v;
+    },
+  });
 }
 
 function togglePanel(name) {
