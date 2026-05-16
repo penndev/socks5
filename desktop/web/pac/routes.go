@@ -140,9 +140,9 @@ func buildPACScript(cfg storage.PACConfig) (string, error) {
 
 	var b strings.Builder
 	data := struct {
-		Domains       string
-		WhenMatch     string
-		WhenDefault   string
+		Domains     string
+		WhenMatch   string
+		WhenDefault string
 	}{
 		Domains:     string(domainsLit),
 		WhenMatch:   string(matchLit),
@@ -182,7 +182,7 @@ func getProxyAddress() string {
 		return "127.0.0.1:1080"
 	}
 	host := strings.TrimSpace(settings.Proxy.Host)
-	if host == "" {
+	if host == "" || host == "0.0.0.0" {
 		host = "127.0.0.1"
 	}
 	port := settings.Proxy.Port

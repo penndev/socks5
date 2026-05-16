@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -18,6 +20,11 @@ const TUN_OFFSET = 4
 
 var TUN_IP netip.Prefix
 var Routes []netip.Prefix
+
+const sudoFile = "/etc/sudoers.d/prism-desktop"
+const elevateFailAfter = 3 * time.Second
+
+var elevateMarkerFile string
 
 // 自定义网卡GUID 方便wintun复用
 func init() {
@@ -33,6 +40,41 @@ func init() {
 		netip.MustParsePrefix("128.0.0.0/1"),
 		netip.MustParsePrefix("198.18.0.0/15"),
 	}
+	elevateMarkerFile = filepath.Join(os.TempDir(), "prism-desktop-elevate.marker")
+	initElevate()
+}
+
+// initElevate 检查上次提权重启是否超时失败，超时则清理 sudoers
+func initElevate() {
+	defer os.Remove(elevateMarkerFile)
+	if os.Geteuid() == 0 {
+		return
+	}
+	data, err := os.ReadFile(elevateMarkerFile)
+	if err != nil {
+		return
+	}
+	ts, err := strconv.ParseInt(strings.TrimSpace(string(data)), 10, 64)
+	if err != nil {
+		return
+	}
+	if time.Since(time.Unix(ts, 0)) <= elevateFailAfter {
+		return
+	}
+	removeSudoersFile()
+}
+
+func writeElevateMarker() {
+	_ = os.WriteFile(elevateMarkerFile, []byte(fmt.Sprintf("%d", time.Now().Unix())), 0644)
+}
+
+func removeSudoersFile() {
+	if os.Geteuid() == 0 {
+		_ = os.Remove(sudoFile)
+		return
+	}
+	apple := fmt.Sprintf(`do shell script "rm -f %s" with administrator privileges`, sudoFile)
+	_ = exec.Command("osascript", "-e", apple).Run()
 }
 
 func tunPermission() bool {
@@ -54,16 +96,15 @@ func tunPermission() bool {
 		return false
 	}
 
-	sudoFile := "/etc/sudoers.d/prism-desktop"
-
-	// 如果 sudoers 已存在 → 直接 sudo 启动
+	// sudoers 已存在时先尝试提权启动；失败则继续走下方修复流程，避免误退出
 	if _, err := os.Stat(sudoFile); err == nil {
-		cmd := exec.Command("sh", "-c", fmt.Sprintf("sudo %q &", exePath))
-		_ = cmd.Start()
-
-		time.Sleep(100 * time.Millisecond)
-		internal.App.Event.Emit(internal.AppConfig.EventNameServiceAppQuit, true)
-		return false
+		if cmd := exec.Command("sudo", "-n", exePath); cmd.Start() == nil {
+			writeElevateMarker()
+			time.Sleep(100 * time.Millisecond)
+			internal.App.Event.Emit(internal.AppConfig.EventNameServiceAppQuit, true)
+			return false
+		}
+		internal.App.Event.Emit(internal.AppConfig.LogTypeName_STATUS, "sudo launch failed, repairing sudoers")
 	}
 
 	// sudoers 内容（⚠️ 不要转义路径）
@@ -74,7 +115,6 @@ func tunPermission() bool {
 		`echo '%s' > %s && chmod 440 %s`,
 		line, sudoFile, sudoFile,
 	)
-
 	apple := fmt.Sprintf(`do shell script %q with administrator privileges`, script)
 	cmd := exec.Command("osascript", "-e", apple)
 
@@ -92,11 +132,13 @@ func tunPermission() bool {
 			_ = exec.Command("osascript", "-e", fixApple).Run()
 		}
 
-		// 用 sudo 启动（NOPASSWD）
-		exec.Command("sh", "-c", fmt.Sprintf("sudo %q &", exePath)).Start()
-
-		time.Sleep(150 * time.Millisecond)
-		internal.App.Event.Emit(internal.AppConfig.EventNameServiceAppQuit, true)
+		if cmd := exec.Command("sudo", "-n", exePath); cmd.Start() == nil {
+			writeElevateMarker()
+			time.Sleep(100 * time.Millisecond)
+			internal.App.Event.Emit(internal.AppConfig.EventNameServiceAppQuit, true)
+		} else {
+			internal.App.Event.Emit(internal.AppConfig.LogTypeName_STATUS, "elevated launch failed")
+		}
 	}()
 
 	return false
