@@ -82,6 +82,8 @@
   "proxy.mode.manual": "Manual mode",
   "proxy.mode.tun": "TUN mode",
   "proxy.mode.system": "System proxy",
+  "proxy.tun.noNode": "No proxy node configured. Cannot enable TUN mode.",
+  "proxy.tun.startFailed": "Failed to start the TUN device. Check permissions or drivers.",
   "proxy.stopped": "Stopped",
 
   "systray.showMainWindow": "Show main window",

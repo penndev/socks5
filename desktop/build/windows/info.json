@@ -6,9 +6,9 @@
 		"0000": {
 			"ProductVersion": "0.0.1",
 			"CompanyName": "Prism",
-			"FileDescription": "Prism App",
+			"FileDescription": "Prism",
 			"LegalCopyright": "(c) 2026",
-			"ProductName": "prism-desktop",
+			"ProductName": "Prism",
 			"Comments": "代理工具"
 		}
 	}

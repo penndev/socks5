@@ -49,6 +49,7 @@ func main() {
 
 	// 设置任务托管栏功能
 	systray := app.SystemTray.New()
+	systray.SetTooltip(lang.DefaultLang.T("app.title"))
 	systray.SetIcon(build.Icon)
 	systray.SetMenu(systrayMenu)
 	systray.OnClick(func() {

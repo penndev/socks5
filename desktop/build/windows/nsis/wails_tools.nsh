@@ -5,13 +5,13 @@
 !include "FileFunc.nsh"
 
 !ifndef INFO_PROJECTNAME
-    !define INFO_PROJECTNAME "prism-desktop"
+    !define INFO_PROJECTNAME "prism"
 !endif
 !ifndef INFO_COMPANYNAME
     !define INFO_COMPANYNAME "Prism"
 !endif
 !ifndef INFO_PRODUCTNAME
-    !define INFO_PRODUCTNAME "prism-desktop"
+    !define INFO_PRODUCTNAME "Prism"
 !endif
 !ifndef INFO_PRODUCTVERSION
     !define INFO_PRODUCTVERSION "0.0.1"

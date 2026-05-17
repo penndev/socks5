@@ -82,6 +82,8 @@
   "proxy.mode.manual": "手动模式",
   "proxy.mode.tun": "TUN 模式",
   "proxy.mode.system": "系统代理",
+  "proxy.tun.noNode": "未设置代理节点，无法开启 TUN 模式",
+  "proxy.tun.startFailed": "无法启动 TUN 设备，请检查权限或驱动",
   "proxy.stopped": "已停止",
 
   "systray.showMainWindow": "显示主窗口",

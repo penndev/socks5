@@ -121,11 +121,18 @@ async function startProxy() {
 // 切换代理模式
 watch(
   proxyMode,
-  async (mode) => {
+  async (mode, prevMode) => {
+    const revert = prevMode ?? "manual";
     try {
       await SetMode(mode);
     } catch (e) {
-      message.error(e?.message || t("serverList.operationFailed"));
+      if (mode !== revert) { proxyMode.value = revert; }
+      let text = e?.message ?? "";
+      try {
+        const o = JSON.parse(text);
+        if (typeof o.message === "string") text = o.message;
+      } catch {}
+      message.error(text);
     }
   },
   { immediate: true },

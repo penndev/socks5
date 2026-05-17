@@ -2,7 +2,9 @@ package proxy
 
 import (
 	"desktop/internal"
+	"desktop/lang"
 	"desktop/web"
+	"errors"
 	"net"
 	"net/url"
 	"time"
@@ -96,6 +98,9 @@ func (p *Proxy) SetRemote(remote string) error {
 }
 
 func (p *Proxy) setModeTun() error {
+	if p.remoteURL == nil || p.remoteURL.Host == "" {
+		return errors.New(lang.DefaultLang.T("proxy.tun.noNode"))
+	}
 	if !tunPermission() {
 		return nil
 	}
@@ -106,7 +111,8 @@ func (p *Proxy) setModeTun() error {
 		Offset: TUN_OFFSET,
 	})
 	if err != nil {
-		return err
+		internal.App.Event.Emit(internal.AppConfig.LogTypeName_STATUS, "tun.New: "+err.Error())
+		return errors.New(lang.DefaultLang.T("proxy.tun.startFailed"))
 	}
 	stack.New(stack.Option{
 		EndPoint: p.dev,
@@ -127,7 +133,7 @@ func (p *Proxy) setModeTun() error {
 	return nil
 }
 
-func (p *Proxy) SetMode(mode string) {
+func (p *Proxy) SetMode(mode string) error {
 	internal.App.Event.Emit(
 		internal.AppConfig.LogTypeName_STATUS,
 		"SetMode-> "+mode,
@@ -144,7 +150,9 @@ func (p *Proxy) SetMode(mode string) {
 	}
 	if err != nil {
 		internal.App.Event.Emit(internal.AppConfig.LogTypeName_STATUS, err.Error())
+		return err
 	}
+	return nil
 }
 
 func (p *Proxy) SetStop() {
