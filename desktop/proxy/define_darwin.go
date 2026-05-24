@@ -21,11 +21,6 @@ const TUN_OFFSET = 4
 var TUN_IP netip.Prefix
 var Routes []netip.Prefix
 
-const sudoFile = "/etc/sudoers.d/prism-desktop"
-const elevateFailAfter = 3 * time.Second
-
-var elevateMarkerFile string
-
 // 自定义网卡GUID 方便wintun复用
 func init() {
 	TUN_IP = netip.MustParsePrefix("172.19.0.1/32")
@@ -40,9 +35,13 @@ func init() {
 		netip.MustParsePrefix("128.0.0.0/1"),
 		netip.MustParsePrefix("198.18.0.0/15"),
 	}
-	elevateMarkerFile = filepath.Join(os.TempDir(), "prism-desktop-elevate.marker")
 	initElevate()
 }
+
+const sudoFile = "/etc/sudoers.d/prism-desktop"
+const elevateFailAfter = 3 * time.Second
+
+var elevateMarkerFile = "/tmp/prism-desktop-elevate.marker"
 
 // initElevate 检查上次提权重启是否超时失败，超时则清理 sudoers
 func initElevate() {
@@ -61,20 +60,12 @@ func initElevate() {
 	if time.Since(time.Unix(ts, 0)) <= elevateFailAfter {
 		return
 	}
-	removeSudoersFile()
+	apple := fmt.Sprintf(`do shell script "rm -f %s" with administrator privileges`, sudoFile)
+	exec.Command("osascript", "-e", apple).Run()
 }
 
 func writeElevateMarker() {
-	_ = os.WriteFile(elevateMarkerFile, []byte(fmt.Sprintf("%d", time.Now().Unix())), 0644)
-}
-
-func removeSudoersFile() {
-	if os.Geteuid() == 0 {
-		_ = os.Remove(sudoFile)
-		return
-	}
-	apple := fmt.Sprintf(`do shell script "rm -f %s" with administrator privileges`, sudoFile)
-	_ = exec.Command("osascript", "-e", apple).Run()
+	os.WriteFile(elevateMarkerFile, []byte(fmt.Sprintf("%d", time.Now().Unix())), 0644)
 }
 
 func tunPermission() bool {
