@@ -104,6 +104,10 @@ func (p *Proxy) setModeTun() error {
 	if !tunPermission() {
 		return nil
 	}
+	if p.dev != nil {
+		p.dev.Close()
+		internal.App.Event.Emit(internal.AppConfig.LogTypeName_STATUS, "tun dev close success")
+	}
 	var err error
 	p.dev, err = tun.New(tun.Options{
 		Name:   TUN_NAME,

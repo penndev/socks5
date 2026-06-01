@@ -107,17 +107,6 @@ async function copyPacScriptURL() {
   }
 }
 
-async function startProxy() {
-  const { host, port, username, password } = settingsStore.proxy;
-  if (!host || !port) {
-    return;
-  }
-  try {
-    await SetStart(`${host}:${port}`, username, password);
-  } catch (e) {
-    message.error(e?.message || t("serverList.operationFailed"));
-  }
-}
 // 切换代理模式
 watch(
   proxyMode,
@@ -146,8 +135,6 @@ watch(
         const user = server.username || "";
         const pass = server.password || "";
         await SetRemote(`${server.protocol}://${user}:${pass}@${server.host}`);
-        await SetMode(proxyMode.value);
-        await startProxy();
       } catch (e) {
         message.error(e?.message || t("serverList.operationFailed"));
       }
@@ -164,7 +151,8 @@ watch(
 watch(
   () => settingsStore.proxy,
   async () => {
-    await startProxy();
+    const { host, port, username, password } = settingsStore.proxy;
+    await SetStart(`${host}:${port}`, username, password);
   },
   { deep: true, immediate: true },
 );
